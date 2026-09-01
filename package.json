@@ -1,6 +1,6 @@
 {
   "name": "haber-takip",
-  "version": "1.1.1",
+  "version": "1.1.2",
   "description": "Haber Takip Uygulaması",
   "main": "main.js",
   "author": "Ezequiel Sarser",
@@ -13,7 +13,7 @@
     "electron": "^28.3.3",
     "electron-builder": "^24.13.3"
   },
-    "build": {
+  "build": {
     "appId": "com.habertakip.desktop",
     "productName": "Haber Takip",
     "win": {
@@ -29,10 +29,10 @@
     "publish": {
       "provider": "github",
       "owner": "yziyaozsoy-sys",
-      "repo": "HABER-TAK-P"
+      "repo": "HABER-TAK-P",
+      "releaseType": "release"
     }
   },
-
   "dependencies": {
     "cheerio": "1.0.0",
     "electron-updater": "^6.8.9",
