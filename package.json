@@ -6,7 +6,7 @@
   "author": "Ezequiel Sarser",
   "scripts": {
     "start": "electron .",
-    "build": "electron-builder--publish never",
+    "build": "electron-builder --publish never",
     "build:dir": "electron-builder --dir"
   },
   "devDependencies": {
