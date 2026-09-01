@@ -3,3 +3,11 @@ dist/
 dist-electron/
 *.log
 .DS_Store
+# Backup / yedek dosyalar
+*.yedek
+*.bak
+*.bak2
+*.backup*
+*-backup
+log.txt
+cikti.txt
