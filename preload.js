@@ -23,10 +23,14 @@ contextBridge.exposeInMainWorld("api", {
     ipcRenderer.on("tray-refresh", () => callback());
   },
 
-  // --- YENİ: Özet (spot) canlı güncelleme ---
+    // --- YENİ: Özet (spot) canlı güncelleme ---
   onDescriptionUpdated: (callback) => {
     ipcRenderer.on("description-updated", (event, data) => {
       callback(data);
     });
-  }
+  },
+
+  // --- YENİ: Uygulama versiyonu ---
+  getAppVersion: () => ipcRenderer.invoke("get-app-version")
 });
+

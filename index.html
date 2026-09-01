@@ -12,65 +12,92 @@
                font-src 'self' https: data:;">
   <style>
     * { box-sizing: border-box; }
+
+    :root {
+      --bg: #e6eaf0;
+      --bg-card: #e6eaf0;
+      --shadow-dark: rgba(163,177,198,0.55);
+      --shadow-light: rgba(255,255,255,0.9);
+      --text: #3d4457;
+      --text-muted: #7a8299;
+      --accent: #4a90e2;
+      --warning: #f5a623;
+      --danger: #e04b4b;
+    }
+
     body {
       margin: 0;
       font-family: "Segoe UI", Arial, sans-serif;
-      background: #f4f6f8;
-      color: #1a1a1a;
+      background: var(--bg);
+      color: var(--text);
       transition: background 0.3s, color 0.3s;
     }
+
     .modal-overlay {
       display: none;
       position: fixed;
       top: 0; left: 0; right: 0; bottom: 0;
-      background: rgba(0,0,0,0.5);
+      background: rgba(30,34,40,0.55);
       align-items: center;
       justify-content: center;
       z-index: 1000;
     }
-    .modal-overlay.open {
-      display: flex;
+    .modal-overlay.open { display: flex; }
+
+    /* ================ Neumorphism yardımcı sınıflar ================ */
+    .neu-raised {
+      background: var(--bg);
+      box-shadow: 7px 7px 15px var(--shadow-dark), -7px -7px 15px var(--shadow-light);
+    }
+    .neu-pressed {
+      background: var(--bg);
+      box-shadow: inset 4px 4px 10px var(--shadow-dark), inset -4px -4px 10px var(--shadow-light);
     }
 
-    /* ================ OZELLIK 4: KARANLIK MOD ================ */
+    /* ================ KARANLIK MOD ================ */
     body.dark-mode {
-      background: #121212;
-      color: #e8e8e8;
+      --bg: #22252b;
+      --bg-card: #22252b;
+      --shadow-dark: rgba(0,0,0,0.55);
+      --shadow-light: rgba(255,255,255,0.04);
+      --text: #e8e8e8;
+      --text-muted: #9a9fab;
+      background: var(--bg);
+      color: var(--text);
     }
     body.dark-mode .top-bar,
     body.dark-mode .tabs,
     body.dark-mode .news-card,
-    body.dark-mode .modal-content {
-      background: #1e1e1e;
-      color: #e8e8e8;
-      border-color: #333;
+    body.dark-mode .modal-content,
+    body.dark-mode .tracking-panel,
+    body.dark-mode .tracking-wrapper {
+      background: var(--bg);
+      color: var(--text);
     }
-    body.dark-mode .tab-btn {
-      background: #2a2a2a;
-      color: #e8e8e8;
-    }
-    body.dark-mode .tab-btn.active {
-      background: #4a90e2;
-      color: #fff;
-    }
+    body.dark-mode .tab-btn { background: var(--bg); color: var(--text-muted); }
+    body.dark-mode .tab-btn.active { color: #fff; }
     body.dark-mode input,
     body.dark-mode select {
-      background: #2a2a2a;
-      color: #e8e8e8;
-      border-color: #444;
+      background: var(--bg);
+      color: var(--text);
     }
-    body.dark-mode .news-snippet { color: #bbb; }
-    body.dark-mode .news-date { color: #999; }
+    body.dark-mode .news-snippet,
+    body.dark-mode .news-desc { color: #b7bcc8; }
+    body.dark-mode .news-date,
+    body.dark-mode .pub-date { color: var(--text-muted); }
     body.dark-mode .news-card.read { opacity: 0.5; }
+    body.dark-mode .version-tag { background: var(--bg); color: var(--text-muted); }
+    body.dark-mode #status { background: var(--bg); color: var(--text-muted); }
+    body.dark-mode .keyword-chip { background: var(--bg); color: var(--text); }
 
     /* ================ UST BAR ================ */
     .top-bar {
       display: flex;
       align-items: center;
-      gap: 10px;
-      padding: 12px 16px;
-      background: #fff;
-      border-bottom: 1px solid #ddd;
+      gap: 12px;
+      padding: 16px 20px;
+      background: var(--bg);
+      box-shadow: 0 6px 16px rgba(163,177,198,0.35);
       flex-wrap: wrap;
     }
     .top-bar h1 {
@@ -78,12 +105,29 @@
       margin: 0;
       margin-right: 10px;
       white-space: nowrap;
+      color: var(--text);
     }
+    .version-tag {
+      font-size: 11px;
+      font-weight: 400;
+      color: var(--text-muted);
+      background: var(--bg);
+      box-shadow: inset 2px 2px 5px var(--shadow-dark), inset -2px -2px 5px var(--shadow-light);
+      padding: 3px 10px;
+      border-radius: 12px;
+      vertical-align: middle;
+      margin-left: 4px;
+    }
+
     #searchInput, #sourceFilter {
-      padding: 8px 10px;
-      border: 1px solid #ccc;
-      border-radius: 6px;
+      padding: 10px 14px;
+      border: none;
+      border-radius: 14px;
       font-size: 14px;
+      background: var(--bg);
+      color: var(--text);
+      box-shadow: inset 3px 3px 7px var(--shadow-dark), inset -3px -3px 7px var(--shadow-light);
+      outline: none;
     }
     #searchInput { flex: 1; min-width: 150px; }
     #sourceFilter { min-width: 140px; }
@@ -91,332 +135,292 @@
     button {
       cursor: pointer;
       border: none;
-      border-radius: 6px;
-      padding: 8px 14px;
+      border-radius: 14px;
+      padding: 10px 16px;
       font-size: 14px;
-      background: #eee;
-      transition: background 0.2s;
+      background: var(--bg);
+      color: var(--text);
+      box-shadow: 5px 5px 10px var(--shadow-dark), -5px -5px 10px var(--shadow-light);
+      transition: box-shadow 0.15s, transform 0.1s;
     }
-    button:hover { filter: brightness(0.95); }
+    button:hover { transform: translateY(-1px); }
+    button:active {
+      box-shadow: inset 3px 3px 7px var(--shadow-dark), inset -3px -3px 7px var(--shadow-light);
+      transform: translateY(0);
+    }
 
-    .btn-icon { font-size: 16px; padding: 8px 10px; }
-    .btn-primary { background: #4a90e2; color: #fff; }
-    .btn-warning { background: #f5a623; color: #fff; }
-    .btn-danger { background: #e04b4b; color: #fff; }
+    .btn-icon { font-size: 14px; }
+    .btn-primary { color: var(--accent); font-weight: 600; }
+    .btn-warning { color: var(--warning); font-weight: 600; }
+    .btn-danger { color: var(--danger); font-weight: 600; }
     #refreshIcon { display: inline-block; }
-    #refreshIcon.spinning {
-      animation: spin 1s linear infinite;
-    }
-    @keyframes spin {
-      from { transform: rotate(0deg); }
-      to   { transform: rotate(360deg); }
-    }
+    #refreshIcon.spinning { animation: spin 1s linear infinite; }
+    @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
 
     /* ================ KATEGORI SEKMELERI ================ */
     .tabs {
       display: flex;
-      gap: 6px;
-      padding: 10px 16px;
-      background: #fff;
-      border-bottom: 1px solid #ddd;
+      gap: 10px;
+      padding: 14px 20px;
+      background: var(--bg);
       overflow-x: auto;
     }
     .tab-btn {
       white-space: nowrap;
-      background: #eef1f4;
-      padding: 8px 14px;
-      border-radius: 20px;
+      background: var(--bg);
+      color: var(--text-muted);
+      padding: 9px 16px;
+      border-radius: 18px;
       font-weight: 500;
+      box-shadow: 4px 4px 9px var(--shadow-dark), -4px -4px 9px var(--shadow-light);
+      border: none;
     }
     .tab-btn.active {
-      background: #4a90e2;
-      color: #fff;
+      color: var(--accent);
+      box-shadow: inset 3px 3px 7px var(--shadow-dark), inset -3px -3px 7px var(--shadow-light);
+      font-weight: 700;
     }
 
     /* ================ DURUM CUBUGU ================ */
     #status {
-      padding: 8px 16px;
+      padding: 10px 20px;
       font-size: 13px;
-      color: #666;
-      background: #f0f0f0;
-    }
-    body.dark-mode #status {
-      background: #1a1a1a;
-      color: #aaa;
+      color: var(--text-muted);
+      background: var(--bg);
     }
 
     /* ================ HABER LISTESI ================ */
     #newsList {
-      padding: 16px;
+      padding: 20px;
       display: grid;
       grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
-      gap: 14px;
+      gap: 20px;
     }
     .news-card {
-      background: #fff;
-      border-radius: 10px;
-      padding: 14px;
-      box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+      background: var(--bg);
+      border-radius: 18px;
+      padding: 16px;
+      box-shadow: 8px 8px 18px var(--shadow-dark), -8px -8px 18px var(--shadow-light);
       display: flex;
       flex-direction: column;
       gap: 6px;
-      border: 1px solid transparent;
+      border: none;
+      transition: box-shadow 0.2s;
     }
     .news-card.read { opacity: 0.55; }
-    .news-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-    }
+    .news-header { display: flex; justify-content: space-between; align-items: center; }
     .news-source {
       font-size: 12px;
-      font-weight: 600;
-      color: #4a90e2;
+      font-weight: 700;
+      color: var(--accent);
       text-transform: uppercase;
     }
     .star-btn {
-      background: none;
-      font-size: 18px;
-      padding: 2px 6px;
+      background: var(--bg);
+      font-size: 16px;
+      padding: 6px 9px;
+      border-radius: 10px;
+      box-shadow: 3px 3px 7px var(--shadow-dark), -3px -3px 7px var(--shadow-light);
     }
     .news-title {
       font-size: 15px;
-      font-weight: 600;
+      font-weight: 700;
       color: inherit;
       text-decoration: none;
       line-height: 1.4;
     }
-    .news-title:hover { text-decoration: underline; }
-    .news-date { font-size: 12px; color: #888; }
-    .news-snippet {
-      font-size: 13px;
-      color: #555;
-      margin: 0;
-      line-height: 1.4;
-    }
-    .empty-msg {
-      grid-column: 1 / -1;
-      text-align: center;
-      color: #999;
-      padding: 40px;
-    }
+    .news-title:hover { color: var(--accent); }
+    .news-date { font-size: 12px; color: var(--text-muted); }
+    .news-snippet { font-size: 13px; color: var(--text-muted); margin: 0; line-height: 1.4; }
+    .empty-msg { grid-column: 1 / -1; text-align: center; color: var(--text-muted); padding: 50px; }
 
     /* ================ MODAL (KAYNAK YONETIMI) ================ */
     .modal-content {
-      background: #fff;
-      border-radius: 10px;
-      padding: 20px;
+      background: var(--bg);
+      border-radius: 22px;
+      padding: 24px;
       width: 450px;
       max-width: 90%;
       max-height: 85vh;
       overflow-y: auto;
+      box-shadow: 12px 12px 28px rgba(0,0,0,0.35), -8px -8px 20px var(--shadow-light);
     }
-    .modal-content h2 { margin-top: 0; font-size: 18px; }
+    .modal-content h2 { margin-top: 0; font-size: 18px; color: var(--text); }
     .modal-content label {
       display: block;
       font-size: 13px;
       font-weight: 600;
-      margin: 10px 0 4px;
+      margin: 12px 0 6px;
+      color: var(--text-muted);
     }
-   .modal-content input,
-.modal-content select {
-  width: 100%;
-  padding: 8px;
-  border: 1px solid #ccc;
-  border-radius: 6px;
-  font-size: 14px;
-  box-sizing: border-box;
-}
-    .modal-actions {
-      display: flex;
-      gap: 8px;
-      margin-top: 16px;
+    .modal-content input,
+    .modal-content select {
+      width: 100%;
+      padding: 10px 12px;
+      border: none;
+      border-radius: 12px;
+      font-size: 14px;
+      background: var(--bg);
+      color: var(--text);
+      box-shadow: inset 3px 3px 7px var(--shadow-dark), inset -3px -3px 7px var(--shadow-light);
+      box-sizing: border-box;
     }
+    .modal-actions { display: flex; gap: 10px; margin-top: 20px; }
     .modal-actions button { flex: 1; }
 
     .source-list-title {
-      margin-top: 20px;
+      margin-top: 22px;
       font-size: 13px;
-      font-weight: 600;
-      border-top: 1px solid #eee;
-      padding-top: 12px;
+      font-weight: 700;
+      color: var(--text-muted);
+      padding-top: 14px;
+      box-shadow: inset 0 1px 0 var(--shadow-light);
     }
     .source-row {
       display: flex;
       justify-content: space-between;
       align-items: center;
-      padding: 6px 0;
+      padding: 10px 4px;
       font-size: 13px;
-      border-bottom: 1px solid #f0f0f0;
     }
     .source-row button {
-      background: none;
-      font-size: 15px;
-      padding: 2px 6px;
+      background: var(--bg);
+      font-size: 14px;
+      padding: 5px 9px;
+      border-radius: 8px;
+      box-shadow: 3px 3px 6px var(--shadow-dark), -3px -3px 6px var(--shadow-light);
     }
 
     /* ================ HABER TAKIP (KEYWORD) STILLERI ================ */
-    .tracking-panel {
+    .tracking-panel, .tracking-wrapper {
       grid-column: 1 / -1;
-      background: #fff;
-      border-radius: 10px;
-      padding: 16px;
-      margin-bottom: 6px;
-      box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+      background: var(--bg);
+      border-radius: 18px;
+      padding: 18px;
+      margin-bottom: 8px;
+      box-shadow: 8px 8px 18px var(--shadow-dark), -8px -8px 18px var(--shadow-light);
     }
-    body.dark-mode .tracking-panel { background: #1e1e1e; }
 
-    .tracking-input-row {
-      display: flex;
-      gap: 8px;
-      margin-bottom: 12px;
-    }
+    .tracking-input-row { display: flex; gap: 10px; margin-bottom: 14px; }
     .tracking-input-row input {
       flex: 1;
-      padding: 8px 10px;
-      border: 1px solid #ccc;
-      border-radius: 6px;
+      padding: 10px 14px;
+      border: none;
+      border-radius: 14px;
       font-size: 14px;
-    }
-    body.dark-mode .tracking-input-row input {
-      background: #2a2a2a;
-      color: #e8e8e8;
-      border-color: #444;
+      background: var(--bg);
+      color: var(--text);
+      box-shadow: inset 3px 3px 7px var(--shadow-dark), inset -3px -3px 7px var(--shadow-light);
     }
 
-    .tracking-keyword-list {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 8px;
-    }
+    .tracking-keyword-list, .tracked-keywords-list { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 12px; }
     .keyword-chip {
-      background: #eef1f4;
-      color: #333;
-      padding: 6px 10px;
+      background: var(--bg);
+      color: var(--text);
+      padding: 8px 12px;
       border-radius: 16px;
       font-size: 13px;
       display: inline-flex;
       align-items: center;
       gap: 6px;
+      box-shadow: 4px 4px 9px var(--shadow-dark), -4px -4px 9px var(--shadow-light);
     }
-    body.dark-mode .keyword-chip {
-      background: #2a2a2a;
-      color: #e8e8e8;
-    }
-    .chip-remove {
+    .chip-remove, .remove-kw-btn {
       background: none;
       border: none;
       cursor: pointer;
       font-size: 12px;
       padding: 0 2px;
-      color: #999;
+      color: var(--text-muted);
+      box-shadow: none;
     }
-    .chip-remove:hover { color: #e04b4b; }
-/* ============ HABER TAKİP EŞLEŞME RENKLERİ ============ */
+    .chip-remove:hover, .remove-kw-btn:hover { color: var(--danger); }
 
-/* Aydınlık modda yakalanan haber */
-.news-card.tracked-match {
-  background: linear-gradient(135deg, #fff8df 0%, #fff3c4 100%);
-  border: 2px solid #f5a623;
-  box-shadow: 0 3px 12px rgba(245, 166, 35, 0.25);
-  position: relative;
-}
+    /* ============ HABER TAKİP EŞLEŞME (Neumorphism amber vurgu) ============ */
+    .news-card.tracked-match {
+      background: var(--bg);
+      box-shadow: 8px 8px 18px var(--shadow-dark), -8px -8px 18px var(--shadow-light), inset 0 0 0 2px rgba(245,166,35,0.55);
+      position: relative;
+    }
+    .news-card.tracked-match::before {
+      content: "";
+      position: absolute;
+      top: 14px;
+      bottom: 14px;
+      left: -3px;
+      width: 5px;
+      background: var(--warning);
+      border-radius: 5px;
+      box-shadow: 2px 0 6px rgba(245,166,35,0.5);
+    }
+    .tracked-match-badge {
+      display: inline-flex;
+      align-items: center;
+      align-self: flex-start;
+      flex-wrap: wrap;
+      gap: 5px;
+      margin: 5px 0;
+      padding: 6px 12px;
+      border-radius: 14px;
+      background: var(--bg);
+      color: #b45f00;
+      font-size: 12px;
+      font-weight: 700;
+      box-shadow: inset 3px 3px 7px rgba(245,166,35,0.25), inset -3px -3px 7px var(--shadow-light);
+    }
+    body.dark-mode .tracked-match-badge { color: #ffbe3d; }
+    .tracked-match-badge strong { color: var(--warning); }
+    .tracked-bell { font-size: 13px; }
+    .news-card.tracked-match.read { opacity: 0.72; }
 
-/* Kartın sol tarafındaki renkli şerit */
-.news-card.tracked-match::before {
-  content: "";
-  position: absolute;
-  top: 10px;
-  bottom: 10px;
-  left: 0;
-  width: 5px;
-  background: #f5a623;
-  border-radius: 0 5px 5px 0;
-}
-
-/* Takip kelimesi etiketi */
-.tracked-match-badge {
-  display: inline-flex;
-  align-items: center;
-  align-self: flex-start;
-  flex-wrap: wrap;
-  gap: 5px;
-  margin: 5px 0;
-  padding: 5px 9px;
-  border: 1px solid #e6a11e;
-  border-radius: 14px;
-  background: #ffe5a3;
-  color: #754600;
-  font-size: 12px;
-  font-weight: 600;
-}
-
-.tracked-match-badge strong {
-  color: #b45f00;
-}
-
-.tracked-bell {
-  font-size: 13px;
-}
-
-/* Karanlık modda yakalanan haber */
-body.dark-mode .news-card.tracked-match {
-  background: linear-gradient(135deg, #30291b 0%, #3a2e17 100%);
-  border-color: #f5a623;
-  box-shadow: 0 3px 14px rgba(245, 166, 35, 0.18);
-}
-
-body.dark-mode .tracked-match-badge {
-  background: #5a4215;
-  border-color: #d99416;
-  color: #ffd983;
-}
-
-body.dark-mode .tracked-match-badge strong {
-  color: #ffbe3d;
-}
-
-/* Okunmuş olsa bile takip rengi tamamen kaybolmasın */
-.news-card.tracked-match.read {
-  opacity: 0.72;
-}
-
+    .tracking-matches { display: grid; gap: 14px; margin-top: 14px; }
+    .match-card {
+      box-shadow: 8px 8px 18px var(--shadow-dark), -8px -8px 18px var(--shadow-light), inset 3px 0 0 var(--warning);
+    }
+    .matched-kw { font-size: 12px; color: var(--warning); font-weight: 700; margin-left: auto; }
 
     /* ============ EKSİK KART STİLLERİ (renderer.js ile uyumlu) ============ */
-    .source-logo { width: 18px; height: 18px; border-radius: 4px; object-fit: contain; margin-right: 6px; vertical-align: middle; }
-    .source-name { font-size: 12px; font-weight: 600; color: #4a90e2; text-transform: uppercase; margin-right: 8px; }
-    .pub-date { font-size: 12px; color: #888; }
-    .news-desc { font-size: 13px; color: #555; margin: 8px 0; line-height: 1.4; }
-    body.dark-mode .news-desc { color: #bbb; }
-    body.dark-mode .pub-date { color: #999; }
-    .news-actions { display: flex; justify-content: space-between; align-items: center; margin-top: 10px; }
-    .fav-btn { background: none; border: none; cursor: pointer; font-size: 13px; color: #888; padding: 4px 6px; }
-    .fav-btn.active { color: #f5a623; font-weight: 600; }
-    .read-link { font-size: 13px; color: #4a90e2; text-decoration: none; font-weight: 600; }
-    .read-link:hover { text-decoration: underline; }
-
-    /* ============ HABER TAKİP SEKMESİ STİLLERİ ============ */
-    .tracking-wrapper {
-      grid-column: 1 / -1;
-      background: #fff;
+    .source-logo { width: 20px; height: 20px; border-radius: 6px; object-fit: contain; margin-right: 6px; vertical-align: middle; }
+    .source-name { font-size: 12px; font-weight: 700; color: var(--accent); text-transform: uppercase; margin-right: 8px; }
+    .pub-date { font-size: 12px; color: var(--text-muted); }
+    .news-desc { font-size: 13px; color: var(--text-muted); margin: 8px 0; line-height: 1.4; }
+    .news-actions { display: flex; justify-content: space-between; align-items: center; margin-top: 12px; }
+    .fav-btn {
+      background: var(--bg);
+      border: none;
+      cursor: pointer;
+      font-size: 13px;
+      color: var(--text-muted);
+      padding: 6px 10px;
       border-radius: 10px;
-      padding: 16px;
-      box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+      box-shadow: 3px 3px 7px var(--shadow-dark), -3px -3px 7px var(--shadow-light);
     }
-    body.dark-mode .tracking-wrapper { background: #1e1e1e; }
-    .tracked-keywords-list { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 12px; }
-    .remove-kw-btn { background: none; border: none; cursor: pointer; font-size: 12px; color: #999; padding: 0 2px; }
-    .remove-kw-btn:hover { color: #e04b4b; }
-    .tracking-matches { display: grid; gap: 12px; margin-top: 12px; }
-    .match-card { border-left: 4px solid #f5a623; }
-    .matched-kw { font-size: 12px; color: #f5a623; font-weight: 600; margin-left: auto; }
+    .fav-btn.active { color: var(--warning); font-weight: 700; }
+    .read-link {
+      font-size: 13px;
+      color: var(--accent);
+      text-decoration: none;
+      font-weight: 700;
+      padding: 6px 10px;
+      border-radius: 10px;
+    }
+       .read-link:hover { box-shadow: 3px 3px 7px var(--shadow-dark), -3px -3px 7px var(--shadow-light); }
+
+    .category-badge {
+      font-size: 11px;
+      font-weight: 600;
+      padding: 2px 8px;
+      border-radius: 12px;
+      margin-left: 6px;
+      white-space: nowrap;
+    }
   </style>
 </head>
 <body>
 
   <!-- ================ UST BAR ================ -->
   <div class="top-bar">
-    <h1>📰 Haber Takip</h1>
+    <h1>📰 Haber Takip <span id="appVersion" class="version-tag"></span></h1>
     <input type="text" id="searchInput" placeholder="🔍 Başlıkta ara..." />
     <select id="sourceFilter">
       <option value="all">Tüm Kaynaklar</option>
@@ -424,8 +428,7 @@ body.dark-mode .tracked-match-badge strong {
     <button id="darkModeToggle" class="btn-icon">🌙 Karanlık Mod</button>
     <button id="exportBtn" class="btn-icon">💾 Dışa Aktar</button>
     <button id="addSourceBtn" class="btn-primary">+ Kaynak</button>
-<button id="refreshBtn" class="btn-icon"><span id="refreshIcon">🔄</span> Yenile</button>
-
+    <button id="refreshBtn" class="btn-icon"><span id="refreshIcon">🔄</span> Yenile</button>
   </div>
 
   <!-- ================ KATEGORI SEKMELERI ================ -->
@@ -450,58 +453,33 @@ body.dark-mode .tracked-match-badge strong {
       <input type="text" id="modalName" placeholder="Örn: Hürriyet" />
 
       <label>Kaynak Türü</label>
-<select id="modalType">
-  <option value="rss">RSS</option>
-  <option value="html">HTML / Web Sitesi</option>
-</select>
+      <select id="modalType">
+        <option value="rss">RSS</option>
+        <option value="html">HTML / Web Sitesi</option>
+      </select>
 
-<label>Kaynak URL</label>
-<input type="text" id="modalUrl" placeholder="https://..." />
+      <label>Kaynak URL</label>
+      <input type="text" id="modalUrl" placeholder="https://..." />
 
-<label>Logo URL <span style="font-weight: normal;">(isteğe bağlı)</span></label>
-<input
-  type="text"
-  id="modalLogo"
-  placeholder="Boş bırakılırsa favicon kullanılır"
-/>
+      <label>Logo URL <span style="font-weight: normal;">(isteğe bağlı)</span></label>
+      <input type="text" id="modalLogo" placeholder="Boş bırakılırsa favicon kullanılır" />
 
-<div id="htmlSelectorFields" style="display: none;">
-  <label>Haber Kapsayıcı Seçicisi</label>
-  <input
-    type="text"
-    id="modalItemSelector"
-    placeholder="Örn: article veya .news-item"
-  />
+      <div id="htmlSelectorFields" style="display: none;">
+        <label>Haber Kapsayıcı Seçicisi</label>
+        <input type="text" id="modalItemSelector" placeholder="Örn: article veya .news-item" />
 
-  <label>Başlık Seçicisi</label>
-  <input
-    type="text"
-    id="modalTitleSelector"
-    placeholder="Örn: h2 a veya .title a"
-  />
+        <label>Başlık Seçicisi</label>
+        <input type="text" id="modalTitleSelector" placeholder="Örn: h2 a veya .title a" />
 
-  <label>Bağlantı Seçicisi</label>
-  <input
-    type="text"
-    id="modalLinkSelector"
-    placeholder="Örn: h2 a veya a"
-  />
+        <label>Bağlantı Seçicisi</label>
+        <input type="text" id="modalLinkSelector" placeholder="Örn: h2 a veya a" />
 
-  <label>Özet Seçicisi</label>
-  <input
-    type="text"
-    id="modalDescriptionSelector"
-    placeholder="Örn: p veya .summary"
-  />
+        <label>Özet Seçicisi</label>
+        <input type="text" id="modalDescriptionSelector" placeholder="Örn: p veya .summary" />
 
-  <label>Tarih Seçicisi</label>
-  <input
-    type="text"
-    id="modalDateSelector"
-    placeholder="Örn: time veya .date"
-  />
-</div>
-
+        <label>Tarih Seçicisi</label>
+        <input type="text" id="modalDateSelector" placeholder="Örn: time veya .date" />
+      </div>
 
       <div class="modal-actions">
         <button id="modalCancelBtn">Vazgeç</button>

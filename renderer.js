@@ -324,6 +324,46 @@ function formatDate(dateStr, item = null) {
     hourCycle: "h23"
   }).format(date);
 }
+// ==================== KATEGORİ RENKLERİ ====================
+const CATEGORY_COLORS = {
+  "Gündem": "#f97316",     // turuncu
+  "Spor": "#22c55e",       // yeşil
+  "Ekonomi": "#3b82f6",    // mavi
+  "Dünya": "#a855f7",      // mor
+  "Teknoloji": "#06b6d4",  // camgöbeği
+  "Magazin": "#ec4899",    // pembe
+  "Sağlık": "#ef4444",     // kırmızı
+  "Politika": "#6b7280",   // gri
+  "Genel": "#94a3b8"       // varsayılan
+};
+
+const autoColorCache = {};
+const AUTO_COLOR_PALETTE = [
+  "#eab308", "#14b8a6", "#8b5cf6", "#f43f5e",
+  "#0ea5e9", "#84cc16", "#d946ef", "#f59e0b"
+];
+
+function getCategoryColor(category) {
+  const name = category || "Genel";
+
+  if (CATEGORY_COLORS[name]) {
+    return CATEGORY_COLORS[name];
+  }
+
+  if (autoColorCache[name]) {
+    return autoColorCache[name];
+  }
+
+  // Kategori adına göre sabit (deterministik) bir renk üret,
+  // böylece her seferinde aynı kategori aynı rengi alır.
+  let hash = 0;
+  for (let i = 0; i < name.length; i++) {
+    hash = (hash * 31 + name.charCodeAt(i)) % AUTO_COLOR_PALETTE.length;
+  }
+  const color = AUTO_COLOR_PALETTE[Math.abs(hash) % AUTO_COLOR_PALETTE.length];
+  autoColorCache[name] = color;
+  return color;
+}
 
   function getCategories() {
     const cats = new Set(sourcesData.map(s => s.category || "Genel"));
@@ -498,11 +538,12 @@ function getNewsTimestamp(dateStr, item = null) {
         (result && Array.isArray(result.items) && result.items) ||
         (Array.isArray(result) ? result : []);
 
-      return items.map(item => ({
+           return items.map(item => ({
         ...item,
         sourceName: src.name,
         sourceLogo: src.logo,
-        sourceId: src.id
+        sourceId: src.id,
+        category: src.category || "Genel"
       }));
     } catch (err) {
       console.error(
@@ -631,6 +672,8 @@ newsCache = Array.from(categoryMap.values()).sort((a, b) => {
     "news-card" +
     (isRead ? " read" : "") +
     (isTrackedMatch ? " tracked-match" : "");
+      const catColor = getCategoryColor(item.category);
+  card.style.borderTop = `3px solid ${catColor}`;
 const trackedBadge = isTrackedMatch
   ? `
     <div class="tracked-match-badge">
@@ -643,9 +686,12 @@ const trackedBadge = isTrackedMatch
 
 
       card.innerHTML = `
-        <div class="news-header">
+               <div class="news-header">
           ${item.sourceLogo ? `<img src="${item.sourceLogo}" class="source-logo" alt="${item.sourceName}" />` : ""}
           <span class="source-name">${item.sourceName || ""}</span>
+          <span class="category-badge" style="background:${catColor}20; color:${catColor}; border:1px solid ${catColor}55;">
+            ${item.category || "Genel"}
+          </span>
           <span class="pub-date">${formatDate(item.pubDate, item)}</span>
         </div>
 ${trackedBadge}
@@ -798,13 +844,18 @@ function getMatchedTrackedKeywords(item) {
     if (trackingMatches.length === 0) {
       matchesListEl.innerHTML = '<p class="empty-msg">Henuz eslesen haber yok.</p>';
     } else {
-      trackingMatches.forEach(item => {
+          trackingMatches.forEach(item => {
         const card = document.createElement("div");
         card.className = "news-card match-card";
+        const catColor = getCategoryColor(item.category);
+        card.style.borderTop = `3px solid ${catColor}`;
         card.innerHTML = `
           <div class="news-header">
             ${item.sourceLogo ? `<img src="${item.sourceLogo}" class="source-logo" alt="${item.sourceName}" />` : ""}
             <span class="source-name">${item.sourceName || ""}</span>
+            <span class="category-badge" style="background:${catColor}20; color:${catColor}; border:1px solid ${catColor}55;">
+              ${item.category || "Genel"}
+            </span>
             <span class="pub-date">${formatDate(item.pubDate, item)}</span>
             <span class="matched-kw">Eslesen: ${item.matchedKeyword}</span>
           </div>
@@ -883,11 +934,12 @@ const results = await Promise.all(
         (result && Array.isArray(result.items) && result.items) ||
         (Array.isArray(result) ? result : []);
 
-      return items.map(item => ({
+          return items.map(item => ({
         ...item,
         sourceName: src.name,
         sourceLogo: src.logo,
-        sourceId: src.id
+        sourceId: src.id,
+        category: src.category || "Genel"
       }));
     } catch (err) {
       console.error(
@@ -1272,6 +1324,21 @@ window.api.onDescriptionUpdated(({ link, description }) => {
     }
   }
 });
+
+// ==================== YENİ: UYGULAMA VERSİYONU ====================
+(async function showAppVersion() {
+  try {
+    if (window.api && typeof window.api.getAppVersion === "function") {
+      const version = await window.api.getAppVersion();
+      const versionEl = document.getElementById("appVersion");
+      if (versionEl) {
+        versionEl.textContent = `v${version}`;
+      }
+    }
+  } catch (e) {
+    console.error("Versiyon bilgisi alinamadi:", e);
+  }
+})();
 
 
 

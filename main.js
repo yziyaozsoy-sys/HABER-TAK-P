@@ -1378,6 +1378,10 @@ function getFaviconUrl(url) {
   }
 }
 
+ipcMain.handle("get-app-version", async () => {
+  return app.getVersion();
+});
+
 ipcMain.handle("get-sources", async () => {
   return readSources();
 });
