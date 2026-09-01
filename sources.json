@@ -1,0 +1,86 @@
+[
+  {
+    "id": "hurriyet",
+    "name": "Hurriyet",
+    "url": "https://www.hurriyet.com.tr/rss/anasayfa",
+    "logo": "https://www.hurriyet.com.tr/favicon.ico",
+    "category": "Gündem"
+  },
+  {
+    "id": "sabah",
+    "name": "Sabah",
+    "url": "https://www.sabah.com.tr/rss/anasayfa.xml",
+    "logo": "https://www.sabah.com.tr/favicon.ico",
+    "category": "Gündem"
+  },
+  {
+    "id": "ntv",
+    "name": "NTV",
+    "url": "https://www.ntv.com.tr/gundem.rss",
+    "logo": "https://www.ntv.com.tr/favicon.ico",
+    "category": "Gündem"
+  },
+  {
+    "name": "HALK TV",
+    "url": "https://halktv.com.tr/service/rss.php",
+    "logo": "https://www.google.com/s2/favicons?domain=halktv.com.tr&sz=64",
+    "id": "src_1787078440779",
+    "category": "Gündem"
+  },
+  {
+    "name": "ANADOLU AJANSI",
+    "url": "https://www.aa.com.tr/tr/rss/default?cat=guncel",
+    "logo": "https://www.google.com/s2/favicons?domain=aa.com.tr&sz=64",
+    "id": "src_1787078682578",
+    "category": "Gündem"
+  },
+  {
+    "name": "HÜRRİYET EKONOMİ",
+    "url": "https://www.hurriyet.com.tr/rss/ekonomi",
+    "logo": "https://www.google.com/s2/favicons?domain=hurriyet.com.tr&sz=64",
+    "id": "src_1787079432513",
+    "category": "Ekonomi"
+  },
+  {
+    "name": "SÖZCÜ",
+    "url": "https://www.sozcu.com.tr/feeds-rss-category-gundem",
+    "logo": "https://www.google.com/s2/favicons?domain=sozcu.com.tr&sz=64",
+    "id": "src_1787079612632",
+    "category": "Gündem"
+  },
+  {
+    "name": "TÜRKİYE GAZETESİ",
+    "url": "https://www.turkiyegazetesi.com.tr/feed",
+    "logo": "https://www.google.com/s2/favicons?domain=turkiyegazetesi.com.tr&sz=128",
+    "category": "Gündem",
+    "id": "src_1787087314169"
+  },
+  {
+    "name": "YENİ ŞAFAK",
+    "url": "https://www.yenisafak.com/rss?xml=gundem",
+    "logo": "https://www.google.com/s2/favicons?domain=yenisafak.com&sz=128",
+    "category": "Gündem",
+    "id": "src_1787087348833"
+  },
+  {
+    "name": "YENİ ŞAFAK",
+    "url": "https://www.yenisafak.com/rss?xml=spor",
+    "logo": "https://www.google.com/s2/favicons?domain=yenisafak.com&sz=128",
+    "category": "Spor",
+    "id": "src_1787087383572"
+  },
+  {
+    "name": "BLOOMBERG HT",
+    "url": "https://www.bloomberght.com/rss",
+    "logo": "https://www.google.com/s2/favicons?domain=bloomberght.com&sz=128",
+    "category": "Ekonomi",
+    "id": "src_1787087436559"
+  },
+  {
+    "name": "T24",
+    "url": "https://t24.com.tr/rss",
+    "logo": "https://www.google.com/s2/favicons?domain=t24.com.tr&sz=128",
+    "category": "Gündem",
+    "id": "src_1787087580712"
+  }
+]
