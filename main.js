@@ -399,8 +399,41 @@ app.whenReady().then(() => {
   createTray();
   startBackgroundTracking();   // ✅ YENİ: Arka plan takibi artık main process'te, pencereden bağımsız
 
+  // ==================== AUTO-UPDATE LOGLAMA ====================
+  const log = require("electron-log");
+  log.transports.file.level = "info";
+  log.transports.file.resolvePathFn = () => path.join(userDataPath, "update.log");
+  autoUpdater.logger = log;
+
+  logToFile("Auto-updater baslatiliyor, mevcut versiyon: " + app.getVersion());
+
+  autoUpdater.on("checking-for-update", () => {
+    logToFile("Guncelleme kontrol ediliyor...");
+  });
+
+  autoUpdater.on("update-available", (info) => {
+    logToFile("YENI GUNCELLEME BULUNDU: " + info.version);
+  });
+
+  autoUpdater.on("update-not-available", (info) => {
+    logToFile("Guncelleme yok. Mevcut surum en son surum: " + info.version);
+  });
+
+  autoUpdater.on("error", (err) => {
+    logToFile("AUTO-UPDATER HATASI: " + (err && err.stack ? err.stack : String(err)));
+  });
+
+  autoUpdater.on("download-progress", (progress) => {
+    logToFile("Indiriliyor: %" + Math.round(progress.percent));
+  });
+
+  autoUpdater.on("update-downloaded", (info) => {
+    logToFile("Guncelleme indirildi: " + info.version + " - Yeniden baslatilacak.");
+  });
+
   // Otomatik güncelleme kontrolü
   autoUpdater.checkForUpdatesAndNotify();
+  // ================================================================
 
 });
 
