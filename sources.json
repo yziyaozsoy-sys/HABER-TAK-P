@@ -76,11 +76,18 @@
     "category": "Ekonomi",
     "id": "src_1787087436559"
   },
-  {
-    "name": "T24",
-    "url": "https://t24.com.tr/rss",
-    "logo": "https://www.google.com/s2/favicons?domain=t24.com.tr&sz=128",
-    "category": "Gündem",
-    "id": "src_1787087580712"
+{
+  "name": "T24",
+  "url": "https://t24.com.tr/son-dakika",
+  "type": "html",
+  "logo": "https://www.google.com/s2/favicons?domain=t24.com.tr&sz=128",
+  "category": "Gündem",
+  "id": "src_1787087580712",
+  "selectors": {
+    "item": "a:has(h4)",
+    "title": "h4",
+    "link": "a"
   }
+}
+
 ]

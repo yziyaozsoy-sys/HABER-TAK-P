@@ -1,4 +1,4 @@
-﻿console.log("MAIN.JS CALISTI");
+console.log("MAIN.JS CALISTI");
 
 const { app, BrowserWindow, ipcMain, dialog, Tray, Menu, Notification } = require("electron");
 const { autoUpdater } = require("electron-updater");
@@ -558,8 +558,11 @@ async function fetchAndParseRSS(url) {
     xmlString = buffer.toString("utf8");
   }
 
+   // Kaçışsız (unescaped) & karakterlerini düzelt (bozuk XML feed'ler için)
+  xmlString = xmlString.replace(/&(?!amp;|lt;|gt;|quot;|apos;|#\d+;|#x[0-9a-fA-F]+;)/g, "&amp;");
   return parser.parseString(xmlString);
 }
+
 // --- RSS bulunmayan sitelerden HTML yoluyla haber çekme ---
 async function fetchAndParseHTML(source) {
   if (!source || !source.url) {
@@ -1540,25 +1543,32 @@ async function checkKeywordsInBackground(silent) {
   if (!sources || sources.length === 0) return;
 
   const newMatches = [];
-
-  for (const src of sources) {
-    try {
-      const feed = await fetchAndParseRSS(ensureProtocol(src.url));
-      if (!feed || !feed.items) continue;
-
-      feed.items.forEach((item) => {
-       const titleLower = (item.title || "").toLocaleLowerCase('tr-TR');
-
 function isWholeWordMatch(text, keyword) {
   const kw = keyword.toLocaleLowerCase('tr-TR').trim();
   if (!kw) return false;
-  // Türkçe karakterleri de içeren kelime sınırı kontrolü
+  const normalizedText = text.toLocaleLowerCase('tr-TR');
   const escaped = kw.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-  const regex = new RegExp(`(^|[^a-zçğıöşü0-9])${escaped}([^a-zçğıöşü0-9]|$)`, 'i');
-  return regex.test(text);
+  const regex = new RegExp(`(^|[^a-zçğıöşü0-9])${escaped}([^a-zçğıöşü0-9]|$)`);
+  return regex.test(normalizedText);
 }
 
-const matchedKeyword = tracked.keywords.find((kw) => isWholeWordMatch(titleLower, kw));
+ for (const src of sources) {
+    try {
+      const sourceType = String(src.type || "rss").toLowerCase();
+      let feed;
+
+      if (["html", "web", "website", "site"].includes(sourceType)) {
+        feed = await fetchAndParseHTML({ ...src, url: ensureProtocol(src.url) });
+      } else {
+        feed = await fetchAndParseRSS(ensureProtocol(src.url));
+      }
+
+      if (!feed || !feed.items) continue;
+
+
+      feed.items.forEach((item) => {
+        const titleLower = (item.title || "").toLocaleLowerCase('tr-TR');
+        const matchedKeyword = tracked.keywords.find((kw) => isWholeWordMatch(titleLower, kw));
 
         if (!matchedKeyword) return;
         if (tracked.seenLinks.includes(item.link)) return;
@@ -1580,12 +1590,44 @@ const matchedKeyword = tracked.keywords.find((kw) => isWholeWordMatch(titleLower
   writeTracked(tracked);
 
   if (!silent && newMatches.length > 0) {
-    newMatches.forEach((m, index) => {
+    const matchesByKeyword = {};
+    newMatches.forEach((m) => {
+      if (!matchesByKeyword[m.matchedKeyword]) {
+        matchesByKeyword[m.matchedKeyword] = [];
+      }
+      matchesByKeyword[m.matchedKeyword].push(m);
+    });
+
+    const BATCH_THRESHOLD = 5;
+    const notificationsToShow = [];
+
+    Object.entries(matchesByKeyword).forEach(([keyword, items]) => {
+      if (items.length >= BATCH_THRESHOLD) {
+        for (let i = 0; i < items.length; i += BATCH_THRESHOLD) {
+          const group = items.slice(i, i + BATCH_THRESHOLD);
+          const titles = group.map((g) => ". " + g.title).join("\n");
+
+          notificationsToShow.push({
+            title: `🔔 "${keyword}" - ${group.length} yeni haber`,
+            body: titles
+          });
+        }
+      } else {
+        items.forEach((m) => {
+          notificationsToShow.push({
+            title: `🔔 "${m.matchedKeyword}" eslesmesi: ${m.sourceName}`,
+            body: m.title
+          });
+        });
+      }
+    });
+
+    notificationsToShow.forEach((n, index) => {
       setTimeout(() => {
         try {
           const notif = new Notification({
-            title: `🔔 "${m.matchedKeyword}" eslesmesi: ${m.sourceName}`,
-            body: m.title,
+            title: n.title,
+            body: n.body,
             icon: path.join(__dirname, "assets", "icon.ico")
           });
           notif.on("click", () => {
@@ -1598,20 +1640,33 @@ const matchedKeyword = tracked.keywords.find((kw) => isWholeWordMatch(titleLower
         } catch (e) {
           logToFile("Bildirim gosterme hatasi: " + e.message);
         }
-      }, index * 1500); // Her bildirim 1.5 saniye arayla -> karismayi engeller
+      }, index * 1500);
     });
-    logToFile(`Arka plan taramasi: ${newMatches.length} yeni eslesen haber bulundu.`);
+
+    logToFile(
+      `Arka plan taramasi: ${newMatches.length} yeni eslesen haber bulundu ` +
+      `(${notificationsToShow.length} bildirim gonderildi).`
+    );
   } else {
     logToFile(`Arka plan taramasi calisti. Eslesen yeni haber: ${newMatches.length}`);
   }
 }
 
 function startBackgroundTracking() {
-  if (backgroundTrackTimer) clearInterval(backgroundTrackTimer);
-  checkKeywordsInBackground(isFirstBackgroundCheck).then(() => {
-    isFirstBackgroundCheck = false;
+  logToFile("Arka plan takip sistemi baslatiliyor. Interval: " + (BG_TRACK_CHECK_MS / 1000) + " sn.");
+
+  checkKeywordsInBackground(isFirstBackgroundCheck).catch((err) => {
+    logToFile("Ilk arka plan taramasi hatasi: " + err.message);
   });
+  isFirstBackgroundCheck = false;
+
+  if (backgroundTrackTimer) {
+    clearInterval(backgroundTrackTimer);
+  }
+
   backgroundTrackTimer = setInterval(() => {
-    checkKeywordsInBackground(false);
+    checkKeywordsInBackground(false).catch((err) => {
+      logToFile("Arka plan taramasi hatasi (interval): " + err.message);
+    });
   }, BG_TRACK_CHECK_MS);
 }
