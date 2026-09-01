@@ -1,6 +1,7 @@
 ﻿console.log("MAIN.JS CALISTI");
 
 const { app, BrowserWindow, ipcMain, dialog, Tray, Menu, Notification } = require("electron");
+const { autoUpdater } = require("electron-updater");
 const path = require("path");
 const fs = require("fs");
 if (process.platform === "win32") {
@@ -397,6 +398,10 @@ app.whenReady().then(() => {
   createWindow();
   createTray();
   startBackgroundTracking();   // ✅ YENİ: Arka plan takibi artık main process'te, pencereden bağımsız
+
+  // Otomatik güncelleme kontrolü
+  autoUpdater.checkForUpdatesAndNotify();
+
 });
 
 
