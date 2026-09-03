@@ -1,5 +1,42 @@
 ﻿// ==================== renderer.js ====================
 // Haber Takip Uygulamasi - Duzeltilmis ve Tam Surum
+// ==================== renderer.js ====================
+// Haber Takip Uygulamasi - Duzeltilmis ve Tam Surum
+
+const CATEGORY_COLORS = {
+  "Gündem": "#f97316",
+  "Spor": "#22c55e",
+  "Ekonomi": "#3b82f6",
+  "Dünya": "#a855f7",
+  "Teknoloji": "#06b6d4",
+  "Magazin": "#ec4899",
+  "Sağlık": "#ef4444",
+  "Politika": "#6b7280",
+  "Genel": "#94a3b8"
+};
+
+const autoColorCache = {};
+const AUTO_COLOR_PALETTE = [
+  "#eab308", "#14b8a6", "#8b5cf6", "#f43f5e",
+  "#0ea5e9", "#84cc16", "#d946ef", "#f59e0b"
+];
+
+function getCategoryColor(category) {
+  const name = category || "Genel";
+  if (CATEGORY_COLORS[name]) {
+    return CATEGORY_COLORS[name];
+  }
+  if (autoColorCache[name]) {
+    return autoColorCache[name];
+  }
+  let hash = 0;
+  for (let i = 0; i < name.length; i++) {
+    hash = (hash * 31 + name.charCodeAt(i)) % AUTO_COLOR_PALETTE.length;
+  }
+  const color = AUTO_COLOR_PALETTE[Math.abs(hash) % AUTO_COLOR_PALETTE.length];
+  autoColorCache[name] = color;
+  return color;
+}
 
 function initApp() {
   // ==================== DURUM (STATE) ====================
@@ -171,9 +208,18 @@ function isTurkishNewsSource(item) {
     String(source.id || "") === String(item.sourceId || "")
   );
 
-  // Bir kaynağa dateMode: "turkey-local" eklenmişse kesinlikle
-  // Türkiye yerel saati olarak değerlendirilir.
+  // Bir kaynağa dateMode: "turkey-local" eklenmişse
+  // kesinlikle Türkiye yerel saati olarak değerlendirilir.
   if (registeredSource?.dateMode === "turkey-local") {
+    return true;
+  }
+
+  // T24 RSS'i arka planda çalışıyor, sourceUrl bazen boş gelebiliyor.
+  // Bu yüzden T24'ü doğrudan ve garantili şekilde yakalıyoruz.
+  const sourceIdText = String(item.sourceId || registeredSource?.id || "").toLowerCase();
+  const sourceNameText = String(item.sourceName || registeredSource?.name || "").toLocaleLowerCase("tr-TR");
+
+  if (sourceIdText === "t24" || sourceNameText.includes("t24")) {
     return true;
   }
 
@@ -215,6 +261,7 @@ function isTurkishNewsSource(item) {
     /\btrt\s*haber\b/i.test(sourceText) ||
     /\bhaber\s*türk\b/i.test(sourceText);
 }
+
 function parseDateAsWritten(dateStr) {
   if (!dateStr) return null;
 
@@ -244,18 +291,8 @@ function parseDateAsWritten(dateStr) {
 
   if (match) {
     const months = {
-      Jan: 1,
-      Feb: 2,
-      Mar: 3,
-      Apr: 4,
-      May: 5,
-      Jun: 6,
-      Jul: 7,
-      Aug: 8,
-      Sep: 9,
-      Oct: 10,
-      Nov: 11,
-      Dec: 12
+      Jan: 1, Feb: 2, Mar: 3, Apr: 4, May: 5, Jun: 6,
+      Jul: 7, Aug: 8, Sep: 9, Oct: 10, Nov: 11, Dec: 12
     };
 
     const month = months[match[2]];
@@ -274,6 +311,7 @@ function parseDateAsWritten(dateStr) {
 
   return null;
 }
+
 function formatDate(dateStr, item = null) {
   if (!dateStr) return "";
 
@@ -324,51 +362,6 @@ function formatDate(dateStr, item = null) {
     hourCycle: "h23"
   }).format(date);
 }
-// ==================== KATEGORİ RENKLERİ ====================
-const CATEGORY_COLORS = {
-  "Gündem": "#f97316",     // turuncu
-  "Spor": "#22c55e",       // yeşil
-  "Ekonomi": "#3b82f6",    // mavi
-  "Dünya": "#a855f7",      // mor
-  "Teknoloji": "#06b6d4",  // camgöbeği
-  "Magazin": "#ec4899",    // pembe
-  "Sağlık": "#ef4444",     // kırmızı
-  "Politika": "#6b7280",   // gri
-  "Genel": "#94a3b8"       // varsayılan
-};
-
-const autoColorCache = {};
-const AUTO_COLOR_PALETTE = [
-  "#eab308", "#14b8a6", "#8b5cf6", "#f43f5e",
-  "#0ea5e9", "#84cc16", "#d946ef", "#f59e0b"
-];
-
-function getCategoryColor(category) {
-  const name = category || "Genel";
-
-  if (CATEGORY_COLORS[name]) {
-    return CATEGORY_COLORS[name];
-  }
-
-  if (autoColorCache[name]) {
-    return autoColorCache[name];
-  }
-
-  // Kategori adına göre sabit (deterministik) bir renk üret,
-  // böylece her seferinde aynı kategori aynı rengi alır.
-  let hash = 0;
-  for (let i = 0; i < name.length; i++) {
-    hash = (hash * 31 + name.charCodeAt(i)) % AUTO_COLOR_PALETTE.length;
-  }
-  const color = AUTO_COLOR_PALETTE[Math.abs(hash) % AUTO_COLOR_PALETTE.length];
-  autoColorCache[name] = color;
-  return color;
-}
-
-  function getCategories() {
-    const cats = new Set(sourcesData.map(s => s.category || "Genel"));
-    return Array.from(cats).sort();
-  }
 
   function getSourcesByCategory(category) {
     if (!category || category === "__all__" || category === "__favorites__" || category === "__tracking__") {
@@ -499,23 +492,53 @@ function getNewsTimestamp(dateStr, item = null) {
   }
 
   // ==================== KAYNAK (SOURCE) YUKLEME ====================
-  async function loadSources() {
-    setStatus("Kaynaklar yukleniyor...");
-    try {
-      sourcesData = loadJSON("sourcesData", []);
-      refreshCategoryDatalist();
-      buildSourceFilterOptions();
-      renderTabs();
+ async function saveSourceFromModal() {
+  const name = modalNameInput ? modalNameInput.value.trim() : "";
+  const url = modalUrlInput ? modalUrlInput.value.trim() : "";
+  const category = modalCategoryInput ? modalCategoryInput.value.trim() : "Genel";
+  const logo = modalLogoInput ? modalLogoInput.value.trim() : "";
+  const type = modalTypeInput ? modalTypeInput.value : "rss";
 
-      const savedCategory = loadJSON("lastCategory", "__all__");
-      selectCategory(savedCategory);
-
-      setStatus("Hazir.");
-    } catch (e) {
-      console.error("loadSources hatasi:", e);
-      setStatus("Kaynaklar yuklenirken hata olustu.");
-    }
+  if (!name || !url) {
+    setStatus("Kaynak adı ve URL alanları zorunludur.");
+    return;
   }
+
+  const selectors = type === "html"
+    ? {
+        item: modalItemSelectorInput ? modalItemSelectorInput.value.trim() : "",
+        title: modalTitleSelectorInput ? modalTitleSelectorInput.value.trim() : "",
+        link: modalLinkSelectorInput ? modalLinkSelectorInput.value.trim() : "",
+        description: modalDescriptionSelectorInput ? modalDescriptionSelectorInput.value.trim() : "",
+        date: modalDateSelectorInput ? modalDateSelectorInput.value.trim() : ""
+      }
+    : undefined;
+
+  try {
+    if (editingSourceId) {
+      const result = await window.api.updateSource({
+        id: editingSourceId,
+        name, url, category, logo, type, selectors
+      });
+      if (result?.success) sourcesData = result.sources;
+    } else {
+      const result = await window.api.addSource({
+        name, url, category, logo, type, selectors
+      });
+      if (result?.success) sourcesData = result.sources;
+    }
+  } catch (e) {
+    console.error("Kaynak kaydetme hatasi:", e);
+    setStatus("Kaynak kaydedilirken hata olustu.");
+    return;
+  }
+
+  refreshCategoryDatalist();
+  buildSourceFilterOptions();
+  renderTabs();
+  renderSourceListInModal();
+  closeModal();
+}
 
      async function loadCategory(category) {
     const sources = getSourcesByCategory(category);
@@ -636,6 +659,11 @@ newsCache = Array.from(categoryMap.values()).sort((a, b) => {
       opt.textContent = src.name;
       sourceFilterSelect.appendChild(opt);
     });
+  }
+
+  function getCategories() {
+    const cats = new Set(sourcesData.map(s => s.category || "Genel"));
+    return Array.from(cats).sort();
   }
 
   function refreshCategoryDatalist() {
@@ -1199,11 +1227,20 @@ function saveSourceFromModal() {
   renderSourceListInModal();
   closeModal();
 }
-function deleteSource(sourceId) {
-
+async function deleteSource(sourceId) {
   if (!confirm("Bu kaynagi silmek istediginize emin misiniz?")) return;
-  sourcesData = sourcesData.filter(s => s.id !== sourceId);
-  saveJSON("sourcesData", sourcesData);
+
+  try {
+    const result = await window.api.removeSource({ id: sourceId });
+    if (result?.success) {
+      sourcesData = result.sources;
+    }
+  } catch (e) {
+    console.error("Kaynak silme hatasi:", e);
+    setStatus("Kaynak silinirken hata olustu.");
+    return;
+  }
+
   refreshCategoryDatalist();
   buildSourceFilterOptions();
   renderTabs();
@@ -1291,6 +1328,21 @@ if (refreshBtn) {
     }
   });
 }
+
+// ============================================
+// 🎯 TICKER (HABER BANDI) BUTONU
+// ============================================
+const openTickerBtn = document.getElementById("openTickerBtn");
+if (openTickerBtn) {
+  openTickerBtn.addEventListener("click", async () => {
+    try {
+      await window.api.openTickerWindow();
+    } catch (err) {
+      console.error("Ticker penceresi açılırken hata:", err);
+    }
+  });
+}
+
 if (modalTypeInput) {
   modalTypeInput.addEventListener("change", updateHtmlSelectorVisibility);
 }
@@ -1301,6 +1353,18 @@ if (saveModalBtn) saveModalBtn.addEventListener("click", saveSourceFromModal);
 const cancelModalBtn = document.getElementById("modalCancelBtn");  // ✅ düzeltildi
 if (cancelModalBtn) cancelModalBtn.addEventListener("click", closeModal);
 
+async function loadSources() {
+  try {
+    sourcesData = await window.api.getSources();
+  } catch (e) {
+    console.error("Kaynaklar yüklenirken hata:", e);
+    sourcesData = [];
+  }
+
+  refreshCategoryDatalist();
+  buildSourceFilterOptions();
+  renderTabs();
+}
 
   // ==================== BASLANGIC ====================
   applyDarkMode();
@@ -1343,5 +1407,104 @@ window.api.onDescriptionUpdated(({ link, description }) => {
 
 
 
+
+
+
+
+// ============================================
+// TICKER (HABER BANDI) AYARLARI MODALI
+// ============================================
+const tickerSettingsBtn = document.getElementById("tickerSettingsBtn");
+const tickerSettingsModal = document.getElementById("tickerSettingsModal");
+const tickerSourceList = document.getElementById("tickerSourceList");
+const tickerSpeedSelect = document.getElementById("tickerSpeedSelect");
+const tickerSettingsCancelBtn = document.getElementById("tickerSettingsCancelBtn");
+const tickerSettingsSaveBtn = document.getElementById("tickerSettingsSaveBtn");
+
+async function openTickerSettingsModal() {
+  if (!tickerSettingsModal) return;
+
+  const sources = await window.api.getSources();
+  const settings = await window.api.getTickerSettings();
+  const selectedIds = settings.sourceIds || [];
+
+  tickerSourceList.innerHTML = "";
+
+  sources.forEach((s) => {
+    const row = document.createElement("label");
+    row.style.display = "flex";
+    row.style.alignItems = "center";
+    row.style.gap = "8px";
+    row.style.padding = "4px 0";
+    row.style.cursor = "pointer";
+
+       const checkbox = document.createElement("input");
+    checkbox.type = "checkbox";
+    checkbox.value = s.id;
+    checkbox.checked = selectedIds.length === 0 || selectedIds.includes(s.id);
+    checkbox.style.width = "18px";
+    checkbox.style.height = "18px";
+    checkbox.style.minWidth = "18px";
+    checkbox.style.flexShrink = "0";
+    checkbox.style.margin = "0";
+    checkbox.style.accentColor = "#3b82f6";
+    checkbox.style.cursor = "pointer";
+
+    const dot = document.createElement("span");
+    dot.style.display = "inline-block";
+    dot.style.width = "10px";
+    dot.style.height = "10px";
+    dot.style.borderRadius = "50%";
+    dot.style.background = getCategoryColor(s.category);
+    dot.style.flexShrink = "0";
+
+    const text = document.createElement("span");
+    text.textContent = (s.name || "Adsız Kaynak") + " (" + (s.category || "Kategori yok") + ")";
+
+    row.appendChild(checkbox);
+    row.appendChild(dot);
+    row.appendChild(text);
+    tickerSourceList.appendChild(row);
+  });
+
+  tickerSpeedSelect.value = settings.speed || "normal";
+
+  tickerSettingsModal.classList.add("open");
+}
+
+function closeTickerSettingsModal() {
+  if (tickerSettingsModal) {
+    tickerSettingsModal.classList.remove("open");
+  }
+}
+
+if (tickerSettingsBtn) {
+  tickerSettingsBtn.addEventListener("click", openTickerSettingsModal);
+}
+
+if (tickerSettingsCancelBtn) {
+  tickerSettingsCancelBtn.addEventListener("click", closeTickerSettingsModal);
+}
+
+if (tickerSettingsSaveBtn) {
+  tickerSettingsSaveBtn.addEventListener("click", async () => {
+    const checkboxes = tickerSourceList.querySelectorAll('input[type="checkbox"]');
+    const selectedIds = Array.from(checkboxes)
+      .filter((cb) => cb.checked)
+      .map((cb) => cb.value);
+
+    const settings = {
+      sourceIds: selectedIds,
+      speed: tickerSpeedSelect.value
+    };
+
+    try {
+      await window.api.saveTickerSettings(settings);
+      closeTickerSettingsModal();
+    } catch (err) {
+      console.error("Ticker ayarlari kaydedilirken hata:", err);
+    }
+  });
+}
 
 

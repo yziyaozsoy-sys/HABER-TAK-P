@@ -11,3 +11,6 @@ dist-electron/
 *-backup
 log.txt
 cikti.txt
+
+brace-check.js
+brace-output.txt

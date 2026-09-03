@@ -1,9 +1,7 @@
-console.log("MAIN.JS CALISTI");
-
-const { app, BrowserWindow, ipcMain, dialog, Tray, Menu, Notification } = require("electron");
-const { autoUpdater } = require("electron-updater");
+﻿const { app, BrowserWindow, ipcMain, dialog, Menu, Tray, screen, shell } = require("electron");
 const path = require("path");
 const fs = require("fs");
+console.log("MAIN.JS CALISTI");
 if (process.platform === "win32") {
   app.setAppUserModelId("com.habertakip.app");
 }
@@ -48,6 +46,24 @@ function logToFile(message) {
     fs.appendFileSync(logFilePath, logLine, "utf8");
   } catch (e) {}
 }
+// ==== YENÄ°: TÃœM KAYNAKLAR Ä°Ã‡Ä°N GENEL GELECEK-TARÄ°H DÃœZELTMESÄ° ====
+function sanitizeFutureDate(dateStr, sourceName, articleUrl) {
+  if (!dateStr) return dateStr;
+
+  const parsedDate = new Date(dateStr);
+  if (isNaN(parsedDate.getTime())) return dateStr;
+
+  const toleranceMs = 5 * 60 * 1000; // 5 dakika tolerans
+
+  if (parsedDate.getTime() > Date.now() + toleranceMs) {
+    logToFile(
+      `UYARI - GELECEK TARIH DUZELTILDI: ${sourceName || "?"} | Ham: ${dateStr} | ${articleUrl || ""}`
+    );
+    return new Date().toISOString();
+  }
+
+  return dateStr;
+}
 // ==================== HABER TARIH ONBELLEGI ====================
 
 const articleDateCacheFilePath = path.join(
@@ -55,15 +71,15 @@ const articleDateCacheFilePath = path.join(
   "article-date-cache.json"
 );
 
-// Tarihi bulunan kayıtlar 90 gün saklanır.
+// Tarihi bulunan kayÄ±tlar 90 gÃ¼n saklanÄ±r.
 const ARTICLE_DATE_SUCCESS_TTL =
   90 * 24 * 60 * 60 * 1000;
 
-// Tarihi bulunamayan bağlantılar 30 dakika tekrar sorgulanmaz.
+// Tarihi bulunamayan baÄŸlantÄ±lar 30 dakika tekrar sorgulanmaz.
 const ARTICLE_DATE_FAILURE_TTL =
   30 * 60 * 1000;
 
-// Aynı bağlantı için devam eden tarih sorgularını tutar.
+// AynÄ± baÄŸlantÄ± iÃ§in devam eden tarih sorgularÄ±nÄ± tutar.
 const pendingArticleDateRequests = new Map();
 
 let articleDateCache = {};
@@ -71,7 +87,7 @@ let articleDateCacheSaveTimer = null;
 
 function loadArticleDateCache() {
   try {
-    // Dosya yoksa ilk çalıştırmada boş olarak oluştur.
+    // Dosya yoksa ilk Ã§alÄ±ÅŸtÄ±rmada boÅŸ olarak oluÅŸtur.
     if (!fs.existsSync(articleDateCacheFilePath)) {
       fs.writeFileSync(
         articleDateCacheFilePath,
@@ -121,7 +137,7 @@ function saveArticleDateCache() {
   try {
     const entries = Object.entries(articleDateCache);
 
-    // Önbellek dosyasının sınırsız büyümesini engeller.
+    // Ã–nbellek dosyasÄ±nÄ±n sÄ±nÄ±rsÄ±z bÃ¼yÃ¼mesini engeller.
     if (entries.length > 5000) {
       entries.sort(
         (firstEntry, secondEntry) =>
@@ -168,7 +184,7 @@ function normalizeArticleUrl(
       ? new URL(rawUrl, baseUrl)
       : new URL(rawUrl);
 
-    // Sayfa içi bağlantı bölümünü kaldır.
+    // Sayfa iÃ§i baÄŸlantÄ± bÃ¶lÃ¼mÃ¼nÃ¼ kaldÄ±r.
     parsedUrl.hash = "";
 
     const trackingParameters = [
@@ -253,7 +269,7 @@ async function getCachedArticlePublishedDate(
     }
   }
 
-  // Aynı bağlantı zaten sorgulanıyorsa mevcut işlemi kullan.
+  // AynÄ± baÄŸlantÄ± zaten sorgulanÄ±yorsa mevcut iÅŸlemi kullan.
   if (
     pendingArticleDateRequests.has(normalizedUrl)
   ) {
@@ -264,10 +280,11 @@ async function getCachedArticlePublishedDate(
 
   const requestPromise = (async () => {
     try {
-      const dateValue = String(
+      let dateValue = String(
         (await fetchDateFunction(normalizedUrl)) || ""
       );
-
+// YENÄ°: T24 video sayfasÄ± gibi gelecekte gÃ¶rÃ¼nen tarihleri dÃ¼zelt
+      dateValue = sanitizeFutureDate(dateValue, null, normalizedUrl);
       articleDateCache[normalizedUrl] = {
         date: dateValue,
         checkedAt: Date.now()
@@ -307,8 +324,8 @@ async function getCachedArticlePublishedDate(
   return requestPromise;
 }
 
-// Program başlatılırken önbelleği yükle.
-// Dosya yoksa boş önbellek dosyasını hemen oluşturur.
+// Program baÅŸlatÄ±lÄ±rken Ã¶nbelleÄŸi yÃ¼kle.
+// Dosya yoksa boÅŸ Ã¶nbellek dosyasÄ±nÄ± hemen oluÅŸturur.
 articleDateCache = loadArticleDateCache();
 
 logToFile(
@@ -397,7 +414,7 @@ app.whenReady().then(() => {
   logToFile("Electron hazir, pencere olusturuluyor...");
   createWindow();
   createTray();
-  startBackgroundTracking();   // ✅ YENİ: Arka plan takibi artık main process'te, pencereden bağımsız
+  startBackgroundTracking();   // âœ… YENÄ°: Arka plan takibi artÄ±k main process'te, pencereden baÄŸÄ±msÄ±z
 
   // ==================== AUTO-UPDATE LOGLAMA ====================
   const log = require("electron-log");
@@ -431,7 +448,7 @@ app.whenReady().then(() => {
     logToFile("Guncelleme indirildi: " + info.version + " - Yeniden baslatilacak.");
   });
 
-  // Otomatik güncelleme kontrolü
+  // Otomatik gÃ¼ncelleme kontrolÃ¼
   autoUpdater.checkForUpdatesAndNotify();
   // ================================================================
 
@@ -558,19 +575,28 @@ async function fetchAndParseRSS(url) {
     xmlString = buffer.toString("utf8");
   }
 
-   // Kaçışsız (unescaped) & karakterlerini düzelt (bozuk XML feed'ler için)
+     // KaÃ§Ä±ÅŸsÄ±z (unescaped) & karakterlerini dÃ¼zelt (bozuk XML feed'ler iÃ§in)
   xmlString = xmlString.replace(/&(?!amp;|lt;|gt;|quot;|apos;|#\d+;|#x[0-9a-fA-F]+;)/g, "&amp;");
-  return parser.parseString(xmlString);
+
+  const feed = await parser.parseString(xmlString);
+
+  // YENÄ°: RSS'ten gelen her habere gelecek-tarih kontrolÃ¼ uygula
+  feed.items = (feed.items || []).map((item) => ({
+    ...item,
+    pubDate: sanitizeFutureDate(item.pubDate, feed.title, item.link)
+  }));
+
+  return feed;
 }
 
-// --- RSS bulunmayan sitelerden HTML yoluyla haber çekme ---
+// --- RSS bulunmayan sitelerden HTML yoluyla haber Ã§ekme ---
 async function fetchAndParseHTML(source) {
   if (!source || !source.url) {
-    throw new Error("HTML kaynağının adresi bulunamadı.");
+    throw new Error("HTML kaynaÄŸÄ±nÄ±n adresi bulunamadÄ±.");
   }
 
   if (!cheerio) {
-    throw new Error("Cheerio modülü yüklenemedi.");
+    throw new Error("Cheerio modÃ¼lÃ¼ yÃ¼klenemedi.");
   }
 
   const result = await fetchBuffer(source.url, 0, {
@@ -602,7 +628,7 @@ async function fetchAndParseHTML(source) {
   const selectors = source.selectors || {};
   const items = [];
 
-  // Siteye özel seçici verilmemişse genel haber seçicilerini kullanır.
+  // Siteye Ã¶zel seÃ§ici verilmemiÅŸse genel haber seÃ§icilerini kullanÄ±r.
   const itemSelector =
     selectors.item ||
     "article, .news-item, .news-card, .haber-item, .haber-karti, .story";
@@ -677,7 +703,7 @@ async function fetchAndParseHTML(source) {
       return;
     }
 
-    // JavaScript bağlantılarını haber olarak kabul etme.
+    // JavaScript baÄŸlantÄ±larÄ±nÄ± haber olarak kabul etme.
     if (
       absoluteLink.startsWith("javascript:") ||
       absoluteLink.startsWith("mailto:")
@@ -687,7 +713,7 @@ async function fetchAndParseHTML(source) {
 
     const description = cleanText(descriptionElement.text());
 
-    // Tarihi önce seçilen HTML öğesinden al.
+    // Tarihi Ã¶nce seÃ§ilen HTML Ã¶ÄŸesinden al.
     let pubDate =
       cleanText(dateElement.attr("datetime")) ||
       cleanText(dateElement.attr("content")) ||
@@ -695,7 +721,7 @@ async function fetchAndParseHTML(source) {
       cleanText(dateElement.text()) ||
       "";
 
-    // Seçici sonuç vermediyse kart içindeki genel tarih öğelerini ara.
+    // SeÃ§ici sonuÃ§ vermediyse kart iÃ§indeki genel tarih Ã¶ÄŸelerini ara.
     if (!pubDate) {
       const fallbackDateElement = root
         .find("time, .date, .news-date, .publish-date, .tarih")
@@ -709,7 +735,7 @@ async function fetchAndParseHTML(source) {
         "";
     }
 
-    // Motor1 gibi "Aug 23" biçiminde yıl içermeyen tarihleri düzelt.
+    // Motor1 gibi "Aug 23" biÃ§iminde yÄ±l iÃ§ermeyen tarihleri dÃ¼zelt.
     const dateSearchText = pubDate || cleanText(root.text());
 
     const englishDateMatch = dateSearchText.match(
@@ -756,7 +782,7 @@ async function fetchAndParseHTML(source) {
         ? Number(explicitYear)
         : new Date().getFullYear();
 
-      // Yıl yoksa ve tarih gelecekte görünüyorsa önceki yılı kullan.
+      // YÄ±l yoksa ve tarih gelecekte gÃ¶rÃ¼nÃ¼yorsa Ã¶nceki yÄ±lÄ± kullan.
       if (!explicitYear) {
         const candidateDate = new Date(year, month - 1, day);
         const sevenDaysLater =
@@ -773,6 +799,8 @@ async function fetchAndParseHTML(source) {
         `${String(day).padStart(2, "0")}` +
         "T00:00:00+03:00";
     }
+    // YENÄ°: Liste kartÄ±ndan gelen tarihi de kontrol et
+    pubDate = sanitizeFutureDate(pubDate, source.name || source.url, absoluteLink);
 
     items.push({
       title,
@@ -780,11 +808,10 @@ async function fetchAndParseHTML(source) {
       pubDate,
       description,
       source: source.name || source.url
-    });
+        });
   });
 
-
-  // JSON-LD yapısı içinde datePublished değerini özyinelemeli olarak ara.
+  // JSON-LD yapÄ±sÄ± iÃ§inde datePublished deÄŸerini Ã¶zyinelemeli olarak ara.
   function findDatePublished(value) {
     if (!value) {
       return "";
@@ -822,7 +849,7 @@ async function fetchAndParseHTML(source) {
     return "";
   }
 
-  // Haber ayrıntı sayfasındaki meta veya JSON-LD yayın tarihini getir.
+  // Haber ayrÄ±ntÄ± sayfasÄ±ndaki meta veya JSON-LD yayÄ±n tarihini getir.
   async function fetchArticlePublishedDate(articleUrl) {
     try {
       const detailResult = await fetchBuffer(articleUrl);
@@ -886,7 +913,7 @@ async function fetchAndParseHTML(source) {
             return jsonDate;
           }
         } catch (error) {
-          // Geçersiz JSON-LD bloklarını atla.
+          // GeÃ§ersiz JSON-LD bloklarÄ±nÄ± atla.
         }
       }
     } catch (error) {
@@ -901,7 +928,7 @@ async function fetchAndParseHTML(source) {
     return "";
   }
 
-   // Bağlantıları normalize ederek yinelenen haberleri temizle.
+   // BaÄŸlantÄ±larÄ± normalize ederek yinelenen haberleri temizle.
   const uniqueItemMap = new Map();
 
   for (const item of items) {
@@ -923,7 +950,7 @@ async function fetchAndParseHTML(source) {
       continue;
     }
 
-    // Yinelenen iki kayıttan daha dolu olan alanları koru.
+    // Yinelenen iki kayÄ±ttan daha dolu olan alanlarÄ± koru.
     if (!existingItem.title && item.title) {
       existingItem.title = item.title;
     }
@@ -939,14 +966,14 @@ async function fetchAndParseHTML(source) {
 
   const uniqueItems = Array.from(uniqueItemMap.values());
 
-  // Liste kartında tarihi olmayan bütün HTML haberlerinde
-  // ayrıntı sayfasından tarih getir.
+  // Liste kartÄ±nda tarihi olmayan bÃ¼tÃ¼n HTML haberlerinde
+  // ayrÄ±ntÄ± sayfasÄ±ndan tarih getir.
   const itemsWithoutDate = uniqueItems.filter(
     item => !item.pubDate && item.link
   );
 
-  // Siteye aşırı eş zamanlı istek göndermemek için
-  // detay sayfalarını beşerli gruplar halinde işle.
+  // Siteye aÅŸÄ±rÄ± eÅŸ zamanlÄ± istek gÃ¶ndermemek iÃ§in
+  // detay sayfalarÄ±nÄ± beÅŸerli gruplar halinde iÅŸle.
   const DETAIL_REQUEST_CONCURRENCY = 5;
 
   for (
@@ -982,10 +1009,58 @@ async function fetchAndParseHTML(source) {
       })
     );
   }
+// Liste kartÄ±nda Ã¶zet (spot) metni olmayan HTML haberlerinde
+// ayrÄ±ntÄ± sayfasÄ±ndan Ã¶zet getir. (AÅŸamalÄ± + Ã¶nbellekli + canlÄ± UI gÃ¼ncelleme)
+const itemsWithoutDescription = uniqueItems.filter(
+  item => !item.description && item.link
+);
 
+for (
+  let index = 0;
+  index < itemsWithoutDescription.length;
+  index += DETAIL_REQUEST_CONCURRENCY
+) {
+  const batch = itemsWithoutDescription.slice(
+    index,
+    index + DETAIL_REQUEST_CONCURRENCY
+  );
+
+  await Promise.all(
+    batch.map(async item => {
+      const detailDescription = await getCachedArticleDescription(
+        item.link,
+        fetchArticleDescription
+      );
+
+      if (detailDescription) {
+        item.description = detailDescription;
+
+        logToFile(
+          "HTML DETAY OZETI: " +
+          (source.name || source.url) +
+          " | " +
+          item.link
+        );
+
+        // ArayÃ¼ze anlÄ±k gÃ¼ncelleme gÃ¶nder (asenkron akÄ±ÅŸ).
+        if (mainWindow && !mainWindow.isDestroyed()) {
+          mainWindow.webContents.send("description-updated", {
+            link: item.link,
+            description: detailDescription
+          });
+        }
+      }
+    })
+  );
+}
+  return {
+    title: source.name || source.url,
+    items: uniqueItems
+  };
+}
 // ============================================================
 // BOLUM 1
-// Şu satırların HEMEN ALTINA ekleyin:
+// Åu satÄ±rlarÄ±n HEMEN ALTINA ekleyin:
 //
 //   articleDateCache = loadArticleDateCache();
 //   logToFile("TARIH ONBELLEK DOSYASI: " + articleDateCacheFilePath);
@@ -996,13 +1071,13 @@ const articleDescriptionCacheFilePath = path.join(
   "article-description-cache.json"
 );
 
-// Özeti bulunan kayıtlar 90 gün saklanır.
+// Ã–zeti bulunan kayÄ±tlar 90 gÃ¼n saklanÄ±r.
 const ARTICLE_DESCRIPTION_SUCCESS_TTL = 90 * 24 * 60 * 60 * 1000;
 
-// Özeti bulunamayan başarısızlıklar 30 dakika sonra tekrar sorgulanmaz.
+// Ã–zeti bulunamayan baÅŸarÄ±sÄ±zlÄ±klar 30 dakika sonra tekrar sorgulanmaz.
 const ARTICLE_DESCRIPTION_FAILURE_TTL = 30 * 60 * 1000;
 
-// Aynı bağlantı için devam eden istek varsa tekrar tetiklenmez.
+// AynÄ± baÄŸlantÄ± iÃ§in devam eden istek varsa tekrar tetiklenmez.
 const pendingArticleDescriptionRequests = new Map();
 
 let articleDescriptionCache = {};
@@ -1050,7 +1125,7 @@ function saveArticleDescriptionCache() {
   try {
     const entries = Object.entries(articleDescriptionCache);
 
-    // Önbellek dosyasının sınırsız büyümesini engeller.
+    // Ã–nbellek dosyasÄ±nÄ±n sÄ±nÄ±rsÄ±z bÃ¼yÃ¼mesini engeller.
     if (entries.length > 5000) {
       entries.sort(
         (firstEntry, secondEntry) =>
@@ -1082,7 +1157,7 @@ function scheduleArticleDescriptionCacheSave() {
   }, 300);
 }
 
-// Önbellekten kontrol ederek, gerekirse detay sayfasından özet getirir.
+// Ã–nbellekten kontrol ederek, gerekirse detay sayfasÄ±ndan Ã¶zet getirir.
 async function getCachedArticleDescription(
   articleUrl,
   fetchDescriptionFunction
@@ -1106,7 +1181,7 @@ async function getCachedArticleDescription(
     }
   }
 
-  // Aynı bağlantı için zaten devam eden bir istek varsa onu bekle.
+  // AynÄ± baÄŸlantÄ± iÃ§in zaten devam eden bir istek varsa onu bekle.
   if (pendingArticleDescriptionRequests.has(normalizedLink)) {
     return pendingArticleDescriptionRequests.get(normalizedLink);
   }
@@ -1138,7 +1213,7 @@ async function getCachedArticleDescription(
   return fetchPromise;
 }
 
-// Program başlatılırken önbelleği yükle.
+// Program baÅŸlatÄ±lÄ±rken Ã¶nbelleÄŸi yÃ¼kle.
 articleDescriptionCache = loadArticleDescriptionCache();
 
 logToFile(
@@ -1148,12 +1223,12 @@ logToFile(
 
 // ============================================================
 // BOLUM 2
-// fetchAndParseHTML fonksiyonu İÇİNDE, şu bloğun HEMEN ALTINA
-// ekleyin (itemsWithoutDate döngüsü bittikten sonra,
-// "return { title: ..., items: uniqueItems };" satırından ÖNCE):
+// fetchAndParseHTML fonksiyonu Ä°Ã‡Ä°NDE, ÅŸu bloÄŸun HEMEN ALTINA
+// ekleyin (itemsWithoutDate dÃ¶ngÃ¼sÃ¼ bittikten sonra,
+// "return { title: ..., items: uniqueItems };" satÄ±rÄ±ndan Ã–NCE):
 // ============================================================
 
-// Haber ayrıntı sayfasındaki kısa özet (spot) metnini getir.
+// Haber ayrÄ±ntÄ± sayfasÄ±ndaki kÄ±sa Ã¶zet (spot) metnini getir.
 async function fetchArticleDescription(articleUrl) {
   try {
     const detailResult = await fetchBuffer(articleUrl);
@@ -1176,7 +1251,7 @@ async function fetchArticleDescription(articleUrl) {
 
     const detailPage = cheerio.load(detailHTML);
 
-    // 1) Önce meta açıklama etiketlerini dene.
+    // 1) Ã–nce meta aÃ§Ä±klama etiketlerini dene.
     const metaSelectors = [
       'meta[property="og:description"]',
       'meta[name="description"]',
@@ -1193,7 +1268,7 @@ async function fetchArticleDescription(articleUrl) {
       }
     }
 
-    // 2) H1 başlığını takip eden H2 (spot) metnini dene.
+    // 2) H1 baÅŸlÄ±ÄŸÄ±nÄ± takip eden H2 (spot) metnini dene.
     const h1FollowingH2 = cleanText(
       detailPage("h1").first().nextAll("h2").first().text()
     );
@@ -1202,7 +1277,7 @@ async function fetchArticleDescription(articleUrl) {
       return h1FollowingH2;
     }
 
-    // 3) Sık kullanılan spot/özet class'larını dene.
+    // 3) SÄ±k kullanÄ±lan spot/Ã¶zet class'larÄ±nÄ± dene.
     const spotSelectors = [
       ".spot",
       ".ozet",
@@ -1221,7 +1296,7 @@ async function fetchArticleDescription(articleUrl) {
       }
     }
 
-    // 4) Hiçbiri bulunamazsa ilk anlamlı paragrafı dene.
+    // 4) HiÃ§biri bulunamazsa ilk anlamlÄ± paragrafÄ± dene.
     const firstParagraph = cleanText(
       detailPage("article p, .content p, .haber-detay p").first().text()
     );
@@ -1238,55 +1313,7 @@ async function fetchArticleDescription(articleUrl) {
   return "";
 }
 
-// Liste kartında özet (spot) metni olmayan HTML haberlerinde
-// ayrıntı sayfasından özet getir. (Aşamalı + önbellekli + canlı UI güncelleme)
-const itemsWithoutDescription = uniqueItems.filter(
-  item => !item.description && item.link
-);
 
-for (
-  let index = 0;
-  index < itemsWithoutDescription.length;
-  index += DETAIL_REQUEST_CONCURRENCY
-) {
-  const batch = itemsWithoutDescription.slice(
-    index,
-    index + DETAIL_REQUEST_CONCURRENCY
-  );
-
-  await Promise.all(
-    batch.map(async item => {
-      const detailDescription = await getCachedArticleDescription(
-        item.link,
-        fetchArticleDescription
-      );
-
-      if (detailDescription) {
-        item.description = detailDescription;
-
-        logToFile(
-          "HTML DETAY OZETI: " +
-          (source.name || source.url) +
-          " | " +
-          item.link
-        );
-
-        // Arayüze anlık güncelleme gönder (asenkron akış).
-        if (mainWindow && !mainWindow.isDestroyed()) {
-          mainWindow.webContents.send("description-updated", {
-            link: item.link,
-            description: detailDescription
-          });
-        }
-      }
-    })
-  );
-}
-  return {
-    title: source.name || source.url,
-    items: uniqueItems
-  };
-}
 
 // --- RSS kaynagindan haber cekme ---
 ipcMain.handle("fetch-rss", async (event, url) => {
@@ -1314,14 +1341,14 @@ ipcMain.handle("fetch-rss", async (event, url) => {
     return { success: false, error: error.message, items: [] };
   }
 });
-// RSS ve normal HTML kaynaklarını ortak kanaldan çalıştırır.
+// RSS ve normal HTML kaynaklarÄ±nÄ± ortak kanaldan Ã§alÄ±ÅŸtÄ±rÄ±r.
 ipcMain.handle("fetch-source", async (event, source) => {
   if (!source || typeof source !== "object") {
-    throw new Error("Geçerli bir kaynak bilgisi gönderilmedi.");
+    throw new Error("GeÃ§erli bir kaynak bilgisi gÃ¶nderilmedi.");
   }
 
   if (!source.url) {
-    throw new Error("Kaynak adresi bulunamadı.");
+    throw new Error("Kaynak adresi bulunamadÄ±.");
   }
 
   const sourceType = String(source.type || "rss").toLowerCase();
@@ -1386,25 +1413,29 @@ ipcMain.handle("get-sources", async () => {
   return readSources();
 });
 
-ipcMain.handle("add-source", async (event, { category, name, url }) => {
+ipcMain.handle("update-source", async (event, { id, name, url, category, active, type, selectors, logo }) => {
   const sources = readSources();
   const fixedUrl = ensureProtocol(url);
-  const newSource = {
-    id: "src_" + Date.now(),
-    name,
-    url: fixedUrl,
-    logo: getFaviconUrl(fixedUrl),
-    category
-  };
-  sources.push(newSource);
+  const idx = sources.findIndex((s) => s.id === id);
+  if (idx !== -1) {
+    sources[idx] = {
+      ...sources[idx],
+      name,
+      url: fixedUrl,
+      category,
+      logo: logo || sources[idx].logo,
+      type: type || sources[idx].type,
+      active: active !== undefined ? active : sources[idx].active
+    };
 
-  const ok = writeSources(sources);
-  if (!ok) {
-    logToFile(`HATA: Kaynak eklenemedi (disk yazma başarısız): [${category}] ${name}`);
-    return { success: false, error: "Kaynak dosyaya yazılamadı. app.log dosyasını kontrol edin.", sources: readSources() };
+    if (type === "html" && selectors) {
+      sources[idx].selectors = selectors;
+    } else if (type !== "html") {
+      delete sources[idx].selectors;
+    }
   }
-
-  logToFile(`Kaynak eklendi: [${category}] ${name} -> ${fixedUrl}`);
+  writeSources(sources);
+  logToFile(`Kaynak guncellendi: ${id} -> ${fixedUrl}`);
   return { success: true, sources };
 });
 
@@ -1414,23 +1445,35 @@ ipcMain.handle("remove-source", async (event, { id }) => {
 
   const ok = writeSources(sources);
   if (!ok) {
-    logToFile(`HATA: Kaynak silinemedi (disk yazma başarısız): ${id}`);
-    return { success: false, error: "Silme işlemi diske yazılamadı. app.log dosyasını kontrol edin.", sources: readSources() };
+    logToFile(`HATA: Kaynak silinemedi (disk yazma baÅŸarÄ±sÄ±z): ${id}`);
+    return { success: false, error: "Silme iÅŸlemi diske yazÄ±lamadÄ±. app.log dosyasÄ±nÄ± kontrol edin.", sources: readSources() };
   }
 
   logToFile(`Kaynak silindi: ${id}`);
   return { success: true, sources };
 });
 
-ipcMain.handle("update-source", async (event, { id, name, url, category }) => {
+ipcMain.handle("add-source", async (event, { name, url, category, type, selectors, logo }) => {
   const sources = readSources();
   const fixedUrl = ensureProtocol(url);
-  const idx = sources.findIndex((s) => s.id === id);
-  if (idx !== -1) {
-    sources[idx] = { ...sources[idx], name, url: fixedUrl, category };
+
+  const newSource = {
+    id: Date.now().toString(),
+    name,
+    url: fixedUrl,
+    category: category || "Genel",
+    type: type || "rss",
+    logo: logo || "",
+    active: true
+  };
+
+  if (type === "html" && selectors) {
+    newSource.selectors = selectors;
   }
+
+  sources.push(newSource);
   writeSources(sources);
-  logToFile(`Kaynak guncellendi: ${id} -> ${fixedUrl}`);
+  logToFile(`Yeni kaynak eklendi: ${newSource.id} -> ${fixedUrl}`);
   return { success: true, sources };
 });
 
@@ -1492,7 +1535,7 @@ ipcMain.handle("export-news", async (event, { format, data }) => {
     return { success: false, error: e.message };
   }
 });
-// ==================== ARKA PLAN HABER TAKİP SİSTEMİ (KALICI ÇÖZÜM) ====================
+// ==================== ARKA PLAN HABER TAKÄ°P SÄ°STEMÄ° (KALICI Ã‡Ã–ZÃœM) ====================
 const trackedFilePath = path.join(userDataPath, "tracked.json");
 
 function readTracked() {
@@ -1552,7 +1595,7 @@ function isWholeWordMatch(text, keyword) {
   if (!kw) return false;
   const normalizedText = text.toLocaleLowerCase('tr-TR');
   const escaped = kw.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-  const regex = new RegExp(`(^|[^a-zçğıöşü0-9])${escaped}([^a-zçğıöşü0-9]|$)`);
+  const regex = new RegExp(`(^|[^a-zÃ§ÄŸÄ±Ã¶ÅŸÃ¼0-9])${escaped}([^a-zÃ§ÄŸÄ±Ã¶ÅŸÃ¼0-9]|$)`);
   return regex.test(normalizedText);
 }
 
@@ -1612,14 +1655,14 @@ function isWholeWordMatch(text, keyword) {
           const titles = group.map((g) => ". " + g.title).join("\n");
 
           notificationsToShow.push({
-            title: `🔔 "${keyword}" - ${group.length} yeni haber`,
+            title: `ğŸ”” "${keyword}" - ${group.length} yeni haber`,
             body: titles
           });
         }
       } else {
         items.forEach((m) => {
           notificationsToShow.push({
-            title: `🔔 "${m.matchedKeyword}" eslesmesi: ${m.sourceName}`,
+            title: `ğŸ”” "${m.matchedKeyword}" eslesmesi: ${m.sourceName}`,
             body: m.title
           });
         });
@@ -1674,3 +1717,137 @@ function startBackgroundTracking() {
     });
   }, BG_TRACK_CHECK_MS);
 }
+// ============================================
+// ğŸ¯ TICKER (HABER BANDI) SISTEMI
+// ============================================
+
+// --- Habere tiklaninca tarayicida ac ---
+ipcMain.handle("open-news-link", (event, url) => {
+  shell.openExternal(url);
+  logToFile("Ticker haberi acildi: " + url);
+  return { success: true };
+});
+
+// --- Kaynagi aktif/pasif yap ---
+ipcMain.handle("toggle-source-active", (event, { id, active }) => {
+  const sources = readSources();
+  const idx = sources.findIndex((s) => s.id === id);
+  if (idx !== -1) {
+    sources[idx].active = active;
+  }
+  writeSources(sources);
+  logToFile("Kaynak durumu degisti: " + id + " -> " + (active ? "AKTIF" : "PASIF"));
+  return { success: true, sources };
+});
+
+// --- Ticker ayarlarini oku/yaz ---
+const tickerSettingsPath = path.join(app.getPath("userData"), "ticker-settings.json");
+
+function readTickerSettings() {
+  try {
+    if (fs.existsSync(tickerSettingsPath)) {
+      return JSON.parse(fs.readFileSync(tickerSettingsPath, "utf-8"));
+    }
+  } catch (err) {
+    logToFile("Ticker ayarlari okunamadi: " + err.message);
+  }
+  return { sourceIds: [], speed: "normal" };
+}
+
+function writeTickerSettings(settings) {
+  try {
+    fs.writeFileSync(tickerSettingsPath, JSON.stringify(settings, null, 2), "utf-8");
+  } catch (err) {
+    logToFile("Ticker ayarlari yazilamadi: " + err.message);
+  }
+}
+
+ipcMain.handle("get-ticker-settings", () => {
+  return readTickerSettings();
+});
+
+ipcMain.handle("save-ticker-settings", (event, settings) => {
+  writeTickerSettings(settings);
+  logToFile("Ticker ayarlari guncellendi: " + JSON.stringify(settings));
+  return { success: true };
+});
+
+// --- Ticker icin aktif kaynaklardan haber cek ---
+ipcMain.handle("get-ticker-news", async (event, filters) => {
+  const allSources = readSources();
+  const activeSources = allSources.filter((s) => s.active !== false);
+
+  const filteredSources = filters && filters.sourceIds && filters.sourceIds.length
+  ? activeSources.filter((s) => filters.sourceIds.includes(s.id))
+  : activeSources;
+
+  let allNews = [];
+
+  for (const source of filteredSources) {
+    try {
+      const sourceType = String(source.type || "rss").toLowerCase();
+      let items = [];
+
+      if (sourceType === "html" || sourceType === "web" || sourceType === "website" || sourceType === "site") {
+        const result = await fetchAndParseHTML(source);
+        items = result.items || result || [];
+      } else {
+        const feed = await fetchAndParseRSS(source.url);
+        items = feed.items || [];
+      }
+
+      const newsWithMeta = items.map((item) => ({
+        title: item.title,
+        link: item.link,
+        pubDate: item.pubDate,
+        sourceName: source.name,
+        category: source.category
+      }));
+
+      allNews = allNews.concat(newsWithMeta);
+    } catch (error) {
+      logToFile("TICKER HATASI (" + source.name + "): " + error.message);
+    }
+  }
+
+  allNews.sort((a, b) => new Date(b.pubDate) - new Date(a.pubDate));
+  return allNews.slice(0, 30);
+});
+
+// --- Ticker penceresini ac ---
+let tickerWindow = null;
+ipcMain.handle("open-ticker-window", () => {
+  if (tickerWindow && !tickerWindow.isDestroyed()) {
+    tickerWindow.focus();
+    return { success: true };
+  }
+  const primaryDisplay = screen.getPrimaryDisplay();
+  const { width: screenWidth, height: screenHeight } = primaryDisplay.workAreaSize;
+  tickerWindow = new BrowserWindow({
+    width: screenWidth,
+    height: 90,
+    x: 0,
+    y: screenHeight - 90,
+    frame: false,
+    transparent: true,
+    alwaysOnTop: true,
+    resizable: true,
+    webPreferences: {
+      nodeIntegration: false,
+      contextIsolation: true,
+      preload: path.join(__dirname, "preload.js")
+    }
+  });
+  tickerWindow.loadFile("ticker.html");
+  logToFile("Ticker penceresi acildi.");
+  return { success: true };
+});
+
+ipcMain.handle("close-ticker-window", () => {
+  if (tickerWindow && !tickerWindow.isDestroyed()) {
+    tickerWindow.close();
+  }
+  return { success: true };
+});
+
+

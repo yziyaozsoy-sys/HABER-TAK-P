@@ -30,7 +30,18 @@ contextBridge.exposeInMainWorld("api", {
     });
   },
 
-  // --- YENİ: Uygulama versiyonu ---
-  getAppVersion: () => ipcRenderer.invoke("get-app-version")
+   // --- YENİ: Uygulama versiyonu ---
+  getAppVersion: () => ipcRenderer.invoke("get-app-version"),
+
+  // ============================================
+  // 🎯 TICKER (HABER BANDI) KÖPRÜLERİ
+  // ============================================
+  openNewsLink: (url) => ipcRenderer.invoke("open-news-link", url),
+  toggleSourceActive: (payload) => ipcRenderer.invoke("toggle-source-active", payload),
+  getTickerNews: (filters) => ipcRenderer.invoke("get-ticker-news", filters),
+  openTickerWindow: () => ipcRenderer.invoke("open-ticker-window"),
+  closeTickerWindow: () => ipcRenderer.invoke("close-ticker-window"),
+  getTickerSettings: () => ipcRenderer.invoke("get-ticker-settings"),
+  saveTickerSettings: (settings) => ipcRenderer.invoke("save-ticker-settings", settings)
 });
 
