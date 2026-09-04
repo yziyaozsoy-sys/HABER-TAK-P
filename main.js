@@ -1,6 +1,7 @@
 ﻿const { app, BrowserWindow, ipcMain, dialog, Menu, Tray, screen, shell } = require("electron");
 const path = require("path");
 const fs = require("fs");
+const { autoUpdater } = require("electron-updater");
 console.log("MAIN.JS CALISTI");
 if (process.platform === "win32") {
   app.setAppUserModelId("com.habertakip.app");
@@ -33,7 +34,8 @@ cheerio = require("cheerio");
   });
 }
 
-const userDataPath = app.getPath("userData");
+const isDev = !app.isPackaged;
+const userDataPath = isDev ? __dirname : app.getPath("userData");
 console.log("=== USER DATA YOLU: " + userDataPath + " ===");
 const logFilePath = path.join(userDataPath, "app.log");
 const sourcesFilePath = path.join(userDataPath, "sources.json");
@@ -416,40 +418,44 @@ app.whenReady().then(() => {
   createTray();
   startBackgroundTracking();   // âœ… YENÄ°: Arka plan takibi artÄ±k main process'te, pencereden baÄŸÄ±msÄ±z
 
-  // ==================== AUTO-UPDATE LOGLAMA ====================
-  const log = require("electron-log");
-  log.transports.file.level = "info";
-  log.transports.file.resolvePathFn = () => path.join(userDataPath, "update.log");
-  autoUpdater.logger = log;
+    // ==================== AUTO-UPDATE LOGLAMA ====================
+  if (app.isPackaged) {
+    const log = require("electron-log");
+    log.transports.file.level = "info";
+    log.transports.file.resolvePathFn = () => path.join(userDataPath, "update.log");
+    autoUpdater.logger = log;
 
-  logToFile("Auto-updater baslatiliyor, mevcut versiyon: " + app.getVersion());
+    logToFile("Auto-updater baslatiliyor, mevcut versiyon: " + app.getVersion());
 
-  autoUpdater.on("checking-for-update", () => {
-    logToFile("Guncelleme kontrol ediliyor...");
-  });
+    autoUpdater.on("checking-for-update", () => {
+      logToFile("Guncelleme kontrol ediliyor...");
+    });
 
-  autoUpdater.on("update-available", (info) => {
-    logToFile("YENI GUNCELLEME BULUNDU: " + info.version);
-  });
+    autoUpdater.on("update-available", (info) => {
+      logToFile("YENI GUNCELLEME BULUNDU: " + info.version);
+    });
 
-  autoUpdater.on("update-not-available", (info) => {
-    logToFile("Guncelleme yok. Mevcut surum en son surum: " + info.version);
-  });
+    autoUpdater.on("update-not-available", (info) => {
+      logToFile("Guncelleme yok. Mevcut surum en son surum: " + info.version);
+    });
 
-  autoUpdater.on("error", (err) => {
-    logToFile("AUTO-UPDATER HATASI: " + (err && err.stack ? err.stack : String(err)));
-  });
+    autoUpdater.on("error", (err) => {
+      logToFile("AUTO-UPDATER HATASI: " + (err && err.stack ? err.stack : String(err)));
+    });
 
-  autoUpdater.on("download-progress", (progress) => {
-    logToFile("Indiriliyor: %" + Math.round(progress.percent));
-  });
+    autoUpdater.on("download-progress", (progress) => {
+      logToFile("Indiriliyor: %" + Math.round(progress.percent));
+    });
 
-  autoUpdater.on("update-downloaded", (info) => {
-    logToFile("Guncelleme indirildi: " + info.version + " - Yeniden baslatilacak.");
-  });
+    autoUpdater.on("update-downloaded", (info) => {
+      logToFile("Guncelleme indirildi: " + info.version + " - Yeniden baslatilacak.");
+    });
 
-  // Otomatik gÃ¼ncelleme kontrolÃ¼
-  autoUpdater.checkForUpdatesAndNotify();
+    logToFile("Guncelleme kontrolu baslatiliyor...");
+    autoUpdater.checkForUpdatesAndNotify();
+  } else {
+    logToFile("Gelistirme modu: Auto-updater devre disi.");
+  }
   // ================================================================
 
 });
@@ -1457,6 +1463,16 @@ ipcMain.handle("add-source", async (event, { name, url, category, type, selector
   const sources = readSources();
   const fixedUrl = ensureProtocol(url);
 
+  // 🔒 Mükerrer kaynak kontrolü (URL bazlı, büyük/küçük harf duyarsız)
+  const isDuplicate = sources.some(
+    (s) => s.url.trim().toLowerCase() === fixedUrl.trim().toLowerCase()
+  );
+
+  if (isDuplicate) {
+    logToFile(`Mükerrer kaynak eklenmeye çalışıldı: ${fixedUrl}`);
+    return { success: false, message: "Bu kaynak zaten eklenmiş." };
+  }
+
   const newSource = {
     id: Date.now().toString(),
     name,
@@ -1474,6 +1490,7 @@ ipcMain.handle("add-source", async (event, { name, url, category, type, selector
   sources.push(newSource);
   writeSources(sources);
   logToFile(`Yeni kaynak eklendi: ${newSource.id} -> ${fixedUrl}`);
+
   return { success: true, sources };
 });
 
@@ -1499,17 +1516,30 @@ ipcMain.handle("show-notification", async (event, { title, body }) => {
 });
 
 // --- OZELLIK 6: Haberleri disa aktarma ---
-ipcMain.handle("export-news", async (event, { format, data }) => {
+ipcMain.handle("export-news", async (event, { data }) => {
   try {
-    const ext = format === "json" ? "json" : "txt";
-    const defaultName = `haberler_${Date.now()}.${ext}`;
+    const choice = await dialog.showMessageBox(mainWindow, {
+      type: "question",
+      buttons: ["Metin (.txt)", "Word (.doc)", "İptal"],
+      defaultId: 0,
+      cancelId: 2,
+      title: "Dışa Aktarma Formatı",
+      message: "Haberleri hangi formatta dışa aktarmak istersiniz?"
+    });
+
+    if (choice.response === 2) {
+      return { success: false, canceled: true };
+    }
+
+    const format = choice.response === 0 ? "txt" : "doc";
+    const defaultName = `haberler_${Date.now()}.${format}`;
 
     const result = await dialog.showSaveDialog(mainWindow, {
       title: "Haberleri Disa Aktar",
       defaultPath: defaultName,
       filters: [
-        format === "json"
-          ? { name: "JSON Dosyasi", extensions: ["json"] }
+        format === "doc"
+          ? { name: "Word Dosyasi", extensions: ["doc"] }
           : { name: "Metin Dosyasi", extensions: ["txt"] }
       ]
     });
@@ -1519,11 +1549,38 @@ ipcMain.handle("export-news", async (event, { format, data }) => {
     }
 
     let content;
-    if (format === "json") {
-      content = JSON.stringify(data, null, 2);
+    if (format === "doc") {
+      const rows = data
+        .map(
+          (item) => `
+            <p>
+              <b>Kaynak:</b> ${item.sourceName || "-"}<br/>
+              <b>Tarih:</b> ${item.pubDate || "-"}<br/>
+              <b>Başlık:</b> ${item.title || "-"}<br/>
+              <b>Özet:</b> ${item.description || "-"}<br/>
+              <b>Haber:</b> <a href="${item.link || "#"}">${item.link || "-"}</a>
+            </p>
+            <hr/>
+          `
+        )
+        .join("\n");
+
+      content = `
+        <html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word' xmlns='http://www.w3.org/TR/REC-html40'>
+        <head><meta charset='utf-8'><title>Haberler</title></head>
+        <body>${rows}</body>
+        </html>
+      `;
     } else {
       content = data
-        .map((item) => `${item.title}\n${item.link}\n${item.pubDate || ""}\n${"-".repeat(40)}`)
+        .map((item) =>
+          `Kaynak: ${item.sourceName || "-"}\n` +
+          `Tarih: ${item.pubDate || "-"}\n` +
+          `Başlık: ${item.title || "-"}\n` +
+          `Özet: ${item.description || "-"}\n` +
+          `Haber: ${item.link || "-"}\n` +
+          "-".repeat(40)
+        )
         .join("\n\n");
     }
 

@@ -677,16 +677,20 @@ newsCache = Array.from(categoryMap.values()).sort((a, b) => {
   }
 
   // ==================== HABER LISTESI RENDER ====================
-  function renderNewsList(items) {
+    let lastRenderedItems = [];
+    function renderNewsList(items) {
     if (!newsListContainer) return;
     newsListContainer.innerHTML = "";
+    lastRenderedItems = items;
+
 
     if (!items || items.length === 0) {
       newsListContainer.innerHTML = '<p class="empty-msg">Gosterilecek haber bulunamadi.</p>';
       return;
     }
 
-  items.forEach(item => {
+  lastRenderedItems = items; // export için tüm listeyi sakla
+items.forEach((item, idx) => {
   const card = document.createElement("div");
 
   const isRead = readItems.includes(item.link);
@@ -714,7 +718,8 @@ const trackedBadge = isTrackedMatch
 
 
       card.innerHTML = `
-               <div class="news-header">
+                            <div class="news-header">
+          <input type="checkbox" class="news-export-checkbox" data-link="${item.link}" style="margin-right:8px; width:16px; height:16px; cursor:pointer;" />
           ${item.sourceLogo ? `<img src="${item.sourceLogo}" class="source-logo" alt="${item.sourceName}" />` : ""}
           <span class="source-name">${item.sourceName || ""}</span>
           <span class="category-badge" style="background:${catColor}20; color:${catColor}; border:1px solid ${catColor}55;">
@@ -1114,119 +1119,6 @@ const results = await Promise.all(
     editingSourceId = null;
   }
 
-function saveSourceFromModal() {
-  const name = modalNameInput
-    ? modalNameInput.value.trim()
-    : "";
-
-  const url = modalUrlInput
-    ? modalUrlInput.value.trim()
-    : "";
-
-  const category = modalCategoryInput
-    ? modalCategoryInput.value.trim() || "Genel"
-    : "Genel";
-
-  let logo = modalLogoInput
-    ? modalLogoInput.value.trim()
-    : "";
-
-  const type = modalTypeInput
-    ? modalTypeInput.value
-    : "rss";
-
-  if (!name || !url) {
-    alert("Kaynak adı ve URL zorunludur.");
-    return;
-  }
-
-  // URL biçimini doğrula.
-  try {
-    new URL(url);
-  } catch (e) {
-    alert("Lütfen geçerli bir kaynak URL'si girin.");
-    return;
-  }
-
-  // Logo boş bırakılırsa kaynağın favicon adresini oluştur.
-  if (!logo) {
-    try {
-      const urlObj = new URL(url);
-      logo =
-        `https://www.google.com/s2/favicons?domain=${urlObj.hostname}&sz=64`;
-    } catch (e) {
-      console.error("Favicon otomatik oluşturulamadı:", e);
-    }
-  }
-
-  // Seçiciler yalnızca HTML kaynakları için kaydedilir.
-  const selectors = type === "html"
-    ? {
-        item: modalItemSelectorInput
-          ? modalItemSelectorInput.value.trim()
-          : "",
-
-        title: modalTitleSelectorInput
-          ? modalTitleSelectorInput.value.trim()
-          : "",
-
-        link: modalLinkSelectorInput
-          ? modalLinkSelectorInput.value.trim()
-          : "",
-
-        description: modalDescriptionSelectorInput
-          ? modalDescriptionSelectorInput.value.trim()
-          : "",
-
-        date: modalDateSelectorInput
-          ? modalDateSelectorInput.value.trim()
-          : ""
-      }
-    : undefined;
-
-  if (editingSourceId) {
-    const src = sourcesData.find(
-      source => source.id === editingSourceId
-    );
-
-    if (src) {
-      src.name = name;
-      src.url = url;
-      src.category = category;
-      src.logo = logo;
-      src.type = type;
-
-      if (type === "html") {
-        src.selectors = selectors;
-      } else {
-        // HTML kaynağı RSS'e çevrildiyse eski seçicileri temizle.
-        delete src.selectors;
-      }
-    }
-  } else {
-    const newSource = {
-      id: "src_" + Date.now(),
-      name,
-      url,
-      category,
-      logo,
-      type
-    };
-
-    if (type === "html") {
-      newSource.selectors = selectors;
-    }
-
-    sourcesData.push(newSource);
-  }
-
-  saveJSON("sourcesData", sourcesData);
-  refreshCategoryDatalist();
-  buildSourceFilterOptions();
-  renderTabs();
-  renderSourceListInModal();
-  closeModal();
-}
 async function deleteSource(sourceId) {
   if (!confirm("Bu kaynagi silmek istediginize emin misiniz?")) return;
 
@@ -1339,6 +1231,34 @@ if (openTickerBtn) {
       await window.api.openTickerWindow();
     } catch (err) {
       console.error("Ticker penceresi açılırken hata:", err);
+    }
+  });
+}
+
+const exportBtn = document.getElementById("exportBtn");
+if (exportBtn) {
+  exportBtn.addEventListener("click", async () => {
+    const checkboxes = newsListContainer.querySelectorAll(".news-export-checkbox:checked");
+    let selectedItems;
+
+    if (checkboxes.length > 0) {
+      const selectedLinks = Array.from(checkboxes).map((cb) => cb.dataset.link);
+      selectedItems = lastRenderedItems.filter((it) => selectedLinks.includes(it.link));
+    } else {
+      selectedItems = lastRenderedItems;
+    }
+
+    if (!selectedItems || selectedItems.length === 0) {
+      alert("Dışa aktarılacak haber bulunamadı.");
+      return;
+    }
+
+    const result = await window.api.exportNews({ data: selectedItems });
+
+    if (result.success) {
+      setStatus(`✅ ${selectedItems.length} haber dışa aktarıldı: ${result.filePath}`);
+    } else if (!result.canceled) {
+      alert("Dışa aktarma hatası: " + result.error);
     }
   });
 }

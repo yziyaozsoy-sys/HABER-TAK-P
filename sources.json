@@ -76,19 +76,43 @@
     "category": "Ekonomi",
     "id": "src_1787087436559"
   },
-{
-  "name": "T24",
-  "url": "https://t24.com.tr/son-dakika",
-  "dateMode": "turkey-local",
-  "type": "html",
-  "logo": "https://www.google.com/s2/favicons?domain=t24.com.tr&sz=128",
-  "category": "Gündem",
-  "id": "src_1787087580712",
-  "selectors": {
-    "item": "a:has(h4)",
-    "title": "h4",
-    "link": "a"
+  {
+    "name": "T24",
+    "url": "https://t24.com.tr/son-dakika",
+    "dateMode": "turkey-local",
+    "type": "html",
+    "logo": "https://www.google.com/s2/favicons?domain=t24.com.tr&sz=128",
+    "category": "Gündem",
+    "id": "src_1787087580712",
+    "selectors": {
+      "item": "a:has(h4)",
+      "title": "h4",
+      "link": "a"
+    }
+  },
+  {
+    "id": "1788479639614",
+    "name": "MEDYA RADAR",
+    "url": "https://www.medyaradar.net/",
+    "category": "Gündem",
+    "type": "html",
+    "logo": "",
+    "active": true,
+    "selectors": {
+      "item": "a[title]",
+      "title": "h2",
+      "link": "",
+      "description": "",
+      "date": ""
+    }
+  },
+  {
+    "id": "1788479797408",
+    "name": "ODA TV",
+    "url": "https://www.odatv.com/rss.xml",
+    "category": "Gündem",
+    "type": "rss",
+    "logo": "",
+    "active": true
   }
-}
-
 ]
