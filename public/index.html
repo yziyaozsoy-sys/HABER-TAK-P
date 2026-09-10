@@ -122,16 +122,10 @@
     </div>
   </header>
 
-  <!-- Kategori Sekmeleri -->
+  <!-- Kategori Sekmeleri (Dinamik Yüklenir) -->
   <nav class="bg-slate-850 bg-slate-800/80 border-b border-slate-700 px-6 py-2 sticky top-[65px] z-30 backdrop-blur-md">
     <div class="max-w-7xl mx-auto flex items-center gap-2 overflow-x-auto text-xs" id="categoryTabs">
-      <button data-cat="Tümü" class="cat-btn px-3 py-1 rounded-lg font-semibold bg-emerald-600 text-white transition">Tümü</button>
-      <button data-cat="Gündem" class="cat-btn px-3 py-1 rounded-lg font-medium text-slate-300 hover:bg-slate-700 transition">Gündem</button>
-      <button data-cat="Spor" class="cat-btn px-3 py-1 rounded-lg font-medium text-slate-300 hover:bg-slate-700 transition">Spor</button>
-      <button data-cat="Ekonomi" class="cat-btn px-3 py-1 rounded-lg font-medium text-slate-300 hover:bg-slate-700 transition">Ekonomi</button>
-      <button data-cat="Dünya" class="cat-btn px-3 py-1 rounded-lg font-medium text-slate-300 hover:bg-slate-700 transition">Dünya</button>
-      <button data-cat="Teknoloji" class="cat-btn px-3 py-1 rounded-lg font-medium text-slate-300 hover:bg-slate-700 transition">Teknoloji</button>
-      <button data-cat="Magazin" class="cat-btn px-3 py-1 rounded-lg font-medium text-slate-300 hover:bg-slate-700 transition">Magazin</button>
+      <span class="text-xs text-slate-500">Kategoriler yükleniyor...</span>
     </div>
   </nav>
 
@@ -254,6 +248,7 @@
   </button>
 
   <script>
+    let allCategoriesList = [];
     let allSourcesList = [];
     let currentNewsList = [];
     let selectedSources = new Set();
@@ -448,6 +443,43 @@
       }
     }
 
+    // Dinamik Kategorileri Getir & Sekmeleri Oluştur
+    async function loadCategories() {
+      try {
+        const res = await fetch('/api/categories');
+        const data = await res.json();
+        const catTabsContainer = document.getElementById('categoryTabs');
+        
+        let cats = ['Tümü'];
+        if (data.success && data.data) {
+          allCategoriesList = data.data;
+          data.data.forEach(c => {
+            if (!cats.includes(c.name)) cats.push(c.name);
+          });
+        }
+
+        catTabsContainer.innerHTML = cats.map(cat => `
+          <button data-cat="${cat}" class="cat-btn px-3 py-1 rounded-lg font-medium transition ${cat === selectedCategory ? 'bg-emerald-600 text-white font-semibold' : 'text-slate-300 hover:bg-slate-700'}">
+            ${cat}
+          </button>
+        `).join('');
+
+        document.querySelectorAll('.cat-btn').forEach(btn => {
+          btn.addEventListener('click', () => {
+            document.querySelectorAll('.cat-btn').forEach(b => {
+              b.className = 'cat-btn px-3 py-1 rounded-lg font-medium text-slate-300 hover:bg-slate-700 transition';
+            });
+            btn.className = 'cat-btn px-3 py-1 rounded-lg font-semibold bg-emerald-600 text-white transition';
+            selectedCategory = btn.getAttribute('data-cat');
+            
+            tickerCategoryTitle.textContent = selectedCategory.toUpperCase() + ' AKIŞI';
+            renderCategorySources();
+            loadNews();
+          });
+        });
+      } catch (e) {}
+    }
+
     function renderCategorySources() {
       let filtered = allSourcesList.filter(s => s.isActive);
       if (selectedCategory !== 'Tümü') {
@@ -486,20 +518,6 @@
         });
       });
     }
-
-    document.querySelectorAll('.cat-btn').forEach(btn => {
-      btn.addEventListener('click', () => {
-        document.querySelectorAll('.cat-btn').forEach(b => {
-          b.className = 'cat-btn px-3 py-1 rounded-lg font-medium text-slate-300 hover:bg-slate-700 transition';
-        });
-        btn.className = 'cat-btn px-3 py-1 rounded-lg font-semibold bg-emerald-600 text-white transition';
-        selectedCategory = btn.getAttribute('data-cat');
-        
-        tickerCategoryTitle.textContent = selectedCategory.toUpperCase() + ' AKIŞI';
-        renderCategorySources();
-        loadNews();
-      });
-    });
 
     function updateExportButtonState() {
       const count = selectedNewsGuids.size;
@@ -771,7 +789,7 @@
       syncBtn.disabled = true;
       syncIcon.className = 'fa-solid fa-circle-notch fa-spin';
       syncText.textContent = 'Taranıyor...';
-      showAlert('RSS kaynakları taranıyor, lütfen bekleyin...', 'info');
+      showAlert('Kaynaklar taranıyor (RSS & HTML Siteler)...', 'info');
 
       try {
         await fetch('/api/sync');
@@ -780,7 +798,7 @@
           syncIcon.className = 'fa-solid fa-cloud-arrow-down';
           syncText.textContent = 'Kaynakları Tara';
           syncBtn.disabled = false;
-          showAlert('Kaynaklar güncellendi.', 'success');
+          showAlert('Tüm kaynaklar güncellendi.', 'success');
         }, 5000);
       } catch (e) {
         syncIcon.className = 'fa-solid fa-triangle-exclamation';
@@ -791,6 +809,7 @@
     });
 
     // Başlat
+    loadCategories();
     loadSources();
     loadNews();
     loadBannerAds();

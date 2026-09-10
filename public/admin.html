@@ -76,7 +76,7 @@
           <h2 class="text-base font-bold text-slate-100 flex items-center gap-2">
             <i class="fa-solid fa-envelope-open-text text-amber-400"></i> Kullanıcı İstek ve Talepleri
           </h2>
-          <p class="text-xs text-slate-400 mt-0.5">Ziyaretçilerin form üzerinden gönderdiği tüm öneri, kaynak ve bildirimler.</p>
+          <p class="text-xs text-slate-400 mt-0.5">Ziyaretçilerin form üzerinden gönderdiği tüm öneri ve bildirimler.</p>
         </div>
         <button id="refreshReqsBtn" class="bg-slate-700 hover:bg-slate-600 text-slate-200 text-xs px-2.5 py-1 rounded-lg transition flex items-center gap-1">
           <i class="fa-solid fa-arrows-rotate"></i> Yenile
@@ -101,7 +101,101 @@
       </div>
     </section>
 
-    <!-- 2. BÖLÜM: ŞİFRE DEĞİŞTİRME -->
+    <!-- 2. BÖLÜM: DİNAMİK KATEGORİ YÖNETİMİ -->
+    <section class="bg-slate-800/80 border border-slate-700 rounded-2xl p-6 shadow-lg">
+      <div class="mb-5 pb-4 border-b border-slate-700">
+        <h2 class="text-base font-bold text-slate-100 flex items-center gap-2">
+          <i class="fa-solid fa-tags text-purple-400"></i> Kategori Yönetimi
+        </h2>
+        <p class="text-xs text-slate-400 mt-0.5">Sitedeki haber sekmeleri ve kaynak kategorilerini buradan dilediğiniz gibi ekleyip yönetin.</p>
+      </div>
+
+      <form id="addCategoryForm" class="flex flex-wrap gap-3 mb-5 bg-slate-900/60 p-4 rounded-xl border border-slate-700/60 items-end">
+        <div class="flex-1 min-w-[200px]">
+          <label class="block text-[11px] text-slate-400 mb-1">Yeni Kategori Adı</label>
+          <input type="text" id="catNameInput" required placeholder="örn: Eğitim, Sağlık, Otomotiv, Yerel" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-1.5 text-xs text-slate-200 focus:outline-none focus:border-purple-500">
+        </div>
+        <button type="submit" class="bg-purple-600 hover:bg-purple-500 text-white py-1.5 px-4 rounded-lg text-xs font-semibold transition flex items-center gap-1.5">
+          <i class="fa-solid fa-plus"></i> Kategori Ekle
+        </button>
+      </form>
+
+      <!-- Mevcut Kategoriler Listesi -->
+      <div>
+        <span class="block text-xs text-slate-400 mb-2 font-medium">Aktif Kategoriler:</span>
+        <div id="categoryChipsContainer" class="flex flex-wrap gap-2">
+          <span class="text-xs text-slate-500 italic">Kategoriler yükleniyor...</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- 3. BÖLÜM: RSS & HTML WEB KAYNAKLARI YÖNETİMİ -->
+    <section class="bg-slate-800/80 border border-slate-700 rounded-2xl p-6 shadow-lg">
+      <div class="flex flex-wrap justify-between items-center mb-5 pb-4 border-b border-slate-700 gap-3">
+        <div>
+          <h2 class="text-base font-bold text-slate-100 flex items-center gap-2">
+            <i class="fa-solid fa-square-rss text-orange-400"></i> Haber Kaynakları (RSS & HTML Siteler)
+          </h2>
+          <p class="text-xs text-slate-400 mt-0.5">İster standart RSS beslemelerini, ister doğrudan web sitelerini (HTML) kazıyarak ekleyin.</p>
+        </div>
+        <button id="refreshSyncBtn" class="bg-emerald-600 hover:bg-emerald-500 text-white px-3 py-1.5 rounded-lg text-xs font-medium transition flex items-center gap-1.5">
+          <i class="fa-solid fa-arrows-rotate"></i> Şimdi Tüm Kaynakları Tara
+        </button>
+      </div>
+
+      <form id="addSourceForm" class="grid grid-cols-1 md:grid-cols-12 gap-3 mb-6 bg-slate-900/60 p-4 rounded-xl border border-slate-700/60">
+        <div class="md:col-span-3">
+          <label class="block text-[11px] text-slate-400 mb-1">Kaynak Adı</label>
+          <input type="text" id="srcName" required placeholder="örn: NTV Haber veya Sondakika.com" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-1.5 text-xs text-slate-200 focus:outline-none focus:border-emerald-500">
+        </div>
+        <div class="md:col-span-2">
+          <label class="block text-[11px] text-slate-400 mb-1">Kaynak Tipi</label>
+          <select id="srcType" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-2.5 py-1.5 text-xs text-slate-200 focus:outline-none focus:border-emerald-500">
+            <option value="rss">RSS XML Akışı</option>
+            <option value="html">Web Sitesi (HTML Kazıma)</option>
+          </select>
+        </div>
+        <div class="md:col-span-2">
+          <label class="block text-[11px] text-slate-400 mb-1">Kategori</label>
+          <select id="srcCategory" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-2.5 py-1.5 text-xs text-slate-200 focus:outline-none focus:border-emerald-500">
+            <!-- Kategoriler dinamik yüklenir -->
+          </select>
+        </div>
+        <div class="md:col-span-3">
+          <label class="block text-[11px] text-slate-400 mb-1">URL (RSS veya Site Linki)</label>
+          <input type="url" id="srcUrl" required placeholder="https://..." class="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-1.5 text-xs text-slate-200 focus:outline-none focus:border-emerald-500">
+        </div>
+        <div class="md:col-span-2 flex items-end">
+          <button type="submit" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white py-1.5 px-3 rounded-lg text-xs font-semibold transition flex items-center justify-center gap-1.5">
+            <i class="fa-solid fa-plus"></i> Kaynak Ekle
+          </button>
+        </div>
+        <div id="htmlSelectorDiv" class="hidden md:col-span-12 text-xs">
+          <label class="block text-[11px] text-amber-400 mb-1">Özel CSS Seçici (Opsiyonel - Boş bırakırsanız sistem manşet ve başlık linklerini otomatik tarar):</label>
+          <input type="text" id="srcSelector" placeholder="örn: .headline-card a, .manset-listesi a, article h2 a" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-1.5 text-slate-200 text-xs">
+        </div>
+      </form>
+
+      <div class="overflow-x-auto">
+        <table class="w-full text-left text-xs">
+          <thead>
+            <tr class="text-slate-400 border-b border-slate-700 bg-slate-900/40">
+              <th class="py-2.5 px-3">Kaynak Adı</th>
+              <th class="py-2.5 px-3">Tip</th>
+              <th class="py-2.5 px-3">Kategori</th>
+              <th class="py-2.5 px-3">Bağlantı URL</th>
+              <th class="py-2.5 px-3 text-center">Durum</th>
+              <th class="py-2.5 px-3 text-right">İşlem</th>
+            </tr>
+          </thead>
+          <tbody id="sourcesTableBody" class="divide-y divide-slate-700/40">
+            <tr><td colspan="6" class="text-center py-6 text-slate-500">Kaynaklar yükleniyor...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- 4. BÖLÜM: ŞİFRE DEĞİŞTİRME -->
     <section class="bg-slate-800/80 border border-slate-700 rounded-2xl p-6 shadow-lg">
       <div class="mb-4 pb-3 border-b border-slate-700">
         <h2 class="text-base font-bold text-slate-100 flex items-center gap-2">
@@ -127,7 +221,7 @@
       </form>
     </section>
 
-    <!-- 3. BÖLÜM: PERSONEL YÖNETİMİ (Admin Only) -->
+    <!-- 5. BÖLÜM: PERSONEL YÖNETİMİ (Admin Only) -->
     <section id="personnelSection" class="bg-slate-800/80 border border-slate-700 rounded-2xl p-6 shadow-lg">
       <div class="mb-5 pb-4 border-b border-slate-700">
         <h2 class="text-base font-bold text-slate-100 flex items-center gap-2">
@@ -173,66 +267,7 @@
       </div>
     </section>
 
-    <!-- 4. BÖLÜM: RSS KAYNAK & KATEGORİ YÖNETİMİ -->
-    <section class="bg-slate-800/80 border border-slate-700 rounded-2xl p-6 shadow-lg">
-      <div class="flex flex-wrap justify-between items-center mb-5 pb-4 border-b border-slate-700 gap-3">
-        <div>
-          <h2 class="text-base font-bold text-slate-100 flex items-center gap-2">
-            <i class="fa-solid fa-square-rss text-orange-400"></i> RSS Kaynak ve Kategori Yönetimi
-          </h2>
-          <p class="text-xs text-slate-400 mt-0.5">Haber kaynaklarını uygun kategorilere bağlayarak yönetin.</p>
-        </div>
-        <button id="refreshSyncBtn" class="bg-emerald-600 hover:bg-emerald-500 text-white px-3 py-1.5 rounded-lg text-xs font-medium transition flex items-center gap-1.5">
-          <i class="fa-solid fa-arrows-rotate"></i> Şimdi Tüm Kaynakları Tara
-        </button>
-      </div>
-
-      <form id="addSourceForm" class="grid grid-cols-1 md:grid-cols-12 gap-3 mb-6 bg-slate-900/60 p-4 rounded-xl border border-slate-700/60">
-        <div class="md:col-span-3">
-          <label class="block text-[11px] text-slate-400 mb-1">Kaynak Adı</label>
-          <input type="text" id="srcName" required placeholder="örn: NTV Spor" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-1.5 text-xs text-slate-200 focus:outline-none focus:border-emerald-500">
-        </div>
-        <div class="md:col-span-3">
-          <label class="block text-[11px] text-slate-400 mb-1">Kategori</label>
-          <select id="srcCategory" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-2.5 py-1.5 text-xs text-slate-200 focus:outline-none focus:border-emerald-500">
-            <option value="Gündem">Gündem</option>
-            <option value="Spor">Spor</option>
-            <option value="Ekonomi">Ekonomi</option>
-            <option value="Dünya">Dünya</option>
-            <option value="Teknoloji">Teknoloji</option>
-            <option value="Magazin">Magazin</option>
-          </select>
-        </div>
-        <div class="md:col-span-4">
-          <label class="block text-[11px] text-slate-400 mb-1">RSS XML Bağlantısı</label>
-          <input type="url" id="srcRss" required placeholder="https://..." class="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-1.5 text-xs text-slate-200 focus:outline-none focus:border-emerald-500">
-        </div>
-        <div class="md:col-span-2 flex items-end">
-          <button type="submit" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white py-1.5 px-3 rounded-lg text-xs font-semibold transition flex items-center justify-center gap-1.5">
-            <i class="fa-solid fa-plus"></i> Ekle
-          </button>
-        </div>
-      </form>
-
-      <div class="overflow-x-auto">
-        <table class="w-full text-left text-xs">
-          <thead>
-            <tr class="text-slate-400 border-b border-slate-700 bg-slate-900/40">
-              <th class="py-2.5 px-3">Kaynak Adı</th>
-              <th class="py-2.5 px-3">Kategori</th>
-              <th class="py-2.5 px-3">RSS Linki</th>
-              <th class="py-2.5 px-3 text-center">Durum</th>
-              <th class="py-2.5 px-3 text-right">İşlem</th>
-            </tr>
-          </thead>
-          <tbody id="sourcesTableBody" class="divide-y divide-slate-700/40">
-            <tr><td colspan="5" class="text-center py-6 text-slate-500">Kaynaklar yükleniyor...</td></tr>
-          </tbody>
-        </table>
-      </div>
-    </section>
-
-    <!-- 5. BÖLÜM: REKLAM ALANLARI -->
+    <!-- 6. BÖLÜM: REKLAM ALANLARI -->
     <section class="bg-slate-800/80 border border-slate-700 rounded-2xl p-6 shadow-lg">
       <div class="mb-5 pb-4 border-b border-slate-700">
         <h2 class="text-base font-bold text-slate-100 flex items-center gap-2">
@@ -341,6 +376,7 @@
     const userFullname = localStorage.getItem('haber_admin_name');
     const loginModal = document.getElementById('loginModal');
     const alertBox = document.getElementById('alertBox');
+    let categoriesList = [];
 
     function checkAuth() {
       if (!token) {
@@ -352,13 +388,14 @@
           document.getElementById('personnelSection').classList.add('hidden');
         }
         fetchRequests();
+        fetchCategories();
         fetchSources();
         loadAds();
         if (userRole === 'admin') fetchStaff();
       }
     }
 
-    // Giriş
+    // Giriş Yapma
     document.getElementById('loginForm').addEventListener('submit', async (e) => {
       e.preventDefault();
       const username = document.getElementById('loginUsername').value.trim();
@@ -406,7 +443,95 @@
       };
     }
 
-    // Kullanıcı Taleplerini Getir
+    // --- KATEGORİ YÖNETİMİ ---
+    async function fetchCategories() {
+      try {
+        const res = await fetch('/api/categories');
+        const data = await res.json();
+        if (data.success && data.data) {
+          categoriesList = data.data;
+          renderCategories();
+          populateCategorySelect();
+        }
+      } catch (e) {}
+    }
+
+    function renderCategories() {
+      const container = document.getElementById('categoryChipsContainer');
+      if (categoriesList.length === 0) {
+        container.innerHTML = '<span class="text-xs text-slate-500">Henüz kategori bulunmuyor.</span>';
+        return;
+      }
+      container.innerHTML = categoriesList.map(c => `
+        <div class="inline-flex items-center gap-1.5 bg-slate-800 border border-slate-700 px-3 py-1 rounded-lg text-xs font-medium shadow-sm">
+          <span class="text-purple-300 font-semibold">${c.name}</span>
+          ${!['Gündem', 'Spor', 'Ekonomi'].includes(c.name) ? `
+            <button onclick="deleteCategory('${c._id}', '${c.name}')" title="Kategoriyi Sil" class="text-slate-500 hover:text-rose-400 transition ml-1">
+              <i class="fa-solid fa-xmark text-[10px]"></i>
+            </button>
+          ` : '<span class="text-[10px] text-slate-500 ml-1 font-mono">(sistem)</span>'}
+        </div>
+      `).join('');
+    }
+
+    function populateCategorySelect() {
+      const select = document.getElementById('srcCategory');
+      select.innerHTML = categoriesList.map(c => `<option value="${c.name}">${c.name}</option>`).join('');
+    }
+
+    document.getElementById('addCategoryForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const catInput = document.getElementById('catNameInput');
+      const name = catInput.value.trim();
+      if (!name) return;
+
+      try {
+        const res = await fetch('/api/categories', {
+          method: 'POST',
+          headers: authHeaders(),
+          body: JSON.stringify({ name })
+        });
+        const data = await res.json();
+        if (data.success) {
+          notify(data.message, 'success');
+          catInput.value = '';
+          fetchCategories();
+        } else {
+          notify(data.message, 'error');
+        }
+      } catch (err) {
+        notify('Hata: ' + err.message, 'error');
+      }
+    });
+
+    window.deleteCategory = async (id, name) => {
+      if (!confirm(`"${name}" kategorisini silmek istediğinize emin misiniz?`)) return;
+      try {
+        const res = await fetch(`/api/categories/${id}`, { method: 'DELETE', headers: authHeaders() });
+        const data = await res.json();
+        if (data.success) {
+          notify(data.message, 'success');
+          fetchCategories();
+        } else {
+          notify(data.message, 'error');
+        }
+      } catch (err) {
+        notify('Hata: ' + err.message, 'error');
+      }
+    };
+
+    // Kaynak Tipi Değişince CSS Seçici Alanını Göster/Gizle
+    const srcTypeSelect = document.getElementById('srcType');
+    const htmlSelectorDiv = document.getElementById('htmlSelectorDiv');
+    srcTypeSelect.addEventListener('change', () => {
+      if (srcTypeSelect.value === 'html') {
+        htmlSelectorDiv.classList.remove('hidden');
+      } else {
+        htmlSelectorDiv.classList.add('hidden');
+      }
+    });
+
+    // --- KULLANICI TALEPLERİ ---
     async function fetchRequests() {
       try {
         const res = await fetch('/api/requests', { headers: authHeaders() });
@@ -563,7 +688,7 @@
       } catch (e) {}
     };
 
-    // Kaynaklar
+    // Kaynaklar (RSS & HTML Siteler)
     async function fetchSources() {
       try {
         const res = await fetch('/api/sources');
@@ -573,9 +698,14 @@
           <tr class="hover:bg-slate-800/40 transition">
             <td class="py-2.5 px-3 font-semibold text-slate-200">${s.name}</td>
             <td class="py-2.5 px-3">
-              <span class="text-[10px] bg-slate-700 text-sky-300 px-2 py-0.5 rounded font-medium">${s.category || 'Gündem'}</span>
+              <span class="text-[10px] px-2 py-0.5 rounded font-mono font-semibold ${s.type === 'html' ? 'bg-amber-500/20 text-amber-300 border border-amber-500/30' : 'bg-blue-500/20 text-blue-300 border border-blue-500/30'}">
+                ${s.type === 'html' ? 'HTML Web' : 'RSS XML'}
+              </span>
             </td>
-            <td class="py-2.5 px-3 text-slate-400 font-mono text-[11px] truncate max-w-xs">${s.rss}</td>
+            <td class="py-2.5 px-3">
+              <span class="text-[10px] bg-slate-700 text-purple-300 px-2 py-0.5 rounded font-medium">${s.category || 'Gündem'}</span>
+            </td>
+            <td class="py-2.5 px-3 text-slate-400 font-mono text-[11px] truncate max-w-xs" title="${s.url}">${s.url}</td>
             <td class="py-2.5 px-3 text-center">
               <button onclick="toggleSource('${s._id}')" class="px-2 py-0.5 rounded-full text-[10px] font-semibold transition ${s.isActive ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30' : 'bg-slate-700 text-slate-400'}">
                 ${s.isActive ? 'Aktif' : 'Pasif'}
@@ -594,20 +724,23 @@
     document.getElementById('addSourceForm').addEventListener('submit', async (e) => {
       e.preventDefault();
       const name = document.getElementById('srcName').value.trim();
-      const rss = document.getElementById('srcRss').value.trim();
+      const type = document.getElementById('srcType').value;
+      const url = document.getElementById('srcUrl').value.trim();
       const category = document.getElementById('srcCategory').value;
+      const selector = document.getElementById('srcSelector').value.trim();
 
       try {
         const res = await fetch('/api/sources', {
           method: 'POST',
           headers: authHeaders(),
-          body: JSON.stringify({ name, rss, category })
+          body: JSON.stringify({ name, type, url, category, selector })
         });
         const resData = await res.json();
         if (resData.success) {
-          notify(`"${name}" (${category}) eklendi!`, 'success');
+          notify(`"${name}" (${type.toUpperCase()} - ${category}) eklendi!`, 'success');
           document.getElementById('srcName').value = '';
-          document.getElementById('srcRss').value = '';
+          document.getElementById('srcUrl').value = '';
+          document.getElementById('srcSelector').value = '';
           fetchSources();
         } else {
           notify(resData.message || 'Eklenemedi', 'error');
@@ -636,7 +769,7 @@
     document.getElementById('refreshSyncBtn').addEventListener('click', async () => {
       try {
         await fetch('/api/sync');
-        notify('Tüm kaynakların taraması başlatıldı.', 'success');
+        notify('Tüm kaynakların (RSS ve HTML) taraması başlatıldı.', 'success');
       } catch (e) {}
     });
 
