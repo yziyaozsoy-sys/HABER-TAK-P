@@ -5,10 +5,13 @@ const cors = require('cors');
 const path = require('path');
 const axios = require('axios');
 const xml2js = require('xml2js');
+const bcrypt = require('bcryptjs');
+const jwt = require('jsonwebtoken');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 const MONGODB_URI = process.env.MONGODB_URI;
+const JWT_SECRET = process.env.JWT_SECRET || 'haber-takip-gizli-anahtar-2026';
 
 app.use(cors());
 app.use(express.json());
@@ -28,7 +31,6 @@ const newsSchema = new mongoose.Schema({
 newsSchema.index({ pubDate: -1, createdAt: -1 });
 const News = mongoose.model('News', newsSchema);
 
-// Kaynak Modeli
 const sourceSchema = new mongoose.Schema({
   name: { type: String, required: true, unique: true },
   rss: { type: String, required: true },
@@ -37,11 +39,10 @@ const sourceSchema = new mongoose.Schema({
 });
 const Source = mongoose.model('Source', sourceSchema);
 
-// Reklam Modeli (Sol ve Sağ Kule Banner)
 const adSchema = new mongoose.Schema({
   position: { type: String, enum: ['left', 'right'], required: true, unique: true },
-  type: { type: String, enum: ['code', 'custom'], default: 'custom' }, // 'code' (Google AdSense) veya 'custom' (Resim+Link)
-  code: { type: String, default: '' }, // AdSense HTML/JS Kodu
+  type: { type: String, enum: ['code', 'custom'], default: 'custom' },
+  code: { type: String, default: '' },
   imageUrl: { type: String, default: '' },
   targetUrl: { type: String, default: '' },
   title: { type: String, default: 'Sponsorlu Reklam' },
@@ -50,7 +51,30 @@ const adSchema = new mongoose.Schema({
 });
 const Ad = mongoose.model('Ad', adSchema);
 
-// 2. Veritabanı Bağlantısı ve Varsayılanları Oluşturma
+// Personel & Admin Kullanıcı Modeli
+const userSchema = new mongoose.Schema({
+  username: { type: String, required: true, unique: true },
+  password: { type: String, required: true },
+  fullname: { type: String, required: true },
+  role: { type: String, enum: ['admin', 'staff'], default: 'staff' },
+  createdAt: { type: Date, default: Date.now }
+});
+const User = mongoose.model('User', userSchema);
+
+// Yetki Doğrulama Ara Yazılımı (Auth Middleware)
+const authMiddleware = (req, res, next) => {
+  const token = req.headers.authorization?.replace('Bearer ', '');
+  if (!token) return res.status(401).json({ success: false, message: 'Yetkisiz erişim. Lütfen giriş yapın.' });
+  try {
+    const decoded = jwt.verify(token, JWT_SECRET);
+    req.user = decoded;
+    next();
+  } catch (err) {
+    return res.status(401).json({ success: false, message: 'Geçersiz veya süresi dolmuş oturum.' });
+  }
+};
+
+// 2. Veritabanı Başlatma & Varsayılanlar
 const initialSources = [
   { name: 'NTV', rss: 'https://www.ntv.com.tr/son-dakika.rss' },
   { name: 'Ensonhaber', rss: 'https://www.ensonhaber.com/rss/ensonhaber.xml' },
@@ -66,13 +90,27 @@ if (MONGODB_URI) {
   mongoose.connect(MONGODB_URI, { serverSelectionTimeoutMS: 5000 })
     .then(async () => {
       console.log('MongoDB Atlas bağlantısı başarılı.');
-      // İlk açılışta kaynak tablosu boşsa varsayılanları ekle
+
+      // 1. Varsayılan Admin Kullanıcısı (Kullanıcı adı: admin / Şifre: 123456)
+      const adminExist = await User.findOne({ username: 'admin' });
+      if (!adminExist) {
+        const hashedPassword = await bcrypt.hash('123456', 10);
+        await User.create({
+          username: 'admin',
+          password: hashedPassword,
+          fullname: 'Yusuf Yönetici',
+          role: 'admin'
+        });
+        console.log('Süper Admin oluşturuldu: admin / 123456');
+      }
+
+      // 2. Varsayılan Kaynaklar
       const srcCount = await Source.countDocuments();
       if (srcCount === 0) {
         await Source.insertMany(initialSources);
-        console.log('Varsayılan 8 haber kaynağı veritabanına eklendi.');
       }
-      // Reklam kayıtlarını garantiye al
+
+      // 3. Varsayılan Reklamlar
       for (const pos of ['left', 'right']) {
         const exist = await Ad.findOne({ position: pos });
         if (!exist) {
@@ -163,14 +201,93 @@ async function fetchAllSources() {
       await fetchRssFeed(src.name, src.rss);
     }
   } catch (err) {
-    console.error("Kaynakları çekerken hata:", err.message);
+    console.error("Kaynak tarama hatası:", err.message);
   }
   isSyncing = false;
 }
 
 // 4. API Endpoints
 
-// Haberleri Listele
+// Giriş (Login)
+app.post('/api/auth/login', async (req, res) => {
+  try {
+    const { username, password } = req.body;
+    const user = await User.findOne({ username });
+    if (!user) return res.status(401).json({ success: false, message: 'Kullanıcı adı veya şifre hatalı!' });
+
+    const match = await bcrypt.compare(password, user.password);
+    if (!match) return res.status(401).json({ success: false, message: 'Kullanıcı adı veya şifre hatalı!' });
+
+    const token = jwt.sign(
+      { id: user._id, username: user.username, fullname: user.fullname, role: user.role },
+      JWT_SECRET,
+      { expiresIn: '7d' }
+    );
+
+    res.json({
+      success: true,
+      token,
+      user: { username: user.username, fullname: user.fullname, role: user.role }
+    });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
+// Personel Listele (Sadece Admin yetkilendirir)
+app.get('/api/users', authMiddleware, async (req, res) => {
+  try {
+    const users = await User.find().select('-password').sort({ createdAt: -1 });
+    res.json({ success: true, data: users });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
+// Yeni Personel Ekle (Sadece Süper Admin)
+app.post('/api/users', authMiddleware, async (req, res) => {
+  try {
+    if (req.user.role !== 'admin') {
+      return res.status(403).json({ success: false, message: 'Personel ekleme yetkiniz yok.' });
+    }
+    const { username, password, fullname, role } = req.body;
+    if (!username || !password || !fullname) {
+      return res.status(400).json({ success: false, message: 'Tüm alanları doldurunuz.' });
+    }
+    const exist = await User.findOne({ username });
+    if (exist) return res.status(400).json({ success: false, message: 'Bu kullanıcı adı zaten kullanılıyor.' });
+
+    const hashedPassword = await bcrypt.hash(password, 10);
+    const newUser = await User.create({
+      username,
+      password: hashedPassword,
+      fullname,
+      role: role || 'staff'
+    });
+    res.json({ success: true, data: { username: newUser.username, fullname: newUser.fullname, role: newUser.role } });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
+// Personel Sil (Sadece Süper Admin)
+app.delete('/api/users/:id', authMiddleware, async (req, res) => {
+  try {
+    if (req.user.role !== 'admin') {
+      return res.status(403).json({ success: false, message: 'Personel silme yetkiniz yok.' });
+    }
+    const user = await User.findById(req.params.id);
+    if (user.username === 'admin') {
+      return res.status(400).json({ success: false, message: 'Ana süper yönetici silinemez!' });
+    }
+    await User.findByIdAndDelete(req.params.id);
+    res.json({ success: true, message: 'Personel hesabı silindi.' });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
+// Haberler
 app.get('/api/news', async (req, res) => {
   try {
     const limit = parseInt(req.query.limit) || 120;
@@ -192,7 +309,7 @@ app.get('/api/news', async (req, res) => {
   }
 });
 
-// Kaynak Yönetimi API
+// Kaynak Yönetimi
 app.get('/api/sources', async (req, res) => {
   try {
     const sources = await Source.find().sort({ name: 1 });
@@ -202,19 +319,19 @@ app.get('/api/sources', async (req, res) => {
   }
 });
 
-app.post('/api/sources', async (req, res) => {
+app.post('/api/sources', authMiddleware, async (req, res) => {
   try {
     const { name, rss } = req.body;
-    if (!name || !rss) return res.status(400).json({ success: false, message: 'İsim ve RSS linki zorunludur.' });
+    if (!name || !rss) return res.status(400).json({ success: false, message: 'İsim ve RSS zorunludur.' });
     const newSource = await Source.create({ name, rss });
-    fetchAllSources(); // Yeni kaynağı anında tara
+    fetchAllSources();
     res.json({ success: true, data: newSource });
   } catch (err) {
     res.status(500).json({ success: false, error: err.message });
   }
 });
 
-app.delete('/api/sources/:id', async (req, res) => {
+app.delete('/api/sources/:id', authMiddleware, async (req, res) => {
   try {
     await Source.findByIdAndDelete(req.params.id);
     res.json({ success: true, message: 'Kaynak silindi.' });
@@ -223,7 +340,7 @@ app.delete('/api/sources/:id', async (req, res) => {
   }
 });
 
-app.patch('/api/sources/:id/toggle', async (req, res) => {
+app.patch('/api/sources/:id/toggle', authMiddleware, async (req, res) => {
   try {
     const src = await Source.findById(req.params.id);
     if (!src) return res.status(404).json({ success: false, message: 'Kaynak bulunamadı' });
@@ -235,7 +352,7 @@ app.patch('/api/sources/:id/toggle', async (req, res) => {
   }
 });
 
-// Reklam Yönetimi API
+// Reklam Yönetimi
 app.get('/api/ads', async (req, res) => {
   try {
     const ads = await Ad.find();
@@ -245,7 +362,7 @@ app.get('/api/ads', async (req, res) => {
   }
 });
 
-app.post('/api/ads', async (req, res) => {
+app.post('/api/ads', authMiddleware, async (req, res) => {
   try {
     const { position, type, code, imageUrl, targetUrl, title, isActive } = req.body;
     const ad = await Ad.findOneAndUpdate(

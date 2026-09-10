@@ -3,33 +3,119 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Haber Takip - Yönetim Paneli</title>
+  <title>Haber Takip - Yönetim & Personel Paneli</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
 <body class="bg-slate-900 text-slate-100 min-h-screen flex flex-col font-sans">
 
-  <header class="bg-slate-800 border-b border-slate-700 px-6 py-4 shadow-md sticky top-0 z-50">
+  <!-- GİRİŞ EKRANI (LOGIN MODAL) -->
+  <div id="loginModal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+    <div class="bg-slate-800 border border-slate-700 w-full max-w-md rounded-2xl p-6 shadow-2xl">
+      <div class="text-center mb-6">
+        <div class="inline-flex bg-emerald-500/20 p-3 rounded-xl border border-emerald-500/30 text-emerald-400 mb-3">
+          <i class="fa-solid fa-shield-halved text-2xl"></i>
+        </div>
+        <h2 class="text-xl font-bold">Yönetici Girişi</h2>
+        <p class="text-xs text-slate-400 mt-1">Devam etmek için lütfen giriş yapın</p>
+      </div>
+
+      <div id="loginAlert" class="hidden mb-4 p-2.5 rounded-lg text-xs bg-rose-500/20 text-rose-300 border border-rose-500/30 text-center"></div>
+
+      <form id="loginForm" class="space-y-4 text-xs">
+        <div>
+          <label class="block text-slate-400 mb-1">Kullanıcı Adı</label>
+          <input type="text" id="loginUsername" required placeholder="admin" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-slate-200 focus:outline-none focus:border-emerald-500">
+        </div>
+        <div>
+          <label class="block text-slate-400 mb-1">Şifre</label>
+          <input type="password" id="loginPassword" required placeholder="••••••" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-slate-200 focus:outline-none focus:border-emerald-500">
+        </div>
+        <button type="submit" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white py-2 rounded-lg font-semibold transition flex items-center justify-center gap-2">
+          <i class="fa-solid fa-right-to-bracket"></i> Giriş Yap
+        </button>
+      </form>
+      <div class="mt-4 text-center">
+        <a href="/" class="text-xs text-slate-500 hover:text-slate-400 transition">← Ana Sayfaya Geri Dön</a>
+      </div>
+    </div>
+  </div>
+
+  <!-- ADMIN ÜST BAR -->
+  <header class="bg-slate-800 border-b border-slate-700 px-6 py-4 shadow-md sticky top-0 z-40">
     <div class="max-w-6xl mx-auto flex justify-between items-center">
       <div class="flex items-center gap-3">
         <div class="bg-blue-500/20 p-2 rounded-lg border border-blue-500/30">
           <i class="fa-solid fa-sliders text-blue-400 text-xl"></i>
         </div>
         <div>
-          <h1 class="text-lg font-bold tracking-wide">Yönetim & Reklam Paneli</h1>
-          <p class="text-[11px] text-slate-400">Kaynak ekle/çıkar ve reklam alanlarını yapılandır</p>
+          <h1 class="text-lg font-bold tracking-wide flex items-center gap-2">
+            Yönetim Paneli <span id="userBadge" class="text-[11px] bg-slate-700 text-emerald-400 px-2 py-0.5 rounded-md font-normal"></span>
+          </h1>
+          <p class="text-[11px] text-slate-400">Kaynaklar, personeller ve reklam alanları yönetimi</p>
         </div>
       </div>
-      <a href="/" class="bg-slate-700 hover:bg-slate-600 text-slate-200 px-3.5 py-1.5 rounded-lg text-xs font-medium transition flex items-center gap-1.5">
-        <i class="fa-solid fa-arrow-left"></i> Canlı Siteye Dön
-      </a>
+      <div class="flex items-center gap-2">
+        <a href="/" class="bg-slate-700 hover:bg-slate-600 text-slate-200 px-3 py-1.5 rounded-lg text-xs font-medium transition flex items-center gap-1.5">
+          <i class="fa-solid fa-arrow-left"></i> Canlı Site
+        </a>
+        <button id="logoutBtn" class="bg-rose-600/20 hover:bg-rose-600 text-rose-300 hover:text-white border border-rose-500/30 px-3 py-1.5 rounded-lg text-xs font-medium transition flex items-center gap-1.5">
+          <i class="fa-solid fa-arrow-right-from-bracket"></i> Çıkış
+        </button>
+      </div>
     </div>
   </header>
 
   <main class="flex-1 max-w-6xl w-full mx-auto p-6 space-y-8">
     <div id="alertBox" class="hidden p-3.5 rounded-xl text-xs font-medium transition"></div>
 
-    <!-- 1. BÖLÜM: RSS KAYNAK YÖNETİMİ -->
+    <!-- 1. BÖLÜM: PERSONEL YÖNETİMİ (Sadece admin görebilir) -->
+    <section id="personnelSection" class="bg-slate-800/80 border border-slate-700 rounded-2xl p-6 shadow-lg">
+      <div class="mb-5 pb-4 border-b border-slate-700">
+        <h2 class="text-base font-bold text-slate-100 flex items-center gap-2">
+          <i class="fa-solid fa-users text-sky-400"></i> Personel & Editör Yönetimi
+        </h2>
+        <p class="text-xs text-slate-400 mt-0.5">Sistemi yönetecek yeni personeller ekleyin veya çıkarın.</p>
+      </div>
+
+      <form id="addStaffForm" class="grid grid-cols-1 md:grid-cols-12 gap-3 mb-6 bg-slate-900/60 p-4 rounded-xl border border-slate-700/60">
+        <div class="md:col-span-3">
+          <label class="block text-[11px] text-slate-400 mb-1">Ad Soyad</label>
+          <input type="text" id="staffFullname" required placeholder="Ahmet Yılmaz" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-1.5 text-xs text-slate-200 focus:outline-none focus:border-sky-500">
+        </div>
+        <div class="md:col-span-3">
+          <label class="block text-[11px] text-slate-400 mb-1">Kullanıcı Adı</label>
+          <input type="text" id="staffUsername" required placeholder="ahmet" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-1.5 text-xs text-slate-200 focus:outline-none focus:border-sky-500">
+        </div>
+        <div class="md:col-span-3">
+          <label class="block text-[11px] text-slate-400 mb-1">Şifre</label>
+          <input type="password" id="staffPassword" required placeholder="••••••" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-1.5 text-xs text-slate-200 focus:outline-none focus:border-sky-500">
+        </div>
+        <div class="md:col-span-3 flex items-end">
+          <button type="submit" class="w-full bg-sky-600 hover:bg-sky-500 text-white py-1.5 px-3 rounded-lg text-xs font-semibold transition flex items-center justify-center gap-1.5">
+            <i class="fa-solid fa-user-plus"></i> Personel Ekle
+          </button>
+        </div>
+      </form>
+
+      <div class="overflow-x-auto">
+        <table class="w-full text-left text-xs">
+          <thead>
+            <tr class="text-slate-400 border-b border-slate-700 bg-slate-900/40">
+              <th class="py-2.5 px-3">Ad Soyad</th>
+              <th class="py-2.5 px-3">Kullanıcı Adı</th>
+              <th class="py-2.5 px-3">Rol</th>
+              <th class="py-2.5 px-3 text-right">İşlem</th>
+            </tr>
+          </thead>
+          <tbody id="staffTableBody" class="divide-y divide-slate-700/40">
+            <tr><td colspan="4" class="text-center py-4 text-slate-500">Personeller yükleniyor...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- 2. BÖLÜM: RSS KAYNAK YÖNETİMİ -->
     <section class="bg-slate-800/80 border border-slate-700 rounded-2xl p-6 shadow-lg">
       <div class="flex flex-wrap justify-between items-center mb-5 pb-4 border-b border-slate-700 gap-3">
         <div>
@@ -43,7 +129,6 @@
         </button>
       </div>
 
-      <!-- Yeni Kaynak Ekleme Formu -->
       <form id="addSourceForm" class="grid grid-cols-1 md:grid-cols-12 gap-3 mb-6 bg-slate-900/60 p-4 rounded-xl border border-slate-700/60">
         <div class="md:col-span-4">
           <label class="block text-[11px] text-slate-400 mb-1">Kaynak / Gazete Adı</label>
@@ -60,7 +145,6 @@
         </div>
       </form>
 
-      <!-- Kaynak Listesi Tablosu -->
       <div class="overflow-x-auto">
         <table class="w-full text-left text-xs">
           <thead>
@@ -78,7 +162,7 @@
       </div>
     </section>
 
-    <!-- 2. BÖLÜM: REKLAM ALANLARI YÖNETİMİ -->
+    <!-- 3. BÖLÜM: REKLAM ALANLARI YÖNETİMİ -->
     <section class="bg-slate-800/80 border border-slate-700 rounded-2xl p-6 shadow-lg">
       <div class="mb-5 pb-4 border-b border-slate-700">
         <h2 class="text-base font-bold text-slate-100 flex items-center gap-2">
@@ -88,8 +172,7 @@
       </div>
 
       <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-        
-        <!-- SOL REKLAM KARTI -->
+        <!-- SOL REKLAM -->
         <div class="bg-slate-900/60 p-5 rounded-xl border border-slate-700/60 flex flex-col justify-between">
           <div>
             <div class="flex justify-between items-center mb-3">
@@ -134,7 +217,7 @@
           </button>
         </div>
 
-        <!-- SAĞ REKLAM KARTI -->
+        <!-- SAĞ REKLAM -->
         <div class="bg-slate-900/60 p-5 rounded-xl border border-slate-700/60 flex flex-col justify-between">
           <div>
             <div class="flex justify-between items-center mb-3">
@@ -178,13 +261,69 @@
             Sağ Reklamı Kaydet
           </button>
         </div>
-
       </div>
     </section>
   </main>
 
   <script>
+    const token = localStorage.getItem('haber_admin_token');
+    const userRole = localStorage.getItem('haber_admin_role');
+    const userFullname = localStorage.getItem('haber_admin_name');
+    const loginModal = document.getElementById('loginModal');
     const alertBox = document.getElementById('alertBox');
+
+    function checkAuth() {
+      if (!token) {
+        loginModal.classList.remove('hidden');
+      } else {
+        loginModal.classList.add('hidden');
+        document.getElementById('userBadge').textContent = `${userFullname || 'Yönetici'} (${userRole === 'admin' ? 'Süper Admin' : 'Personel'})`;
+        if (userRole !== 'admin') {
+          document.getElementById('personnelSection').classList.add('hidden');
+        }
+        fetchSources();
+        loadAds();
+        if (userRole === 'admin') fetchStaff();
+      }
+    }
+
+    // Giriş Yap
+    document.getElementById('loginForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const username = document.getElementById('loginUsername').value.trim();
+      const password = document.getElementById('loginPassword').value.trim();
+      const alertEl = document.getElementById('loginAlert');
+
+      try {
+        const res = await fetch('/api/auth/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ username, password })
+        });
+        const d = await res.json();
+        if (d.success) {
+          localStorage.setItem('haber_admin_token', d.token);
+          localStorage.setItem('haber_admin_role', d.user.role);
+          localStorage.setItem('haber_admin_name', d.user.fullname);
+          location.reload();
+        } else {
+          alertEl.textContent = d.message || 'Giriş başarısız!';
+          alertEl.classList.remove('hidden');
+        }
+      } catch (err) {
+        alertEl.textContent = 'Bağlantı hatası: ' + err.message;
+        alertEl.classList.remove('hidden');
+      }
+    });
+
+    // Çıkış Yap
+    document.getElementById('logoutBtn').addEventListener('click', () => {
+      localStorage.removeItem('haber_admin_token');
+      localStorage.removeItem('haber_admin_role');
+      localStorage.removeItem('haber_admin_name');
+      location.reload();
+    });
+
     function notify(msg, type = 'success') {
       alertBox.className = `p-3.5 rounded-xl text-xs font-medium transition ${type === 'success' ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30' : 'bg-rose-500/20 text-rose-300 border border-rose-500/30'}`;
       alertBox.innerHTML = msg;
@@ -192,16 +331,92 @@
       setTimeout(() => alertBox.classList.add('hidden'), 4000);
     }
 
-    // 1. Kaynakları Listele
+    function authHeaders() {
+      return {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${localStorage.getItem('haber_admin_token')}`
+      };
+    }
+
+    // Personelleri Listele
+    async function fetchStaff() {
+      try {
+        const res = await fetch('/api/users', { headers: authHeaders() });
+        const data = await res.json();
+        const tbody = document.getElementById('staffTableBody');
+        if (!data.data || data.data.length === 0) {
+          tbody.innerHTML = '<tr><td colspan="4" class="text-center py-4 text-slate-500">Personel bulunmuyor.</td></tr>';
+          return;
+        }
+        tbody.innerHTML = data.data.map(u => `
+          <tr class="hover:bg-slate-800/40 transition">
+            <td class="py-2.5 px-3 font-semibold text-slate-200">${u.fullname}</td>
+            <td class="py-2.5 px-3 text-slate-400 font-mono text-[11px]">${u.username}</td>
+            <td class="py-2.5 px-3">
+              <span class="text-[10px] px-2 py-0.5 rounded font-semibold ${u.role === 'admin' ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30' : 'bg-blue-500/20 text-blue-400 border border-blue-500/30'}">
+                ${u.role === 'admin' ? 'Yönetici' : 'Personel'}
+              </span>
+            </td>
+            <td class="py-2.5 px-3 text-right">
+              ${u.username !== 'admin' ? `
+                <button onclick="deleteStaff('${u._id}')" class="text-rose-400 hover:text-rose-300 text-xs px-2 py-1 rounded transition">
+                  <i class="fa-solid fa-trash"></i> Sil
+                </button>
+              ` : '<span class="text-slate-600 text-[10px]">Korumalı</span>'}
+            </td>
+          </tr>
+        `).join('');
+      } catch (e) {}
+    }
+
+    // Personel Ekle
+    document.getElementById('addStaffForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const fullname = document.getElementById('staffFullname').value.trim();
+      const username = document.getElementById('staffUsername').value.trim();
+      const password = document.getElementById('staffPassword').value.trim();
+
+      try {
+        const res = await fetch('/api/users', {
+          method: 'POST',
+          headers: authHeaders(),
+          body: JSON.stringify({ fullname, username, password, role: 'staff' })
+        });
+        const d = await res.json();
+        if (d.success) {
+          notify(`Personel "${fullname}" başarıyla eklendi!`, 'success');
+          document.getElementById('staffFullname').value = '';
+          document.getElementById('staffUsername').value = '';
+          document.getElementById('staffPassword').value = '';
+          fetchStaff();
+        } else {
+          notify(d.message || 'Eklenemedi', 'error');
+        }
+      } catch (e) {
+        notify('Hata: ' + e.message, 'error');
+      }
+    });
+
+    window.deleteStaff = async (id) => {
+      if (!confirm('Bu personeli silmek istediğinize emin misiniz?')) return;
+      try {
+        const res = await fetch(`/api/users/${id}`, { method: 'DELETE', headers: authHeaders() });
+        const d = await res.json();
+        if (d.success) {
+          notify('Personel silindi.', 'success');
+          fetchStaff();
+        } else {
+          notify(d.message, 'error');
+        }
+      } catch (e) {}
+    };
+
+    // Kaynakları Listele
     async function fetchSources() {
       try {
         const res = await fetch('/api/sources');
         const data = await res.json();
         const tbody = document.getElementById('sourcesTableBody');
-        if (!data.data || data.data.length === 0) {
-          tbody.innerHTML = '<tr><td colspan="4" class="text-center py-6 text-slate-500">Kayıtlı kaynak bulunmuyor.</td></tr>';
-          return;
-        }
         tbody.innerHTML = data.data.map(s => `
           <tr class="hover:bg-slate-800/40 transition">
             <td class="py-2.5 px-3 font-semibold text-slate-200">${s.name}</td>
@@ -218,9 +433,7 @@
             </td>
           </tr>
         `).join('');
-      } catch (e) {
-        notify('Kaynaklar çekilemedi: ' + e.message, 'error');
-      }
+      } catch (e) {}
     }
 
     // Kaynak Ekle
@@ -231,57 +444,54 @@
       try {
         const res = await fetch('/api/sources', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: authHeaders(),
           body: JSON.stringify({ name, rss })
         });
         const resData = await res.json();
         if (resData.success) {
-          notify(`"${name}" başarıyla eklendi ve ilk tarama başladı!`, 'success');
+          notify(`"${name}" başarıyla eklendi!`, 'success');
           document.getElementById('srcName').value = '';
           document.getElementById('srcRss').value = '';
           fetchSources();
         } else {
-          notify(resData.error || 'Eklenemedi', 'error');
+          notify(resData.message || 'Eklenemedi', 'error');
         }
       } catch (e) {
         notify('Hata: ' + e.message, 'error');
       }
     });
 
-    // Kaynak Durum Değiştir
     window.toggleSource = async (id) => {
       try {
-        await fetch(`/api/sources/${id}/toggle`, { method: 'PATCH' });
+        await fetch(`/api/sources/${id}/toggle`, { method: 'PATCH', headers: authHeaders() });
         fetchSources();
       } catch (e) {}
     };
 
-    // Kaynak Sil
     window.deleteSource = async (id) => {
       if (!confirm('Bu kaynağı silmek istediğinize emin misiniz?')) return;
       try {
-        await fetch(`/api/sources/${id}`, { method: 'DELETE' });
+        await fetch(`/api/sources/${id}`, { method: 'DELETE', headers: authHeaders() });
         notify('Kaynak silindi.', 'success');
         fetchSources();
       } catch (e) {}
     };
 
-    // Şimdi Tara Butonu
     document.getElementById('refreshSyncBtn').addEventListener('click', async () => {
       try {
         await fetch('/api/sync');
-        notify('Tüm kaynakların taraması başlatıldı.', 'success');
+        notify('Tüm kaynakların taraması arka planda başlatıldı.', 'success');
       } catch (e) {}
     });
 
-    // 2. Reklamları Getir ve Kaydet
+    // Reklamlar
     async function loadAds() {
       try {
         const res = await fetch('/api/ads');
         const data = await res.json();
         if (data.success) {
           data.data.forEach(ad => {
-            const prefix = ad.position; // 'left' veya 'right'
+            const prefix = ad.position;
             document.getElementById(`${prefix}Active`).checked = ad.isActive;
             document.getElementById(`${prefix}Type`).value = ad.type;
             document.getElementById(`${prefix}ImageUrl`).value = ad.imageUrl || '';
@@ -317,12 +527,14 @@
       try {
         const res = await fetch('/api/ads', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: authHeaders(),
           body: JSON.stringify({ position, type, isActive, imageUrl, targetUrl, code })
         });
         const d = await res.json();
         if (d.success) {
           notify(`${position === 'left' ? 'Sol' : 'Sağ'} reklam alanı güncellendi!`, 'success');
+        } else {
+          notify(d.message || 'Hata oluştu', 'error');
         }
       } catch (e) {
         notify('Kaydedilemedi: ' + e.message, 'error');
@@ -332,9 +544,7 @@
     document.getElementById('saveLeftAdBtn').addEventListener('click', () => saveAd('left'));
     document.getElementById('saveRightAdBtn').addEventListener('click', () => saveAd('right'));
 
-    // Başlangıç
-    fetchSources();
-    loadAds();
+    checkAuth();
   </script>
 </body>
 </html>
