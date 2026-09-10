@@ -16,3 +16,5 @@ brace-check.js
 brace-output.txt
 
 token.txt
+
+.env
