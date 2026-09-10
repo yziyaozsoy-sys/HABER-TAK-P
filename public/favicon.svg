@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <defs>
+    <linearGradient id="grad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#3b82f6" />
+      <stop offset="100%" stop-color="#10b981" />
+    </linearGradient>
+  </defs>
+  <!-- Arka Plan Yuvarlak Kutu -->
+  <rect width="64" height="64" rx="16" fill="url(#grad)" />
+  <!-- Gazete / Bülten İkonu -->
+  <path d="M18 16h28a2 2 0 0 1 2 2v28a2 2 0 0 1-2 2H18a2 2 0 0 1-2-2V18a2 2 0 0 1 2-2z" fill="#ffffff" opacity="0.95"/>
+  <path d="M22 22h20M22 28h12M22 34h20M22 40h14" stroke="#1e293b" stroke-width="2.5" stroke-linecap="round"/>
+  <!-- Canlı Takip / Radar Kırmızı Işığı -->
+  <circle cx="44" cy="22" r="3.5" fill="#ef4444" />
+</svg>
