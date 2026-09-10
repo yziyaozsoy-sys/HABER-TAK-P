@@ -93,23 +93,30 @@
           <h1 class="text-lg font-bold tracking-wide flex items-center gap-2">
             Haber Takip <span class="text-xs bg-emerald-500/20 text-emerald-400 px-2 py-0.5 rounded-full border border-emerald-500/30">Canlı Akış</span>
           </h1>
-          <p class="text-[11px] text-slate-400">Geliş saatine göre anlık sıralama</p>
+          <p class="text-[11px] text-slate-400">Geliş saatine göre anlık sıralama & Rating takibi</p>
         </div>
       </div>
 
-      <!-- Arama, Butonlar ve Admin Girişi -->
+      <!-- Arama, Sıralama, Butonlar ve Admin Girişi -->
       <div class="flex items-center gap-2 flex-1 max-w-xl">
         <div class="relative w-full">
           <i class="fa-solid fa-magnifying-glass absolute left-3 top-2.5 text-slate-400 text-xs"></i>
           <input type="text" id="searchInput" placeholder="Başlık veya özette ara..." class="w-full bg-slate-950 border border-slate-700 rounded-lg pl-8 pr-3 py-1.5 text-xs text-slate-200 placeholder-slate-500 focus:outline-none focus:border-emerald-500">
         </div>
+
+        <!-- Sıralama Modu: Son Dakika vs Çok Okunanlar (Rating) -->
+        <select id="sortModeSelect" class="bg-slate-950 border border-slate-700 rounded-lg px-2.5 py-1.5 text-xs text-emerald-400 font-semibold focus:outline-none cursor-pointer shrink-0">
+          <option value="latest">En Son Gelen</option>
+          <option value="rating">🔥 Çok Okunanlar (Rating)</option>
+        </select>
+
         <button id="refreshBtn" title="Listeyi Tazele" class="bg-slate-700 hover:bg-slate-600 text-white px-3 py-1.5 rounded-lg text-xs font-medium transition flex items-center gap-1.5">
           <i class="fa-solid fa-arrows-rotate" id="refreshIcon"></i>
           <span class="hidden sm:inline">Yenile</span>
         </button>
         <button id="exportWordBtn" title="Seçili veya tüm haberleri Word olarak aktar" class="bg-blue-600 hover:bg-blue-500 text-white px-3.5 py-1.5 rounded-lg text-xs font-medium transition flex items-center gap-1.5 shadow-sm whitespace-nowrap">
           <i class="fa-solid fa-file-word"></i>
-          <span id="exportBtnText">Word İndir</span>
+          <span id="exportBtnText">Word</span>
         </button>
         <button id="openRequestModalBtn" title="Yönetime Talep İlet" class="bg-amber-600/20 hover:bg-amber-600 text-amber-300 hover:text-white border border-amber-500/30 px-2.5 py-1.5 rounded-lg text-xs font-medium transition flex items-center gap-1">
           <i class="fa-regular fa-comment-dots"></i>
@@ -254,8 +261,29 @@
     let selectedSources = new Set();
     let selectedNewsGuids = new Set();
     let selectedCategory = 'Tümü';
+    let currentSortMode = 'latest';
     let searchTimeout;
     let isPaused = false;
+
+    // Rating / Tıklama Kaydetme Fonksiyonu (Bot & Çift Tıklama Korumalı)
+    async function trackNewsClick(newsId) {
+      if (!newsId) return;
+      const clickedKey = `clicked_news_${newsId}`;
+      if (sessionStorage.getItem(clickedKey)) return; // Bu oturumda zaten puan verildi
+
+      try {
+        sessionStorage.setItem(clickedKey, 'true');
+        await fetch(`/api/news/${newsId}/click`, { method: 'POST' });
+        
+        // Yerel listeyi güncelle ve rozeti anında +1 yap
+        const item = currentNewsList.find(n => n._id === newsId);
+        if (item) {
+          item.views = (item.views || 0) + 1;
+          const badge = document.getElementById(`viewsBadge_${newsId}`);
+          if (badge) badge.innerHTML = `<i class="fa-regular fa-eye text-[10px]"></i> ${item.views}`;
+        }
+      } catch (e) {}
+    }
 
     // Ticker Açma / Kapatma (Gizleme) Mantığı
     const mainTickerBar = document.getElementById('mainTickerBar');
@@ -407,6 +435,12 @@
     const exportBtnText = document.getElementById('exportBtnText');
     const toggleSelectAllBtn = document.getElementById('toggleSelectAllBtn');
     const toggleSelectAllText = document.getElementById('toggleSelectAllText');
+    const sortModeSelect = document.getElementById('sortModeSelect');
+
+    sortModeSelect.addEventListener('change', () => {
+      currentSortMode = sortModeSelect.value;
+      loadNews();
+    });
 
     function showAlert(message, type = 'info') {
       statusAlert.className = `mb-4 p-3 rounded-xl text-xs font-medium transition flex items-center gap-2 ${
@@ -521,7 +555,7 @@
 
     function updateExportButtonState() {
       const count = selectedNewsGuids.size;
-      exportBtnText.textContent = count > 0 ? `Word İndir (${count} Seçili)` : 'Word İndir';
+      exportBtnText.textContent = count > 0 ? `Word (${count})` : 'Word İndir';
       toggleSelectAllText.textContent = (currentNewsList.length > 0 && selectedNewsGuids.size === currentNewsList.length) ? 'Seçimi Kaldır' : 'Tümünü Seç';
     }
 
@@ -555,7 +589,7 @@
         const timeStr = new Date(item.pubDate || item.createdAt).toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' });
         const fav = getFaviconUrl(item.link);
         return `
-          <a href="${item.link}" target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-2 hover:text-emerald-400 transition font-medium group">
+          <a href="${item.link}" target="_blank" rel="noopener noreferrer" onclick="trackNewsClick('${item._id}')" class="inline-flex items-center gap-2 hover:text-emerald-400 transition font-medium group">
             <img src="${fav}" alt="" class="w-4 h-4 object-contain rounded bg-slate-900 border border-slate-700">
             <span class="text-emerald-400 font-bold font-mono text-[11px]">[${timeStr}]</span>
             <span class="text-slate-300 font-semibold text-[11px] bg-slate-800/80 px-1.5 py-0.5 rounded">${item.source}</span>
@@ -594,6 +628,8 @@
         const timeStr = dateObj.toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' });
         const dateStr = dateObj.toLocaleDateString('tr-TR', { day: '2-digit', month: '2-digit', year: 'numeric' });
         const faviconSrc = getFaviconUrl(item.link);
+        const viewsCount = item.views || 0;
+        const isTrending = viewsCount >= 5; // 5 ve üzeri tıklanan habere Trend etiketi koy
 
         return `
           <article class="relative bg-slate-800/80 border ${isChecked ? 'border-emerald-500 bg-slate-800 ring-2 ring-emerald-500/40' : (hasAlarm ? 'border-amber-500/80 bg-amber-950/20 ring-1 ring-amber-500/50' : 'border-slate-700/60')} rounded-xl p-4 hover:border-slate-500 transition-all flex flex-col justify-between group shadow-md">
@@ -603,7 +639,15 @@
                 <input type="checkbox" data-guid="${item.guid}" class="news-select-chk w-4 h-4 rounded text-emerald-500 bg-slate-900 border-slate-600 focus:ring-emerald-500 cursor-pointer" ${isChecked ? 'checked' : ''}>
                 <span class="text-[11px] font-medium ${isChecked ? 'text-emerald-400 font-bold' : 'text-slate-400'}">Seç</span>
               </label>
+              
               <div class="flex items-center gap-1.5">
+                ${isTrending ? '<span class="text-[10px] bg-rose-500/20 text-rose-300 border border-rose-500/30 px-1.5 py-0.5 rounded font-bold animate-pulse"><i class="fa-solid fa-fire text-rose-400 mr-0.5"></i>Trend</span>' : ''}
+                
+                <!-- RATING / OKUNMA ROZETİ -->
+                <span id="viewsBadge_${item._id}" class="text-[10px] bg-slate-900 text-slate-300 border border-slate-700 px-1.5 py-0.5 rounded font-mono font-semibold" title="${viewsCount} kişi okudu">
+                  <i class="fa-regular fa-eye text-[10px] text-emerald-400 mr-0.5"></i>${viewsCount}
+                </span>
+
                 <span class="text-[10px] bg-slate-700/60 text-sky-300 px-1.5 py-0.5 rounded font-medium">${item.category || 'Gündem'}</span>
                 <span class="font-mono text-emerald-300 font-semibold text-[11px] flex items-center gap-1">
                   <i class="fa-regular fa-clock text-[10px]"></i> ${timeStr}
@@ -623,7 +667,7 @@
               </div>
               
               <h2 class="text-sm font-semibold text-slate-100 group-hover:text-emerald-400 transition line-clamp-2 mb-2 leading-snug">
-                <a href="${item.link}" target="_blank" rel="noopener noreferrer">${item.title}</a>
+                <a href="${item.link}" target="_blank" rel="noopener noreferrer" onclick="trackNewsClick('${item._id}')">${item.title}</a>
               </h2>
               
               ${item.description ? `<p class="text-xs text-slate-400 line-clamp-3 mb-3 leading-relaxed">${item.description.replace(/<[^>]*>?/gm, '')}</p>` : ''}
@@ -633,7 +677,7 @@
               <div>
                 ${hasAlarm ? '<span class="text-[10px] bg-amber-500/20 text-amber-300 px-1.5 py-0.5 rounded font-semibold border border-amber-500/30">⚠️ ALARM</span>' : ''}
               </div>
-              <a href="${item.link}" target="_blank" rel="noopener noreferrer" class="text-slate-300 hover:text-emerald-400 font-medium inline-flex items-center gap-1 transition">
+              <a href="${item.link}" target="_blank" rel="noopener noreferrer" onclick="trackNewsClick('${item._id}')" class="text-slate-300 hover:text-emerald-400 font-medium inline-flex items-center gap-1 transition">
                 Habere Git <i class="fa-solid fa-arrow-up-right-from-square text-[9px]"></i>
               </a>
             </div>
@@ -661,7 +705,7 @@
 
     async function loadNews() {
       try {
-        let url = `/api/news?limit=120`;
+        let url = `/api/news?limit=120&sort=${currentSortMode}`;
         if (selectedCategory && selectedCategory !== 'Tümü') {
           url += `&category=${encodeURIComponent(selectedCategory)}`;
         }

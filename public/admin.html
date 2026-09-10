@@ -3,13 +3,13 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Haber Takip - Yönetim & Personel Paneli</title>
+  <title>Haber Takip - Yönetim & Analitik Paneli</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
 <body class="bg-slate-900 text-slate-100 min-h-screen flex flex-col font-sans pb-10">
 
-  <!-- GİRİŞ EKRANI -->
+  <!-- GİRİŞ EKRANI (MODAL) -->
   <div id="loginModal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
     <div class="bg-slate-800 border border-slate-700 w-full max-w-md rounded-2xl p-6 shadow-2xl">
       <div class="text-center mb-6">
@@ -46,13 +46,13 @@
     <div class="max-w-6xl mx-auto flex justify-between items-center">
       <div class="flex items-center gap-3">
         <div class="bg-blue-500/20 p-2 rounded-lg border border-blue-500/30">
-          <i class="fa-solid fa-sliders text-blue-400 text-xl"></i>
+          <i class="fa-solid fa-chart-line text-blue-400 text-xl"></i>
         </div>
         <div>
           <h1 class="text-lg font-bold tracking-wide flex items-center gap-2">
-            Yönetim Paneli <span id="userBadge" class="text-[11px] bg-slate-700 text-emerald-400 px-2 py-0.5 rounded-md font-normal"></span>
+            Yönetim & Rating Paneli <span id="userBadge" class="text-[11px] bg-slate-700 text-emerald-400 px-2 py-0.5 rounded-md font-normal"></span>
           </h1>
-          <p class="text-[11px] text-slate-400">Kaynaklar, kategoriler, talepler ve reklam yönetimi</p>
+          <p class="text-[11px] text-slate-400">Canlı okunma ölçümleri, kaynaklar ve sistem ayarları</p>
         </div>
       </div>
       <div class="flex items-center gap-2">
@@ -69,7 +69,103 @@
   <main class="flex-1 max-w-6xl w-full mx-auto p-6 space-y-8">
     <div id="alertBox" class="hidden p-3.5 rounded-xl text-xs font-medium transition"></div>
 
-    <!-- 1. BÖLÜM: KULLANICI İSTEK & TALEPLERİ -->
+    <!-- 1. BÖLÜM: CANLI RATING & ANALİTİK ÖLÇÜM RAPORU -->
+    <section class="bg-slate-800/80 border border-slate-700 rounded-2xl p-6 shadow-lg">
+      <div class="flex flex-wrap justify-between items-center mb-6 pb-4 border-b border-slate-700 gap-3">
+        <div>
+          <h2 class="text-base font-bold text-slate-100 flex items-center gap-2">
+            <i class="fa-solid fa-fire text-rose-500"></i> Canlı Haber Rating & Etkileşim Analitiği
+          </h2>
+          <p class="text-xs text-slate-400 mt-0.5">Ziyaretçilerin hangi haberleri, hangi kaynakları ve hangi kategorileri ne kadar okuduğunu ölçen canlı sistem.</p>
+        </div>
+        <button id="refreshRatingsBtn" class="bg-slate-700 hover:bg-slate-600 text-slate-200 text-xs px-3 py-1.5 rounded-lg transition flex items-center gap-1.5">
+          <i class="fa-solid fa-arrows-rotate"></i> Analitiği Güncelle
+        </button>
+      </div>
+
+      <!-- Özet Sayaç Kartları -->
+      <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
+        <div class="bg-slate-900/80 border border-slate-700/80 p-4 rounded-xl flex items-center gap-4">
+          <div class="w-12 h-12 rounded-lg bg-emerald-500/20 text-emerald-400 flex items-center justify-center text-xl border border-emerald-500/30">
+            <i class="fa-solid fa-eye"></i>
+          </div>
+          <div>
+            <div class="text-[11px] text-slate-400 uppercase font-semibold">Toplam Okunma / Hit</div>
+            <div id="totalViewsDisplay" class="text-2xl font-bold font-mono text-emerald-400">0</div>
+          </div>
+        </div>
+
+        <div class="bg-slate-900/80 border border-slate-700/80 p-4 rounded-xl flex items-center gap-4">
+          <div class="w-12 h-12 rounded-lg bg-blue-500/20 text-blue-400 flex items-center justify-center text-xl border border-blue-500/30">
+            <i class="fa-solid fa-newspaper"></i>
+          </div>
+          <div>
+            <div class="text-[11px] text-slate-400 uppercase font-semibold">Taranan Toplam Haber</div>
+            <div id="totalNewsDisplay" class="text-2xl font-bold font-mono text-blue-400">0</div>
+          </div>
+        </div>
+
+        <div class="bg-slate-900/80 border border-slate-700/80 p-4 rounded-xl flex items-center gap-4">
+          <div class="w-12 h-12 rounded-lg bg-purple-500/20 text-purple-400 flex items-center justify-center text-xl border border-purple-500/30">
+            <i class="fa-solid fa-trophy"></i>
+          </div>
+          <div>
+            <div class="text-[11px] text-slate-400 uppercase font-semibold">Lider Haber Kaynağı</div>
+            <div id="topSourceDisplay" class="text-base font-bold text-purple-300 truncate max-w-[150px]">-</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Rating Detay Tabloları -->
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+        <!-- En Çok Okunan İlk 10 Haber -->
+        <div class="lg:col-span-8 bg-slate-900/60 p-4 rounded-xl border border-slate-700/60">
+          <h3 class="text-xs font-bold text-slate-200 mb-3 flex items-center gap-1.5">
+            <i class="fa-solid fa-arrow-trend-up text-emerald-400"></i> En Çok Tıklanan / Okunan Haberler (Top 10)
+          </h3>
+          <div class="overflow-x-auto">
+            <table class="w-full text-left text-xs">
+              <thead>
+                <tr class="text-slate-400 border-b border-slate-800 text-[11px]">
+                  <th class="py-2 px-2">#</th>
+                  <th class="py-2 px-2">Haber Başlığı</th>
+                  <th class="py-2 px-2">Kaynak</th>
+                  <th class="py-2 px-2 text-right">Rating (Okunma)</th>
+                </tr>
+              </thead>
+              <tbody id="topNewsTableBody" class="divide-y divide-slate-800/60">
+                <tr><td colspan="4" class="text-center py-4 text-slate-500">Yükleniyor...</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Kaynak ve Kategori Popülerlik Sıralaması -->
+        <div class="lg:col-span-4 space-y-4">
+          <!-- Kaynak Rating -->
+          <div class="bg-slate-900/60 p-4 rounded-xl border border-slate-700/60">
+            <h3 class="text-xs font-bold text-slate-200 mb-3 flex items-center gap-1.5">
+              <i class="fa-solid fa-ranking-star text-amber-400"></i> Kaynak İlgi Sıralaması
+            </h3>
+            <div id="sourceRatingsContainer" class="space-y-2 text-xs">
+              <span class="text-slate-500 italic text-[11px]">Hesaplanıyor...</span>
+            </div>
+          </div>
+
+          <!-- Kategori Rating -->
+          <div class="bg-slate-900/60 p-4 rounded-xl border border-slate-700/60">
+            <h3 class="text-xs font-bold text-slate-200 mb-3 flex items-center gap-1.5">
+              <i class="fa-solid fa-layer-group text-sky-400"></i> Kategori İlgi Dağılımı
+            </h3>
+            <div id="categoryRatingsContainer" class="space-y-2 text-xs">
+              <span class="text-slate-500 italic text-[11px]">Hesaplanıyor...</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 2. BÖLÜM: KULLANICI İSTEK & TALEPLERİ -->
     <section class="bg-slate-800/80 border border-slate-700 rounded-2xl p-6 shadow-lg">
       <div class="mb-4 pb-3 border-b border-slate-700 flex justify-between items-center">
         <div>
@@ -101,7 +197,7 @@
       </div>
     </section>
 
-    <!-- 2. BÖLÜM: DİNAMİK KATEGORİ YÖNETİMİ -->
+    <!-- 3. BÖLÜM: DİNAMİK KATEGORİ YÖNETİMİ -->
     <section class="bg-slate-800/80 border border-slate-700 rounded-2xl p-6 shadow-lg">
       <div class="mb-5 pb-4 border-b border-slate-700">
         <h2 class="text-base font-bold text-slate-100 flex items-center gap-2">
@@ -120,7 +216,6 @@
         </button>
       </form>
 
-      <!-- Mevcut Kategoriler Listesi -->
       <div>
         <span class="block text-xs text-slate-400 mb-2 font-medium">Aktif Kategoriler:</span>
         <div id="categoryChipsContainer" class="flex flex-wrap gap-2">
@@ -129,7 +224,7 @@
       </div>
     </section>
 
-    <!-- 3. BÖLÜM: RSS & HTML WEB KAYNAKLARI YÖNETİMİ -->
+    <!-- 4. BÖLÜM: RSS & HTML WEB KAYNAKLARI YÖNETİMİ -->
     <section class="bg-slate-800/80 border border-slate-700 rounded-2xl p-6 shadow-lg">
       <div class="flex flex-wrap justify-between items-center mb-5 pb-4 border-b border-slate-700 gap-3">
         <div>
@@ -158,7 +253,6 @@
         <div class="md:col-span-2">
           <label class="block text-[11px] text-slate-400 mb-1">Kategori</label>
           <select id="srcCategory" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-2.5 py-1.5 text-xs text-slate-200 focus:outline-none focus:border-emerald-500">
-            <!-- Kategoriler dinamik yüklenir -->
           </select>
         </div>
         <div class="md:col-span-3">
@@ -171,7 +265,7 @@
           </button>
         </div>
         <div id="htmlSelectorDiv" class="hidden md:col-span-12 text-xs">
-          <label class="block text-[11px] text-amber-400 mb-1">Özel CSS Seçici (Opsiyonel - Boş bırakırsanız sistem manşet ve başlık linklerini otomatik tarar):</label>
+          <label class="block text-[11px] text-amber-400 mb-1">Özel CSS Seçici (Opsiyonel):</label>
           <input type="text" id="srcSelector" placeholder="örn: .headline-card a, .manset-listesi a, article h2 a" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-1.5 text-slate-200 text-xs">
         </div>
       </form>
@@ -195,7 +289,7 @@
       </div>
     </section>
 
-    <!-- 4. BÖLÜM: ŞİFRE DEĞİŞTİRME -->
+    <!-- 5. BÖLÜM: ŞİFRE DEĞİŞTİRME -->
     <section class="bg-slate-800/80 border border-slate-700 rounded-2xl p-6 shadow-lg">
       <div class="mb-4 pb-3 border-b border-slate-700">
         <h2 class="text-base font-bold text-slate-100 flex items-center gap-2">
@@ -221,7 +315,7 @@
       </form>
     </section>
 
-    <!-- 5. BÖLÜM: PERSONEL YÖNETİMİ (Admin Only) -->
+    <!-- 6. BÖLÜM: PERSONEL YÖNETİMİ (Admin Only) -->
     <section id="personnelSection" class="bg-slate-800/80 border border-slate-700 rounded-2xl p-6 shadow-lg">
       <div class="mb-5 pb-4 border-b border-slate-700">
         <h2 class="text-base font-bold text-slate-100 flex items-center gap-2">
@@ -267,7 +361,7 @@
       </div>
     </section>
 
-    <!-- 6. BÖLÜM: REKLAM ALANLARI -->
+    <!-- 7. BÖLÜM: REKLAM ALANLARI -->
     <section class="bg-slate-800/80 border border-slate-700 rounded-2xl p-6 shadow-lg">
       <div class="mb-5 pb-4 border-b border-slate-700">
         <h2 class="text-base font-bold text-slate-100 flex items-center gap-2">
@@ -387,6 +481,7 @@
         if (userRole !== 'admin') {
           document.getElementById('personnelSection').classList.add('hidden');
         }
+        fetchRatings();
         fetchRequests();
         fetchCategories();
         fetchSources();
@@ -443,7 +538,71 @@
       };
     }
 
-    // --- KATEGORİ YÖNETİMİ ---
+    // --- 1. RATING & ANALİTİK VERİLERİNİ ÇEKME ---
+    async function fetchRatings() {
+      try {
+        const res = await fetch('/api/analytics/ratings', { headers: authHeaders() });
+        const d = await res.json();
+        if (!d.success || !d.data) return;
+
+        const data = d.data;
+        document.getElementById('totalViewsDisplay').textContent = Number(data.totalViews || 0).toLocaleString('tr-TR');
+        document.getElementById('totalNewsDisplay').textContent = Number(data.totalNewsCount || 0).toLocaleString('tr-TR');
+
+        if (data.sourceRatings && data.sourceRatings.length > 0) {
+          document.getElementById('topSourceDisplay').textContent = data.sourceRatings[0]._id;
+        }
+
+        // Top 10 Haber Tablosu
+        const topNewsTbody = document.getElementById('topNewsTableBody');
+        if (!data.topNews || data.topNews.length === 0) {
+          topNewsTbody.innerHTML = '<tr><td colspan="4" class="text-center py-4 text-slate-500">Henüz tıklanma verisi oluşmadı.</td></tr>';
+        } else {
+          topNewsTbody.innerHTML = data.topNews.map((n, i) => `
+            <tr class="hover:bg-slate-800/40 transition">
+              <td class="py-2 px-2 font-mono font-bold ${i < 3 ? 'text-amber-400' : 'text-slate-500'}">${i + 1}</td>
+              <td class="py-2 px-2 font-medium text-slate-200 line-clamp-1">
+                <a href="${n.link}" target="_blank" class="hover:text-emerald-400 transition">${n.title}</a>
+              </td>
+              <td class="py-2 px-2 text-slate-400 whitespace-nowrap text-[11px]">${n.source}</td>
+              <td class="py-2 px-2 text-right font-mono font-bold text-emerald-400 whitespace-nowrap">
+                <i class="fa-solid fa-eye text-[10px] text-slate-500 mr-1"></i>${n.views || 0}
+              </td>
+            </tr>
+          `).join('');
+        }
+
+        // Kaynak İlgi Sıralaması
+        const srcContainer = document.getElementById('sourceRatingsContainer');
+        if (!data.sourceRatings || data.sourceRatings.length === 0) {
+          srcContainer.innerHTML = '<span class="text-slate-500 text-[11px]">Kayıt yok.</span>';
+        } else {
+          srcContainer.innerHTML = data.sourceRatings.map(s => `
+            <div class="flex justify-between items-center bg-slate-950/60 px-3 py-1.5 rounded-lg border border-slate-800">
+              <span class="font-medium text-slate-300 truncate max-w-[140px]">${s._id}</span>
+              <span class="font-mono text-emerald-400 font-semibold text-[11px]">${s.totalViews} okunma</span>
+            </div>
+          `).join('');
+        }
+
+        // Kategori İlgi Dağılımı
+        const catContainer = document.getElementById('categoryRatingsContainer');
+        if (!data.categoryRatings || data.categoryRatings.length === 0) {
+          catContainer.innerHTML = '<span class="text-slate-500 text-[11px]">Kayıt yok.</span>';
+        } else {
+          catContainer.innerHTML = data.categoryRatings.map(c => `
+            <div class="flex justify-between items-center bg-slate-950/60 px-3 py-1.5 rounded-lg border border-slate-800">
+              <span class="font-medium text-sky-300">${c._id}</span>
+              <span class="font-mono text-sky-400 font-semibold text-[11px]">${c.totalViews} okunma</span>
+            </div>
+          `).join('');
+        }
+      } catch (err) {}
+    }
+
+    document.getElementById('refreshRatingsBtn').addEventListener('click', fetchRatings);
+
+    // --- 2. KATEGORİ YÖNETİMİ ---
     async function fetchCategories() {
       try {
         const res = await fetch('/api/categories');
@@ -531,7 +690,7 @@
       }
     });
 
-    // --- KULLANICI TALEPLERİ ---
+    // --- 3. KULLANICI TALEPLERİ ---
     async function fetchRequests() {
       try {
         const res = await fetch('/api/requests', { headers: authHeaders() });
@@ -571,7 +730,7 @@
 
     document.getElementById('refreshReqsBtn').addEventListener('click', fetchRequests);
 
-    // Kendi Şifresini Değiştirme
+    // --- 4. KENDİ ŞİFRESİNİ DEĞİŞTİRME ---
     document.getElementById('changePasswordForm').addEventListener('submit', async (e) => {
       e.preventDefault();
       const currentPassword = document.getElementById('currentPassword').value.trim();
@@ -596,7 +755,7 @@
       }
     });
 
-    // Personel Listele
+    // --- 5. PERSONEL YÖNETİMİ (ADMIN ONLY) ---
     async function fetchStaff() {
       try {
         const res = await fetch('/api/users', { headers: authHeaders() });
@@ -688,7 +847,7 @@
       } catch (e) {}
     };
 
-    // Kaynaklar (RSS & HTML Siteler)
+    // --- 6. KAYNAKLAR (RSS & HTML SİTELER) ---
     async function fetchSources() {
       try {
         const res = await fetch('/api/sources');
@@ -773,7 +932,7 @@
       } catch (e) {}
     });
 
-    // Reklamlar
+    // --- 7. REKLAM YÖNETİMİ ---
     async function loadAds() {
       try {
         const res = await fetch('/api/ads');
@@ -829,6 +988,7 @@
     document.getElementById('saveLeftAdBtn').addEventListener('click', () => saveAd('left'));
     document.getElementById('saveRightAdBtn').addEventListener('click', () => saveAd('right'));
 
+    // Başlat
     checkAuth();
   </script>
 </body>

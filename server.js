@@ -33,16 +33,18 @@ const newsSchema = new mongoose.Schema({
   pubDate: { type: Date, default: Date.now },
   source: { type: String, default: 'Genel' },
   category: { type: String, default: 'Gündem', index: true },
+  views: { type: Number, default: 0, index: true }, // RATING: Okunma / Tıklanma Sayısı
   createdAt: { type: Date, default: Date.now }
 });
 newsSchema.index({ pubDate: -1, createdAt: -1 });
+newsSchema.index({ views: -1 });
 const News = mongoose.model('News', newsSchema);
 
 const sourceSchema = new mongoose.Schema({
   name: { type: String, required: true, unique: true },
-  type: { type: String, enum: ['rss', 'html'], default: 'rss' }, // rss veya html web kazıma
-  url: { type: String, required: true }, // RSS linki veya Site ana/haber sayfası URL'si
-  selector: { type: String, default: '' }, // HTML kazıma için özel css seçici (opsiyonel)
+  type: { type: String, enum: ['rss', 'html'], default: 'rss' },
+  url: { type: String, required: true },
+  selector: { type: String, default: '' },
   category: { type: String, default: 'Gündem' },
   isActive: { type: Boolean, default: true },
   createdAt: { type: Date, default: Date.now }
@@ -108,7 +110,6 @@ if (MONGODB_URI) {
     .then(async () => {
       console.log('MongoDB Atlas bağlantısı başarılı.');
 
-      // Admin Kontrolü
       const adminExist = await User.findOne({ username: 'admin' });
       if (!adminExist) {
         const hashedPassword = await bcrypt.hash('123456', 10);
@@ -121,7 +122,6 @@ if (MONGODB_URI) {
         console.log('Süper Admin oluşturuldu: admin / 123456');
       }
 
-      // Varsayılan Kategoriler
       const catCount = await Category.countDocuments();
       if (catCount === 0) {
         for (const c of defaultCategories) {
@@ -129,13 +129,11 @@ if (MONGODB_URI) {
         }
       }
 
-      // Varsayılan Kaynaklar
       const srcCount = await Source.countDocuments();
       if (srcCount === 0) {
         await Source.insertMany(initialSources);
       }
 
-      // Reklam Alanları
       for (const pos of ['left', 'right']) {
         const exist = await Ad.findOne({ position: pos });
         if (!exist) {
@@ -164,9 +162,7 @@ function extractText(val) {
   return String(val).trim();
 }
 
-// 3. TARAMA MOTORLARI (RSS + HTML SCRAPER)
-
-// A) RSS Çekici
+// 3. TARAMA MOTORLARI
 async function fetchRssFeed(sourceName, url, categoryName = 'Gündem') {
   try {
     const response = await axios.get(url, {
@@ -207,6 +203,7 @@ async function fetchRssFeed(sourceName, url, categoryName = 'Gündem') {
             pubDate: parsedDate,
             source: sourceName,
             category: categoryName,
+            views: 0,
             createdAt: new Date()
           }
         },
@@ -218,7 +215,6 @@ async function fetchRssFeed(sourceName, url, categoryName = 'Gündem') {
   }
 }
 
-// B) HTML Web Kazıyıcı (Scraper)
 async function scrapeHtmlSite(sourceName, siteUrl, categoryName = 'Gündem', customSelector = '') {
   try {
     const response = await axios.get(siteUrl, {
@@ -236,7 +232,6 @@ async function scrapeHtmlSite(sourceName, siteUrl, categoryName = 'Gündem', cus
     const scrapedList = [];
     const seenLinks = new Set();
 
-    // Seçici belirtilmişse onu kullan, yoksa genel haber link kalıplarını tara
     const targetSelector = customSelector && customSelector.trim() 
       ? customSelector 
       : 'article a, .news-item a, .card a, h2 a, h3 a, a[href*="/haber/"], a[href*="/son-dakika/"], a[href*=".html"]';
@@ -249,7 +244,6 @@ async function scrapeHtmlSite(sourceName, siteUrl, categoryName = 'Gündem', cus
 
       if (!title || title.length < 15 || !href) return;
 
-      // Göreceli URL'leri (ör: /haber/123) tam URL yap
       if (href.startsWith('/')) {
         href = origin + href;
       } else if (!href.startsWith('http')) {
@@ -266,7 +260,8 @@ async function scrapeHtmlSite(sourceName, siteUrl, categoryName = 'Gündem', cus
         description: '',
         pubDate: new Date(),
         source: sourceName,
-        category: categoryName
+        category: categoryName,
+        views: 0
       });
     });
 
@@ -282,6 +277,7 @@ async function scrapeHtmlSite(sourceName, siteUrl, categoryName = 'Gündem', cus
             pubDate: item.pubDate,
             source: item.source,
             category: item.category,
+            views: 0,
             createdAt: new Date()
           }
         },
@@ -314,7 +310,64 @@ async function fetchAllSources() {
 
 // 4. API ENDPOINTLERİ
 
-// --- KATEGORİ YÖNETİMİ API'LERİ ---
+// --- RATING & ETKİLEŞİM API'LERİ ---
+// Habere Tıklanma / Okunma Sayısı Ekle
+app.post('/api/news/:id/click', async (req, res) => {
+  try {
+    const news = await News.findByIdAndUpdate(
+      req.params.id,
+      { $inc: { views: 1 } },
+      { new: true }
+    );
+    if (!news) return res.status(404).json({ success: false, message: 'Haber bulunamadı' });
+    res.json({ success: true, views: news.views });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
+// Admin Paneli Rating & Analitik Raporu
+app.get('/api/analytics/ratings', authMiddleware, async (req, res) => {
+  try {
+    // 1. En çok okunan ilk 15 haber
+    const topNews = await News.find().sort({ views: -1, pubDate: -1 }).limit(15);
+
+    // 2. Kaynak bazlı rating (Hangi gazete/ajans toplam kaç okunma aldı?)
+    const sourceRatings = await News.aggregate([
+      { $group: { _id: "$source", totalViews: { $sum: "$views" }, newsCount: { $sum: 1 } } },
+      { $sort: { totalViews: -1 } },
+      { $limit: 10 }
+    ]);
+
+    // 3. Kategori bazlı rating (Hangi kategori daha popüler?)
+    const categoryRatings = await News.aggregate([
+      { $group: { _id: "$category", totalViews: { $sum: "$views" }, newsCount: { $sum: 1 } } },
+      { $sort: { totalViews: -1 } }
+    ]);
+
+    // 4. Toplam istatistikler
+    const totalViewsData = await News.aggregate([
+      { $group: { _id: null, sumViews: { $sum: "$views" } } }
+    ]);
+    const totalViews = totalViewsData[0]?.sumViews || 0;
+    const totalNewsCount = await News.countDocuments();
+
+    res.json({
+      success: true,
+      data: {
+        totalViews,
+        totalNewsCount,
+        topNews,
+        sourceRatings,
+        categoryRatings
+      }
+    });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
+// --- KATEGORİ API'LERİ ---
 app.get('/api/categories', async (req, res) => {
   try {
     const categories = await Category.find().sort({ name: 1 });
@@ -451,7 +504,7 @@ app.delete('/api/users/:id', authMiddleware, async (req, res) => {
   }
 });
 
-// --- KULLANICI TALEP & İSTEK API'LERİ ---
+// --- KULLANICI TALEPLERİ ---
 app.post('/api/requests', async (req, res) => {
   try {
     const { email, subject, message } = req.body;
@@ -503,18 +556,20 @@ app.get('/api/news', async (req, res) => {
       ];
     }
 
-    const news = await News.find(query).sort({ pubDate: -1, createdAt: -1 }).limit(limit).maxTimeMS(4000);
+    // Sıralama modu: varsayılan tarih, veya rating (popülerliğe göre)
+    const sortField = req.query.sort === 'rating' ? { views: -1, pubDate: -1 } : { pubDate: -1, createdAt: -1 };
+
+    const news = await News.find(query).sort(sortField).limit(limit).maxTimeMS(4000);
     res.json({ success: true, count: news.length, data: news });
   } catch (err) {
     res.status(500).json({ success: false, error: err.message, data: [] });
   }
 });
 
-// --- KAYNAK YÖNETİMİ API'LERİ (RSS & HTML) ---
+// --- KAYNAK YÖNETİMİ ---
 app.get('/api/sources', async (req, res) => {
   try {
     const sources = await Source.find().sort({ category: 1, name: 1 });
-    // Eski kaynaklarda url yoksa rss alanını url olarak eşitle
     const mapped = sources.map(s => {
       const doc = s.toObject();
       if (!doc.url && doc.rss) doc.url = doc.rss;
@@ -569,7 +624,7 @@ app.patch('/api/sources/:id/toggle', authMiddleware, async (req, res) => {
   }
 });
 
-// --- REKLAM YÖNETİMİ ---
+// --- REKLAMLAR ---
 app.get('/api/ads', async (req, res) => {
   try {
     const ads = await Ad.find();
