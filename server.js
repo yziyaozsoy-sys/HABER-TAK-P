@@ -820,10 +820,45 @@ app.get('/api/sync', async (req, res) => {
   }
 });
 
-// Her 3 dakikada bir otomatik tara
-setInterval(fetchAllSources, 3 * 60 * 1000);
-// Sunucu açıldıktan 3 saniye sonra ilk taramayı başlat
-setTimeout(fetchAllSources, 3000);
+/let isSyncing = false;
+async function fetchAllSources() {
+  if (isSyncing) {
+    console.log("Tarama zaten devam ediyor, atlandı.");
+    return;
+  }
+  isSyncing = true;
+  console.log("--> [TARAMA BAŞLADI] Kaynaklar sırayla taranıyor...");
+
+  try {
+    const sources = await Source.find({ isActive: true }).lean();
+    
+    // Hepsine aynı anda saldırıp sunucuyu kilitlemek yerine SIRAYLA tara!
+    for (const src of sources) {
+      const targetUrl = src.url || src.rss;
+      if (!targetUrl) continue;
+
+      try {
+        if (src.type === 'html') {
+          await scrapeHtmlSite(src.name, targetUrl, src.category || 'Gündem', src.selector || '', src.lang || 'tr');
+        } else {
+          await fetchRssFeed(src.name, targetUrl, src.category || 'Gündem', src.lang || 'tr');
+        }
+      } catch (err) {
+        console.error(`[HATA] ${src.name}:`, err.message);
+      }
+      // Her kaynak arasında sunucuya ve Mongo'ya 500ms nefes aldır
+      await new Promise(r => setTimeout(r, 500));
+    }
+    console.log("<-- [TARAMA BİTTİ] Tüm aktif kaynaklar güncellendi.");
+  } catch (err) {
+    console.error("Genel tarama hatası:", err.message);
+  } finally {
+    isSyncing = false;
+  }
+}
+
+// 3 dakika yerine 15 dakikada bir hafif tarama
+setInterval(fetchAllSources, 15 * 60 * 1000);
 
 app.listen(PORT, () => {
   console.log(`Haber Takip Web Sunucusu http://localhost:${PORT} portunda çalışıyor.`);
