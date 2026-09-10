@@ -764,7 +764,7 @@
       }
     }
 
-    // Haberleri Canlı Sunucudan Çeken Fonksiyon
+       // Haberleri Canlı Sunucudan Çeken Fonksiyon
     async function loadNews() {
       try {
         let url = `/api/news?limit=120&sort=${currentSortMode}`;
@@ -773,13 +773,25 @@
         }
         const search = document.getElementById('searchInput').value.trim();
         if (search) url += `&search=${encodeURIComponent(search)}`;
-        if (selectedSources.size > 0) url += `&sources=${Array.from(selectedSources).join(',')}`;
+        
+        // Eğer tüm kaynaklar zaten seçiliyse &sources parametresi gönderme (Böylece filtreye takılmaz, tüm günceller akar)
+        const totalActiveSources = allSourcesList.filter(s => s.isActive).length;
+        if (selectedSources.size > 0 && selectedSources.size < totalActiveSources) {
+          url += `&sources=${encodeURIComponent(Array.from(selectedSources).join(','))}`;
+        }
 
         const res = await fetch(url);
         const data = await res.json();
         if (!data.success) throw new Error(data.error || 'Veri çekilemedi');
 
-        currentNewsList = data.data || [];
+        let news = data.data || [];
+
+        // EN YENİ SAAT EN BAŞTA OLSUN DİYE KESİN İSTEMCİ SIRALAMASI
+        if (currentSortMode === 'latest') {
+          news.sort((a, b) => new Date(b.pubDate || b.createdAt) - new Date(a.pubDate || a.createdAt));
+        }
+
+        currentNewsList = news;
         renderNews();
       } catch (err) {
         grid.innerHTML = `<div class="col-span-full text-center py-10 text-rose-400 text-xs">Hata: ${err.message}</div>`;
@@ -914,12 +926,12 @@
       loadNews().finally(() => setTimeout(() => icon.classList.remove('fa-spin'), 600));
     });
 
-    // Kaynakları Tara Butonu
+       // Kaynakları Tara Butonu
     syncBtn.addEventListener('click', async () => {
       syncBtn.disabled = true;
       syncIcon.className = 'fa-solid fa-circle-notch fa-spin';
       syncText.textContent = 'Taranıyor...';
-      showAlert('Kaynaklar taranıyor (RSS & HTML Siteler)...', 'info');
+      showAlert('Kaynaklar taranıyor...', 'info');
 
       try {
         await fetch('/api/sync');
@@ -929,7 +941,7 @@
           syncText.textContent = 'Kaynakları Tara';
           syncBtn.disabled = false;
           showAlert('Tüm kaynaklar güncellendi.', 'success');
-        }, 5000);
+        }, 3000);
       } catch (e) {
         syncIcon.className = 'fa-solid fa-triangle-exclamation';
         syncText.textContent = 'Hata!';
