@@ -4,6 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Canlı Haber Bandı - Y. Ziya Özsoy</title>
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg?v=6">
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <style>
@@ -127,6 +128,23 @@
     let selectedCategory = urlParams.get('category') || 'Tümü';
     catSelect.value = selectedCategory;
 
+    // Dinamik Kategorileri Getir (Varsa Güncelle)
+    async function loadDynamicCategories() {
+      try {
+        const res = await fetch('/api/categories');
+        const data = await res.json();
+        if (data.success && data.data && data.data.length > 0) {
+          let cats = ['Tümü'];
+          data.data.forEach(c => {
+            if (!cats.includes(c.name)) cats.push(c.name);
+          });
+          catSelect.innerHTML = cats.map(c => `
+            <option value="${c}" class="bg-slate-900 text-slate-200" ${c === selectedCategory ? 'selected' : ''}>${c.toUpperCase()}</option>
+          `).join('');
+        }
+      } catch (e) {}
+    }
+
     catSelect.addEventListener('change', () => {
       selectedCategory = catSelect.value;
       loadNews();
@@ -172,7 +190,7 @@
 
     async function loadNews() {
       try {
-        let url = `/api/news?limit=50`;
+        let url = `/api/news?limit=60`;
         if (selectedCategory && selectedCategory !== 'Tümü') {
           url += `&category=${encodeURIComponent(selectedCategory)}`;
         }
@@ -188,11 +206,20 @@
         tickerTrack.innerHTML = newsItems.map(item => {
           const timeStr = new Date(item.pubDate || item.createdAt).toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' });
           const fav = getFaviconUrl(item.link);
+          
+          // Çeviri Rozeti (Yabancı kaynak Türkçe'ye çevrildiyse göster)
+          const translateBadge = item.isTranslated 
+            ? `<span class="inline-flex items-center gap-1 bg-sky-950/80 text-sky-400 border border-sky-600/50 text-[0.75em] px-1.5 py-0.2 rounded font-bold" title="Haber otomatik olarak Türkçeye çevrildi">
+                 <i class="fa-solid fa-language text-[11px]"></i> TR
+               </span>`
+            : '';
+
           return `
-            <a href="${item.link}" target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-2.5 hover:text-emerald-400 transition font-medium group">
+            <a href="${item.link}" target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-2 hover:text-emerald-400 transition font-medium group">
               <img src="${fav}" alt="" class="w-4 h-4 object-contain rounded bg-slate-900 border border-slate-700">
               <span class="text-emerald-400 font-bold font-mono text-[0.85em]">[${timeStr}]</span>
               <span class="text-slate-300 font-semibold text-[0.85em] bg-slate-800 px-2 py-0.5 rounded border border-slate-700/60">${item.source}</span>
+              ${translateBadge}
               <span class="group-hover:underline text-slate-100">${item.title}</span>
               <span class="text-slate-600 font-bold ml-4">✦</span>
             </a>
@@ -203,6 +230,7 @@
       }
     }
 
+    loadDynamicCategories();
     setTickerSpeed(localStorage.getItem('haber_ticker_speed') || 'normal');
     loadNews();
     setInterval(loadNews, 60000);

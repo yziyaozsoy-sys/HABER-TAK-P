@@ -1,4 +1,4 @@
-﻿<<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="tr">
 <head>
   <meta charset="UTF-8">
@@ -9,9 +9,8 @@
   <meta name="description" content="Türkiye ve dünyadan anlık son dakika haberleri, güncel manşetler ve tarafsız canlı haber takibi tek adreste.">
   <meta name="keywords" content="haber takip, son dakika, haberler, güncel haber, ekonomi, spor, gündem, manşetler">
 
-   <!-- GOOGLE & TARAYICI LOGOSU (FAVICON) -->
-    <link rel="icon" type="image/x-icon" href="/favicon.ico?v=5">
-
+  <!-- GOOGLE & TARAYICI LOGOSU (FAVICON) -->
+  <link rel="icon" type="image/x-icon" href="/favicon.ico?v=5">
 
   <!-- SOSYAL MEDYA PAYLAŞIM ÖNİZLEMESİ -->
   <meta property="og:title" content="Haber Takip | Türkiye ve Dünyadan Anlık Son Dakika Haberleri">
@@ -59,6 +58,7 @@
   </style>
 </head>
 <body class="bg-slate-900 text-slate-100 min-h-screen flex flex-col font-sans pb-24">
+
   <!-- KULLANICI TALEP & İSTEK MODALI -->
   <div id="requestModal" class="hidden fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
     <div class="bg-slate-800 border border-slate-700 w-full max-w-md rounded-2xl p-6 shadow-2xl relative">
@@ -104,7 +104,7 @@
           <i class="fa-solid fa-bolt text-emerald-400 text-xl"></i>
         </div>
         <div>
-                 <a href="/" class="flex items-center gap-3 hover:opacity-90 transition">
+          <a href="/" class="flex items-center gap-3 hover:opacity-90 transition">
             <img src="/favicon.svg" alt="Haber Takip" class="w-10 h-10 rounded-xl shadow-md border border-slate-700 bg-slate-800 p-0.5">
             <div class="flex flex-col">
               <div class="flex items-center gap-2">
@@ -126,7 +126,7 @@
           <input type="text" id="searchInput" placeholder="Başlık veya özette ara..." class="w-full bg-slate-950 border border-slate-700 rounded-lg pl-8 pr-3 py-1.5 text-xs text-slate-200 placeholder-slate-500 focus:outline-none focus:border-emerald-500">
         </div>
 
-        <!-- Sıralama Modu: Son Dakika vs Çok Okunanlar (Rating) -->
+        <!-- Sıralama Modu -->
         <select id="sortModeSelect" class="bg-slate-950 border border-slate-700 rounded-lg px-2.5 py-1.5 text-xs text-emerald-400 font-semibold focus:outline-none cursor-pointer shrink-0">
           <option value="latest">En Son Gelen</option>
           <option value="rating">🔥 Çok Okunanlar (Rating)</option>
@@ -150,7 +150,6 @@
       </div>
     </div>
   </header>
-
   <!-- Kategori Sekmeleri (Dinamik Yüklenir) -->
   <nav class="bg-slate-850 bg-slate-800/80 border-b border-slate-700 px-6 py-2 sticky top-[65px] z-30 backdrop-blur-md">
     <div class="max-w-7xl mx-auto flex items-center gap-2 overflow-x-auto text-xs" id="categoryTabs">
@@ -275,7 +274,6 @@
     <i class="fa-solid fa-bars-staggered"></i>
     <span>Canlı Bandı Göster</span>
   </button>
-
   <script>
     let allCategoriesList = [];
     let allSourcesList = [];
@@ -287,22 +285,21 @@
     let searchTimeout;
     let isPaused = false;
 
-    // Rating / Tıklama Kaydetme Fonksiyonu (Bot & Çift Tıklama Korumalı)
+    // Rating / Tıklama Kaydetme Fonksiyonu
     async function trackNewsClick(newsId) {
       if (!newsId) return;
       const clickedKey = `clicked_news_${newsId}`;
-      if (sessionStorage.getItem(clickedKey)) return; // Bu oturumda zaten puan verildi
+      if (sessionStorage.getItem(clickedKey)) return;
 
       try {
         sessionStorage.setItem(clickedKey, 'true');
         await fetch(`/api/news/${newsId}/click`, { method: 'POST' });
         
-        // Yerel listeyi güncelle ve rozeti anında +1 yap
         const item = currentNewsList.find(n => n._id === newsId);
         if (item) {
           item.views = (item.views || 0) + 1;
           const badge = document.getElementById(`viewsBadge_${newsId}`);
-          if (badge) badge.innerHTML = `<i class="fa-regular fa-eye text-[10px]"></i> ${item.views}`;
+          if (badge) badge.innerHTML = `<i class="fa-regular fa-eye text-[10px] text-emerald-400 mr-0.5"></i>${item.views}`;
         }
       } catch (e) {}
     }
@@ -499,7 +496,6 @@
       }
     }
 
-    // Dinamik Kategorileri Getir & Sekmeleri Oluştur
     async function loadCategories() {
       try {
         const res = await fetch('/api/categories');
@@ -550,9 +546,11 @@
 
       sourcesContainer.innerHTML = filtered.map(src => {
         selectedSources.add(src.name);
+        const isEn = src.lang === 'en';
         return `
           <button data-src="${src.name}" class="source-chip bg-emerald-600/20 text-emerald-300 border border-emerald-500/30 px-2.5 py-0.5 rounded-full hover:opacity-80 transition flex items-center gap-1">
             <span>${src.name}</span>
+            ${isEn ? '<span class="text-[9px] bg-indigo-500/30 text-indigo-200 px-1 rounded font-bold">TR Çeviri</span>' : ''}
             <i class="fa-solid fa-check text-[10px]"></i>
           </button>
         `;
@@ -610,11 +608,16 @@
       tickerTrack.innerHTML = topNews.map(item => {
         const timeStr = new Date(item.pubDate || item.createdAt).toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' });
         const fav = getFaviconUrl(item.link);
+        const translateBadge = (item.isTranslated || item.lang === 'en')
+          ? `<span class="inline-flex items-center gap-1 bg-sky-950/80 text-sky-400 border border-sky-600/50 text-[10px] px-1.5 py-0.2 rounded font-bold mr-1" title="Otomatik Türkçe Çeviri"><i class="fa-solid fa-language text-[10px]"></i> TR</span>`
+          : '';
+
         return `
           <a href="${item.link}" target="_blank" rel="noopener noreferrer" onclick="trackNewsClick('${item._id}')" class="inline-flex items-center gap-2 hover:text-emerald-400 transition font-medium group">
             <img src="${fav}" alt="" class="w-4 h-4 object-contain rounded bg-slate-900 border border-slate-700">
             <span class="text-emerald-400 font-bold font-mono text-[11px]">[${timeStr}]</span>
             <span class="text-slate-300 font-semibold text-[11px] bg-slate-800/80 px-1.5 py-0.5 rounded">${item.source}</span>
+            ${translateBadge}
             <span class="group-hover:underline text-slate-100">${item.title}</span>
             <span class="text-slate-600 font-bold ml-4">✦</span>
           </a>
@@ -651,7 +654,8 @@
         const dateStr = dateObj.toLocaleDateString('tr-TR', { day: '2-digit', month: '2-digit', year: 'numeric' });
         const faviconSrc = getFaviconUrl(item.link);
         const viewsCount = item.views || 0;
-        const isTrending = viewsCount >= 5; // 5 ve üzeri tıklanan habere Trend etiketi koy
+        const isTrending = viewsCount >= 5;
+        const isTranslated = item.isTranslated || item.lang === 'en';
 
         return `
           <article class="relative bg-slate-800/80 border ${isChecked ? 'border-emerald-500 bg-slate-800 ring-2 ring-emerald-500/40' : (hasAlarm ? 'border-amber-500/80 bg-amber-950/20 ring-1 ring-amber-500/50' : 'border-slate-700/60')} rounded-xl p-4 hover:border-slate-500 transition-all flex flex-col justify-between group shadow-md">
@@ -683,7 +687,14 @@
                   <div class="w-8 h-8 rounded-lg bg-slate-900 border border-slate-700 flex items-center justify-center overflow-hidden p-1 shadow-inner shrink-0">
                     <img src="${faviconSrc}" alt="${item.source}" class="w-full h-full object-contain" onerror="this.src='https://placehold.co/32x32/1e293b/10b981?text=N'">
                   </div>
-                  <span class="bg-slate-700/80 px-2 py-0.5 rounded font-bold text-xs text-emerald-400 border border-slate-600/50 truncate max-w-[150px]">${item.source || 'Genel'}</span>
+                  <span class="bg-slate-700/80 px-2 py-0.5 rounded font-bold text-xs text-emerald-400 border border-slate-600/50 truncate max-w-[140px]">${item.source || 'Genel'}</span>
+                  
+                  <!-- ÇEVİRİ ROZETİ -->
+                  ${isTranslated ? `
+                    <span class="inline-flex items-center gap-1 bg-indigo-500/20 text-indigo-300 border border-indigo-500/40 text-[10px] px-1.5 py-0.5 rounded font-semibold" title="Bu haber orijinal kaynağından otomatik olarak Türkçeye çevrildi">
+                      <i class="fa-solid fa-language text-sky-400"></i> TR Çeviri
+                    </span>
+                  ` : ''}
                 </div>
                 <span class="text-slate-500 text-[10px] whitespace-nowrap">${dateStr}</span>
               </div>
@@ -724,7 +735,6 @@
         alarmBadge.classList.add('hidden');
       }
     }
-
     async function loadNews() {
       try {
         let url = `/api/news?limit=120&sort=${currentSortMode}`;
@@ -768,6 +778,7 @@
             .item { margin-bottom: 22px; padding-bottom: 16px; border-bottom: 1px solid #e2e8f0; }
             .title { font-size: 13pt; font-weight: bold; color: #0f172a; margin-top: 6px; margin-bottom: 6px; }
             .badge { font-size: 8.5pt; font-weight: bold; background: #e0f2fe; color: #0369a1; padding: 3px 8px; border-radius: 4px; }
+            .trans-badge { font-size: 8.5pt; font-weight: bold; background: #e0e7ff; color: #4338ca; padding: 3px 8px; border-radius: 4px; margin-left: 6px; }
             .cat { font-size: 8.5pt; font-weight: bold; background: #f1f5f9; color: #475569; padding: 3px 8px; border-radius: 4px; margin-left: 6px; }
             .date { font-size: 8.5pt; color: #059669; font-weight: 600; margin-left: 10px; }
             .desc { font-size: 10pt; color: #334155; line-height: 1.5; margin: 8px 0; }
@@ -782,10 +793,13 @@
       exportItems.forEach((n, idx) => {
         const cleanDesc = (n.description || '').replace(/<[^>]*>?/gm, '');
         const dateStr = new Date(n.pubDate || n.createdAt).toLocaleString('tr-TR');
+        const isTranslated = n.isTranslated || n.lang === 'en';
+
         content += `
           <div class="item">
             <div>
               <span class="badge">${n.source || 'Genel'}</span>
+              ${isTranslated ? '<span class="trans-badge">Türkçe Çeviri</span>' : ''}
               <span class="cat">${n.category || 'Gündem'}</span>
               <span class="date">${dateStr}</span>
             </div>

@@ -4,6 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Haber Takip - Yönetim & Analitik Paneli</title>
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg?v=6">
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
@@ -41,7 +42,7 @@
     </div>
   </div>
 
-  <!-- KAYNAK DÜZENLEME MODALI (YENİ EKLENDİ) -->
+  <!-- KAYNAK DÜZENLEME MODALI (DİL SEÇENEKLİ) -->
   <div id="editSourceModal" class="hidden fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
     <div class="bg-slate-800 border border-slate-700 w-full max-w-lg rounded-2xl p-6 shadow-2xl relative">
       <button id="closeEditModalBtn" class="absolute top-4 right-4 text-slate-400 hover:text-white transition">
@@ -54,7 +55,7 @@
         </div>
         <div>
           <h3 class="text-sm font-bold text-slate-100">Kaynağı Düzenle</h3>
-          <p class="text-[11px] text-slate-400">Kaynak URL'sini, kategorisini veya kazıma ayarlarını güncelleyin.</p>
+          <p class="text-[11px] text-slate-400">Kaynak URL'sini, dilini, kategorisini veya kazıma ayarlarını güncelleyin.</p>
         </div>
       </div>
 
@@ -71,12 +72,19 @@
           <input type="url" id="editSrcUrl" required class="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-slate-200 focus:outline-none focus:border-amber-500 font-mono text-[11px]">
         </div>
 
-        <div class="grid grid-cols-2 gap-3">
+        <div class="grid grid-cols-3 gap-3">
           <div>
             <label class="block text-slate-400 mb-1">Kaynak Tipi</label>
             <select id="editSrcType" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-2.5 py-2 text-slate-200 focus:outline-none focus:border-amber-500">
               <option value="rss">RSS XML Akışı</option>
-              <option value="html">Web Sitesi (HTML Kazıma)</option>
+              <option value="html">Web Sitesi (HTML)</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-slate-400 mb-1">Yayın Dili</label>
+            <select id="editSrcLang" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-2.5 py-2 text-slate-200 focus:outline-none focus:border-amber-500">
+              <option value="tr">Türkçe (TR)</option>
+              <option value="en">Yabancı (TR'ye Çevir)</option>
             </select>
           </div>
           <div>
@@ -126,7 +134,6 @@
       </div>
     </div>
   </header>
-
   <main class="flex-1 max-w-6xl w-full mx-auto p-6 space-y-8">
     <div id="alertBox" class="hidden p-3.5 rounded-xl text-xs font-medium transition"></div>
 
@@ -280,7 +287,6 @@
         </div>
       </div>
     </section>
-
     <!-- 4. BÖLÜM: RSS & HTML WEB KAYNAKLARI YÖNETİMİ -->
     <section class="bg-slate-800/80 border border-slate-700 rounded-2xl p-6 shadow-lg">
       <div class="flex flex-wrap justify-between items-center mb-5 pb-4 border-b border-slate-700 gap-3">
@@ -288,23 +294,31 @@
           <h2 class="text-base font-bold text-slate-100 flex items-center gap-2">
             <i class="fa-solid fa-square-rss text-orange-400"></i> Haber Kaynakları (RSS & HTML Siteler)
           </h2>
-          <p class="text-xs text-slate-400 mt-0.5">İster standart RSS beslemelerini, ister doğrudan web sitelerini (HTML) kazıyarak ekleyin.</p>
+          <p class="text-xs text-slate-400 mt-0.5">Yabancı kaynakları (BBC, Reuters vb.) seçtiğinizde haberler otomatik olarak Türkçeye çevrilir.</p>
         </div>
         <button id="refreshSyncBtn" class="bg-emerald-600 hover:bg-emerald-500 text-white px-3 py-1.5 rounded-lg text-xs font-medium transition flex items-center gap-1.5">
           <i class="fa-solid fa-arrows-rotate"></i> Şimdi Tüm Kaynakları Tara
         </button>
       </div>
 
+      <!-- Kaynak Ekleme Formu (DİL SEÇİMİ ENTEGRE EDİLDİ) -->
       <form id="addSourceForm" class="grid grid-cols-1 md:grid-cols-12 gap-3 mb-6 bg-slate-900/60 p-4 rounded-xl border border-slate-700/60">
         <div class="md:col-span-3">
           <label class="block text-[11px] text-slate-400 mb-1">Kaynak Adı</label>
-          <input type="text" id="srcName" required placeholder="örn: NTV Haber veya Sondakika.com" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-1.5 text-xs text-slate-200 focus:outline-none focus:border-emerald-500">
+          <input type="text" id="srcName" required placeholder="örn: BBC World veya NTV" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-1.5 text-xs text-slate-200 focus:outline-none focus:border-emerald-500">
         </div>
         <div class="md:col-span-2">
           <label class="block text-[11px] text-slate-400 mb-1">Kaynak Tipi</label>
           <select id="srcType" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-2.5 py-1.5 text-xs text-slate-200 focus:outline-none focus:border-emerald-500">
             <option value="rss">RSS XML Akışı</option>
-            <option value="html">Web Sitesi (HTML Kazıma)</option>
+            <option value="html">Web Sitesi (HTML)</option>
+          </select>
+        </div>
+        <div class="md:col-span-2">
+          <label class="block text-[11px] text-slate-400 mb-1">Yayın Dili</label>
+          <select id="srcLang" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-2.5 py-1.5 text-xs text-slate-200 focus:outline-none focus:border-emerald-500">
+            <option value="tr">Türkçe (Orijinal)</option>
+            <option value="en">Yabancı (TR'ye Çevir)</option>
           </select>
         </div>
         <div class="md:col-span-2">
@@ -316,8 +330,8 @@
           <label class="block text-[11px] text-slate-400 mb-1">URL (RSS veya Site Linki)</label>
           <input type="url" id="srcUrl" required placeholder="https://..." class="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-1.5 text-xs text-slate-200 focus:outline-none focus:border-emerald-500">
         </div>
-        <div class="md:col-span-2 flex items-end">
-          <button type="submit" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white py-1.5 px-3 rounded-lg text-xs font-semibold transition flex items-center justify-center gap-1.5">
+        <div class="md:col-span-12 flex justify-end">
+          <button type="submit" class="bg-emerald-600 hover:bg-emerald-500 text-white py-2 px-5 rounded-lg text-xs font-semibold transition flex items-center justify-center gap-1.5">
             <i class="fa-solid fa-plus"></i> Kaynak Ekle
           </button>
         </div>
@@ -333,6 +347,7 @@
             <tr class="text-slate-400 border-b border-slate-700 bg-slate-900/40">
               <th class="py-2.5 px-3">Kaynak Adı</th>
               <th class="py-2.5 px-3">Tip</th>
+              <th class="py-2.5 px-3">Dil</th>
               <th class="py-2.5 px-3">Kategori</th>
               <th class="py-2.5 px-3">Bağlantı URL</th>
               <th class="py-2.5 px-3 text-center">Durum</th>
@@ -340,7 +355,7 @@
             </tr>
           </thead>
           <tbody id="sourcesTableBody" class="divide-y divide-slate-700/40">
-            <tr><td colspan="6" class="text-center py-6 text-slate-500">Kaynaklar yükleniyor...</td></tr>
+            <tr><td colspan="7" class="text-center py-6 text-slate-500">Kaynaklar yükleniyor...</td></tr>
           </tbody>
         </table>
       </div>
@@ -904,7 +919,7 @@
       } catch (e) {}
     };
 
-    // --- 6. KAYNAKLAR & DÜZENLEME ---
+    // --- 6. KAYNAKLAR & DÜZENLEME (DİL DESTEKLİ) ---
     async function fetchSources() {
       try {
         const res = await fetch('/api/sources');
@@ -912,33 +927,41 @@
         const tbody = document.getElementById('sourcesTableBody');
         sourcesList = data.data || [];
 
-        tbody.innerHTML = sourcesList.map(s => `
-          <tr class="hover:bg-slate-800/40 transition">
-            <td class="py-2.5 px-3 font-semibold text-slate-200">${s.name}</td>
-            <td class="py-2.5 px-3">
-              <span class="text-[10px] px-2 py-0.5 rounded font-mono font-semibold ${s.type === 'html' ? 'bg-amber-500/20 text-amber-300 border border-amber-500/30' : 'bg-blue-500/20 text-blue-300 border border-blue-500/30'}">
-                ${s.type === 'html' ? 'HTML Web' : 'RSS XML'}
-              </span>
-            </td>
-            <td class="py-2.5 px-3">
-              <span class="text-[10px] bg-slate-700 text-purple-300 px-2 py-0.5 rounded font-medium">${s.category || 'Gündem'}</span>
-            </td>
-            <td class="py-2.5 px-3 text-slate-400 font-mono text-[11px] truncate max-w-xs" title="${s.url}">${s.url}</td>
-            <td class="py-2.5 px-3 text-center">
-              <button onclick="toggleSource('${s._id}')" class="px-2 py-0.5 rounded-full text-[10px] font-semibold transition ${s.isActive ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30' : 'bg-slate-700 text-slate-400'}">
-                ${s.isActive ? 'Aktif' : 'Pasif'}
-              </button>
-            </td>
-            <td class="py-2.5 px-3 text-right space-x-1.5 whitespace-nowrap">
-              <button onclick="openEditModal('${s._id}')" class="bg-amber-500/20 hover:bg-amber-500 text-amber-300 hover:text-white px-2.5 py-1 rounded transition text-xs" title="Kaynağı Düzenle">
-                <i class="fa-solid fa-pen-to-square"></i> Düzenle
-              </button>
-              <button onclick="deleteSource('${s._id}')" class="text-rose-400 hover:text-rose-300 text-xs px-2 py-1 rounded transition" title="Kaynağı Sil">
-                <i class="fa-solid fa-trash"></i> Sil
-              </button>
-            </td>
-          </tr>
-        `).join('');
+        tbody.innerHTML = sourcesList.map(s => {
+          const isEn = s.lang === 'en';
+          return `
+            <tr class="hover:bg-slate-800/40 transition">
+              <td class="py-2.5 px-3 font-semibold text-slate-200">${s.name}</td>
+              <td class="py-2.5 px-3">
+                <span class="text-[10px] px-2 py-0.5 rounded font-mono font-semibold ${s.type === 'html' ? 'bg-amber-500/20 text-amber-300 border border-amber-500/30' : 'bg-blue-500/20 text-blue-300 border border-blue-500/30'}">
+                  ${s.type === 'html' ? 'HTML Web' : 'RSS XML'}
+                </span>
+              </td>
+              <td class="py-2.5 px-3">
+                <span class="text-[10px] px-2 py-0.5 rounded font-bold ${isEn ? 'bg-indigo-500/20 text-indigo-300 border border-indigo-500/30' : 'bg-slate-800 text-slate-400 border border-slate-700'}">
+                  ${isEn ? '<i class="fa-solid fa-language mr-1"></i>EN ➔ TR' : 'TR'}
+                </span>
+              </td>
+              <td class="py-2.5 px-3">
+                <span class="text-[10px] bg-slate-700 text-purple-300 px-2 py-0.5 rounded font-medium">${s.category || 'Gündem'}</span>
+              </td>
+              <td class="py-2.5 px-3 text-slate-400 font-mono text-[11px] truncate max-w-xs" title="${s.url}">${s.url}</td>
+              <td class="py-2.5 px-3 text-center">
+                <button onclick="toggleSource('${s._id}')" class="px-2 py-0.5 rounded-full text-[10px] font-semibold transition ${s.isActive ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30' : 'bg-slate-700 text-slate-400'}">
+                  ${s.isActive ? 'Aktif' : 'Pasif'}
+                </button>
+              </td>
+              <td class="py-2.5 px-3 text-right space-x-1.5 whitespace-nowrap">
+                <button onclick="openEditModal('${s._id}')" class="bg-amber-500/20 hover:bg-amber-500 text-amber-300 hover:text-white px-2.5 py-1 rounded transition text-xs" title="Kaynağı Düzenle">
+                  <i class="fa-solid fa-pen-to-square"></i> Düzenle
+                </button>
+                <button onclick="deleteSource('${s._id}')" class="text-rose-400 hover:text-rose-300 text-xs px-2 py-1 rounded transition" title="Kaynağı Sil">
+                  <i class="fa-solid fa-trash"></i> Sil
+                </button>
+              </td>
+            </tr>
+          `;
+        }).join('');
       } catch (e) {}
     }
 
@@ -946,6 +969,7 @@
       e.preventDefault();
       const name = document.getElementById('srcName').value.trim();
       const type = document.getElementById('srcType').value;
+      const lang = document.getElementById('srcLang').value;
       const url = document.getElementById('srcUrl').value.trim();
       const category = document.getElementById('srcCategory').value;
       const selector = document.getElementById('srcSelector').value.trim();
@@ -954,7 +978,7 @@
         const res = await fetch('/api/sources', {
           method: 'POST',
           headers: authHeaders(),
-          body: JSON.stringify({ name, type, url, category, selector })
+          body: JSON.stringify({ name, type, lang, url, category, selector })
         });
         const resData = await res.json();
         if (resData.success) {
@@ -987,7 +1011,7 @@
       } catch (e) {}
     };
 
-       // --- KAYNAK DÜZENLEME MODALI FONKSİYONLARI ---
+    // --- KAYNAK DÜZENLEME MODALI FONKSİYONLARI ---
     const editModal = document.getElementById('editSourceModal');
     const closeEditModalBtn = document.getElementById('closeEditModalBtn');
     const cancelEditBtn = document.getElementById('cancelEditBtn');
@@ -1001,6 +1025,7 @@
       document.getElementById('editSrcName').value = source.name;
       document.getElementById('editSrcUrl').value = source.url || source.rss || '';
       document.getElementById('editSrcType').value = source.type || 'rss';
+      document.getElementById('editSrcLang').value = source.lang || 'tr';
       document.getElementById('editSrcCategory').value = source.category || 'Gündem';
       document.getElementById('editSrcSelector').value = source.selector || '';
 
@@ -1023,6 +1048,7 @@
       const name = document.getElementById('editSrcName').value.trim();
       const url = document.getElementById('editSrcUrl').value.trim();
       const type = document.getElementById('editSrcType').value;
+      const lang = document.getElementById('editSrcLang').value;
       const category = document.getElementById('editSrcCategory').value;
       const selector = document.getElementById('editSrcSelector').value.trim();
 
@@ -1030,7 +1056,7 @@
         const res = await fetch(`/api/sources/${id}`, {
           method: 'PUT',
           headers: authHeaders(),
-          body: JSON.stringify({ name, url, type, category, selector })
+          body: JSON.stringify({ name, url, type, lang, category, selector })
         });
         const d = await res.json();
         if (d.success) {

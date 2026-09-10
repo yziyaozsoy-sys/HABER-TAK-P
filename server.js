@@ -33,7 +33,9 @@ const newsSchema = new mongoose.Schema({
   pubDate: { type: Date, default: Date.now },
   source: { type: String, default: 'Genel' },
   category: { type: String, default: 'Gündem', index: true },
-  views: { type: Number, default: 0, index: true }, // RATING: Okunma / Tıklanma Sayısı
+  lang: { type: String, default: 'tr' }, // Haberin dili veya kaynağın dili
+  isTranslated: { type: Boolean, default: false }, // Çevrildi rozeti için
+  views: { type: Number, default: 0, index: true }, // RATING
   createdAt: { type: Date, default: Date.now }
 });
 newsSchema.index({ pubDate: -1, createdAt: -1 });
@@ -46,6 +48,7 @@ const sourceSchema = new mongoose.Schema({
   url: { type: String, required: true },
   selector: { type: String, default: '' },
   category: { type: String, default: 'Gündem' },
+  lang: { type: String, enum: ['tr', 'en'], default: 'tr' }, // Kaynak Dili
   isActive: { type: Boolean, default: true },
   createdAt: { type: Date, default: Date.now }
 });
@@ -96,13 +99,14 @@ const authMiddleware = (req, res, next) => {
 // 2. BAŞLANGIÇ VERİLERİ (SEED)
 const defaultCategories = ['Gündem', 'Spor', 'Ekonomi', 'Dünya', 'Teknoloji', 'Magazin', 'Sağlık', 'Eğitim'];
 const initialSources = [
-  { name: 'NTV Son Dakika', type: 'rss', url: 'https://www.ntv.com.tr/son-dakika.rss', category: 'Gündem' },
-  { name: 'Hürriyet Gündem', type: 'rss', url: 'https://www.hurriyet.com.tr/rss/gundem', category: 'Gündem' },
-  { name: 'Ensonhaber', type: 'rss', url: 'https://www.ensonhaber.com/rss/ensonhaber.xml', category: 'Gündem' },
-  { name: 'BBC Türkçe', type: 'rss', url: 'https://feeds.bbci.co.uk/turkce/rss.xml', category: 'Dünya' },
-  { name: 'Milliyet Spor', type: 'rss', url: 'https://www.milliyet.com.tr/rss/rssnew/skorersondakikarss.xml', category: 'Spor' },
-  { name: 'Hürriyet Ekonomi', type: 'rss', url: 'https://www.hurriyet.com.tr/rss/ekonomi', category: 'Ekonomi' },
-  { name: 'Sözcü', type: 'rss', url: 'https://www.sozcu.com.tr/rss/tum-haberler.xml', category: 'Gündem' }
+  { name: 'NTV Son Dakika', type: 'rss', url: 'https://www.ntv.com.tr/son-dakika.rss', category: 'Gündem', lang: 'tr' },
+  { name: 'Hürriyet Gündem', type: 'rss', url: 'https://www.hurriyet.com.tr/rss/gundem', category: 'Gündem', lang: 'tr' },
+  { name: 'Ensonhaber', type: 'rss', url: 'https://www.ensonhaber.com/rss/ensonhaber.xml', category: 'Gündem', lang: 'tr' },
+  { name: 'BBC Türkçe', type: 'rss', url: 'https://feeds.bbci.co.uk/turkce/rss.xml', category: 'Dünya', lang: 'tr' },
+  { name: 'Milliyet Spor', type: 'rss', url: 'https://www.milliyet.com.tr/rss/rssnew/skorersondakikarss.xml', category: 'Spor', lang: 'tr' },
+  { name: 'Hürriyet Ekonomi', type: 'rss', url: 'https://www.hurriyet.com.tr/rss/ekonomi', category: 'Ekonomi', lang: 'tr' },
+  { name: 'Sözcü', type: 'rss', url: 'https://www.sozcu.com.tr/rss/tum-haberler.xml', category: 'Gündem', lang: 'tr' },
+  { name: 'Reuters World', type: 'rss', url: 'https://feeds.reuters.com/reuters/worldNews', category: 'Dünya', lang: 'en' }
 ];
 
 if (MONGODB_URI) {
@@ -161,9 +165,27 @@ function extractText(val) {
   }
   return String(val).trim();
 }
+// YARDIMCI: Metni Otomatik Türkçeye Çevir (Hafif ve Ücretsiz Google Çeviri API'si)
+async function translateToTurkish(text) {
+  if (!text || typeof text !== 'string' || !text.trim()) return '';
+  const clean = text.replace(/<[^>]*>?/gm, '').trim();
+  if (clean.length === 0) return '';
+  
+  try {
+    const url = `https://translate.googleapis.com/translate_a/single?client=gtx&sl=auto&tl=tr&dt=t&q=${encodeURIComponent(clean)}`;
+    const res = await axios.get(url, { timeout: 6000 });
+    if (res.data && Array.isArray(res.data[0])) {
+      return res.data[0].map(segment => segment[0]).join('');
+    }
+    return clean;
+  } catch (e) {
+    // Çeviri servisinde anlık kesinti olursa orijinal metni koru
+    return clean;
+  }
+}
 
 // 3. TARAMA MOTORLARI
-async function fetchRssFeed(sourceName, url, categoryName = 'Gündem') {
+async function fetchRssFeed(sourceName, url, categoryName = 'Gündem', lang = 'tr') {
   try {
     const response = await axios.get(url, {
       headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36' },
@@ -177,12 +199,12 @@ async function fetchRssFeed(sourceName, url, categoryName = 'Gündem') {
     const itemList = (Array.isArray(items) ? items : [items]).slice(0, 20);
 
     for (const item of itemList) {
-      const rawTitle = extractText(item.title);
+      let rawTitle = extractText(item.title);
       if (!rawTitle) continue;
 
       let rawLink = typeof item.link === 'string' ? item.link : (item.link?.$?.href || extractText(item.link));
       let rawGuid = extractText(item.guid) || rawLink || rawTitle;
-      const rawDesc = extractText(item.description || item.summary || '');
+      let rawDesc = extractText(item.description || item.summary || '');
       
       let parsedDate = new Date();
       if (item.pubDate) {
@@ -192,17 +214,37 @@ async function fetchRssFeed(sourceName, url, categoryName = 'Gündem') {
 
       if (!rawGuid || !rawLink) continue;
 
+      // Eğer kaynak yabancı (İngilizce vb.) ise başlık ve açıklamayı Türkçeye çevir
+      const isEnglish = (lang === 'en');
+      let finalTitle = rawTitle;
+      let finalDesc = rawDesc;
+      let isTranslated = false;
+
+      if (isEnglish) {
+        try {
+          finalTitle = await translateToTurkish(rawTitle);
+          if (rawDesc) {
+            finalDesc = await translateToTurkish(rawDesc);
+          }
+          isTranslated = true;
+        } catch (trErr) {
+          finalTitle = rawTitle;
+        }
+      }
+
       await News.updateOne(
         { guid: String(rawGuid) },
         {
           $setOnInsert: {
             guid: String(rawGuid),
-            title: rawTitle,
+            title: finalTitle,
             link: String(rawLink),
-            description: rawDesc,
+            description: finalDesc,
             pubDate: parsedDate,
             source: sourceName,
             category: categoryName,
+            lang: lang || 'tr',
+            isTranslated: isTranslated,
             views: 0,
             createdAt: new Date()
           }
@@ -215,7 +257,7 @@ async function fetchRssFeed(sourceName, url, categoryName = 'Gündem') {
   }
 }
 
-async function scrapeHtmlSite(sourceName, siteUrl, categoryName = 'Gündem', customSelector = '') {
+async function scrapeHtmlSite(sourceName, siteUrl, categoryName = 'Gündem', customSelector = '', lang = 'tr') {
   try {
     const response = await axios.get(siteUrl, {
       headers: { 
@@ -261,22 +303,37 @@ async function scrapeHtmlSite(sourceName, siteUrl, categoryName = 'Gündem', cus
         pubDate: new Date(),
         source: sourceName,
         category: categoryName,
+        lang: lang || 'tr',
         views: 0
       });
     });
 
     for (const item of scrapedList) {
+      let finalTitle = item.title;
+      let isTranslated = false;
+
+      if (lang === 'en') {
+        try {
+          finalTitle = await translateToTurkish(item.title);
+          isTranslated = true;
+        } catch (trErr) {
+          finalTitle = item.title;
+        }
+      }
+
       await News.updateOne(
         { guid: item.guid },
         {
           $setOnInsert: {
             guid: item.guid,
-            title: item.title,
+            title: finalTitle,
             link: item.link,
             description: item.description,
             pubDate: item.pubDate,
             source: item.source,
             category: item.category,
+            lang: lang || 'tr',
+            isTranslated: isTranslated,
             views: 0,
             createdAt: new Date()
           }
@@ -297,9 +354,9 @@ async function fetchAllSources() {
     const sources = await Source.find({ isActive: true });
     for (const src of sources) {
       if (src.type === 'html') {
-        await scrapeHtmlSite(src.name, src.url, src.category || 'Gündem', src.selector || '');
+        await scrapeHtmlSite(src.name, src.url, src.category || 'Gündem', src.selector || '', src.lang || 'tr');
       } else {
-        await fetchRssFeed(src.name, src.url, src.category || 'Gündem');
+        await fetchRssFeed(src.name, src.url, src.category || 'Gündem', src.lang || 'tr');
       }
     }
   } catch (err) {
@@ -307,7 +364,6 @@ async function fetchAllSources() {
   }
   isSyncing = false;
 }
-
 // 4. API ENDPOINTLERİ
 
 // --- RATING & ETKİLEŞİM API'LERİ ---
@@ -533,7 +589,6 @@ app.delete('/api/requests/:id', authMiddleware, async (req, res) => {
     res.status(500).json({ success: false, message: err.message });
   }
 });
-
 // --- HABERLER API'Sİ ---
 app.get('/api/news', async (req, res) => {
   try {
@@ -574,6 +629,7 @@ app.get('/api/sources', async (req, res) => {
       const doc = s.toObject();
       if (!doc.url && doc.rss) doc.url = doc.rss;
       if (!doc.type) doc.type = 'rss';
+      if (!doc.lang) doc.lang = 'tr';
       return doc;
     });
     res.json({ success: true, data: mapped });
@@ -582,18 +638,20 @@ app.get('/api/sources', async (req, res) => {
   }
 });
 
+// YENİ KAYNAK EKLEME (POST) - DİL (LANG) DESTEKLİ
 app.post('/api/sources', authMiddleware, async (req, res) => {
   try {
-    const { name, url, rss, type, category, selector } = req.body;
+    const { name, url, rss, type, category, selector, lang } = req.body;
     const targetUrl = url || rss;
     if (!name || !targetUrl) return res.status(400).json({ success: false, message: 'İsim ve URL/RSS zorunludur.' });
 
     const newSource = await Source.create({ 
-      name, 
+      name: name.trim(), 
       type: type || 'rss',
-      url: targetUrl, 
-      selector: selector || '',
-      category: category || 'Gündem' 
+      url: targetUrl.trim(), 
+      selector: selector ? selector.trim() : '',
+      category: category || 'Gündem',
+      lang: lang === 'en' ? 'en' : 'tr'
     });
 
     fetchAllSources();
@@ -603,10 +661,10 @@ app.post('/api/sources', authMiddleware, async (req, res) => {
   }
 });
 
-// KAYNAK DÜZENLEME (PUT) - YENİ EKLENEN ÖZELLİK
+// KAYNAK DÜZENLEME (PUT) - DİL (LANG) DESTEKLİ
 app.put('/api/sources/:id', authMiddleware, async (req, res) => {
   try {
-    const { name, url, rss, type, category, selector, isActive } = req.body;
+    const { name, url, rss, type, category, selector, lang, isActive } = req.body;
     const targetUrl = url || rss;
 
     const updateFields = {};
@@ -615,6 +673,7 @@ app.put('/api/sources/:id', authMiddleware, async (req, res) => {
     if (type) updateFields.type = type;
     if (category) updateFields.category = category;
     if (typeof selector !== 'undefined') updateFields.selector = selector.trim();
+    if (lang) updateFields.lang = (lang === 'en' ? 'en' : 'tr');
     if (typeof isActive !== 'undefined') updateFields.isActive = isActive;
 
     const updatedSource = await Source.findByIdAndUpdate(
@@ -645,7 +704,7 @@ app.delete('/api/sources/:id', authMiddleware, async (req, res) => {
     await Source.findByIdAndDelete(req.params.id);
     res.json({ success: true, message: 'Kaynak silindi.' });
   } catch (err) {
-    res.status(500).json({ success: false, error: err.message });
+    res.status(500).json({ success: false, message: err.message });
   }
 });
 
@@ -685,14 +744,17 @@ app.post('/api/ads', authMiddleware, async (req, res) => {
   }
 });
 
+// --- SENKRONİZASYON & ZAMANLAYICI ---
 app.get('/api/sync', (req, res) => {
   fetchAllSources();
-  res.json({ success: true, message: "Tarama arka planda baslatildi." });
+  res.json({ success: true, message: "Tarama arka planda başlatıldı." });
 });
 
+// 10 dakikada bir otomatik tara
 setInterval(fetchAllSources, 10 * 60 * 1000);
+// Sunucu açıldıktan 4 saniye sonra ilk taramayı yap
 setTimeout(fetchAllSources, 4000);
 
 app.listen(PORT, () => {
-  console.log(`Haber Takip Web Sunucusu http://localhost:${PORT} portunda calisiyor.`);
+  console.log(`Haber Takip Web Sunucusu http://localhost:${PORT} portunda çalışıyor.`);
 });
