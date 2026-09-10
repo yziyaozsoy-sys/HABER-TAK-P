@@ -3,53 +3,108 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Haber Takip Web</title>
+  <title>Haber Takip Web Pro</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
 <body class="bg-slate-900 text-slate-100 min-h-screen flex flex-col font-sans">
-  <header class="bg-slate-800 border-b border-slate-700 sticky top-0 z-50 px-6 py-4 flex flex-wrap justify-between items-center gap-4">
-    <div class="flex items-center gap-3">
-      <i class="fa-solid fa-newspaper text-emerald-400 text-2xl"></i>
-      <h1 class="text-xl font-bold tracking-wide">Haber Takip <span class="text-xs bg-emerald-500/20 text-emerald-400 px-2 py-0.5 rounded-full border border-emerald-500/30">Web</span></h1>
-    </div>
-    <div class="flex items-center gap-3 flex-1 max-w-md">
-      <div class="relative w-full">
-        <i class="fa-solid fa-magnifying-glass absolute left-3 top-3 text-slate-400"></i>
-        <input type="text" id="searchInput" placeholder="Haberlerde ara..." class="w-full bg-slate-950 border border-slate-700 rounded-lg pl-9 pr-4 py-2 text-sm text-slate-200 placeholder-slate-500 focus:outline-none focus:border-emerald-500">
+
+  <!-- Üst Bar -->
+  <header class="bg-slate-800 border-b border-slate-700 sticky top-0 z-50 px-6 py-3.5 shadow-md">
+    <div class="max-w-7xl mx-auto flex flex-wrap justify-between items-center gap-4">
+      <div class="flex items-center gap-3">
+        <div class="bg-emerald-500/20 p-2 rounded-lg border border-emerald-500/30">
+          <i class="fa-solid fa-bolt text-emerald-400 text-xl"></i>
+        </div>
+        <div>
+          <h1 class="text-lg font-bold tracking-wide flex items-center gap-2">
+            Haber Takip <span class="text-xs bg-emerald-500/20 text-emerald-400 px-2 py-0.5 rounded-full border border-emerald-500/30">Canlı Akış</span>
+          </h1>
+          <p class="text-[11px] text-slate-400">Geliş saatine göre anlık sıralama</p>
+        </div>
       </div>
-      <button id="refreshBtn" class="bg-emerald-600 hover:bg-emerald-500 text-white px-4 py-2 rounded-lg text-sm font-medium transition flex items-center gap-2">
-        <i class="fa-solid fa-arrows-rotate" id="refreshIcon"></i>
-        <span>Yenile</span>
-      </button>
+
+      <!-- Arama ve Butonlar -->
+      <div class="flex items-center gap-2 flex-1 max-w-xl">
+        <div class="relative w-full">
+          <i class="fa-solid fa-magnifying-glass absolute left-3 top-2.5 text-slate-400 text-xs"></i>
+          <input type="text" id="searchInput" placeholder="Başlık veya özette ara..." class="w-full bg-slate-950 border border-slate-700 rounded-lg pl-8 pr-3 py-1.5 text-xs text-slate-200 placeholder-slate-500 focus:outline-none focus:border-emerald-500">
+        </div>
+        <button id="refreshBtn" title="Listeyi Tazele" class="bg-slate-700 hover:bg-slate-600 text-white px-3 py-1.5 rounded-lg text-xs font-medium transition flex items-center gap-1.5">
+          <i class="fa-solid fa-arrows-rotate" id="refreshIcon"></i>
+          <span class="hidden sm:inline">Yenile</span>
+        </button>
+        <button id="exportWordBtn" title="Listelenen haberleri Word (.doc) olarak indir" class="bg-blue-600 hover:bg-blue-500 text-white px-3 py-1.5 rounded-lg text-xs font-medium transition flex items-center gap-1.5 shadow-sm whitespace-nowrap">
+          <i class="fa-solid fa-file-word"></i>
+          <span>Word İndir</span>
+        </button>
+      </div>
     </div>
   </header>
 
+  <!-- Filtreleme & Takip Kontrol Paneli -->
+  <div class="bg-slate-850 bg-slate-800/50 border-b border-slate-800 px-6 py-3">
+    <div class="max-w-7xl mx-auto flex flex-wrap items-center justify-between gap-4">
+      
+      <!-- Kaynak Seçimi -->
+      <div class="flex items-center gap-2 flex-wrap text-xs">
+        <span class="text-slate-400 font-medium flex items-center gap-1"><i class="fa-solid fa-filter text-emerald-400"></i> Kaynaklar:</span>
+        <div id="sourcesFilter" class="flex items-center gap-1.5 flex-wrap">
+          <span class="text-xs text-slate-500">Yükleniyor...</span>
+        </div>
+      </div>
+
+      <!-- Kelime Takip & Alarm -->
+      <div class="flex items-center gap-2 text-xs">
+        <span class="text-amber-400 font-medium flex items-center gap-1"><i class="fa-solid fa-bell"></i> Alarm Kelimeleri:</span>
+        <input type="text" id="watchWordsInput" placeholder="örn: deprem, dolar, borsa (virgülle)" class="bg-slate-950 border border-slate-700 rounded-md px-2.5 py-1 text-xs text-slate-200 placeholder-slate-600 focus:outline-none focus:border-amber-500 w-52">
+      </div>
+    </div>
+  </div>
+
+  <!-- Ana İçerik -->
   <main class="flex-1 max-w-7xl w-full mx-auto p-6">
-    <div class="flex justify-between items-center mb-6 text-sm text-slate-400">
-      <span id="newsCount" class="font-medium text-slate-300">Yükleniyor...</span>
-      <button id="syncRssBtn" class="bg-slate-800 hover:bg-slate-700 text-emerald-400 border border-slate-700 px-3 py-1.5 rounded-lg text-xs font-semibold transition flex items-center gap-1.5 shadow-sm">
+    <div class="flex justify-between items-center mb-5 text-xs text-slate-400">
+      <div class="flex items-center gap-2">
+        <span id="newsCount" class="font-semibold text-slate-300">Yükleniyor...</span>
+        <span id="alarmBadge" class="hidden bg-amber-500/20 text-amber-300 px-2 py-0.5 rounded border border-amber-500/30 animate-pulse font-medium"></span>
+      </div>
+      <button id="syncRssBtn" class="bg-slate-800 hover:bg-slate-700 text-emerald-400 border border-slate-700 px-3 py-1 rounded-lg text-xs font-medium transition flex items-center gap-1.5">
         <i class="fa-solid fa-cloud-arrow-down" id="syncIcon"></i>
-        <span id="syncText">Kaynakları Şimdi Tara</span>
+        <span id="syncText">Kaynakları Tara</span>
       </button>
     </div>
-    
-    <div id="statusAlert" class="hidden mb-6 p-4 rounded-xl text-sm font-medium transition"></div>
 
-    <div id="newsGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"></div>
+    <div id="statusAlert" class="hidden mb-4 p-3 rounded-xl text-xs font-medium transition"></div>
+
+    <!-- Haber Grid -->
+    <div id="newsGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5"></div>
   </main>
 
   <script>
+    let currentNewsList = [];
+    let selectedSources = new Set();
     let searchTimeout;
+
+    // LocalStorage'dan kayıtlı takip kelimelerini çek
+    const watchInput = document.getElementById('watchWordsInput');
+    watchInput.value = localStorage.getItem('haber_watch_words') || '';
+    watchInput.addEventListener('change', () => {
+      localStorage.setItem('haber_watch_words', watchInput.value.trim());
+      renderNews();
+    });
+
     const grid = document.getElementById('newsGrid');
     const countText = document.getElementById('newsCount');
+    const alarmBadge = document.getElementById('alarmBadge');
     const syncBtn = document.getElementById('syncRssBtn');
     const syncIcon = document.getElementById('syncIcon');
     const syncText = document.getElementById('syncText');
     const statusAlert = document.getElementById('statusAlert');
+    const sourcesContainer = document.getElementById('sourcesFilter');
 
     function showAlert(message, type = 'info') {
-      statusAlert.className = `mb-6 p-4 rounded-xl text-sm font-medium transition flex items-center gap-2 ${
+      statusAlert.className = `mb-4 p-3 rounded-xl text-xs font-medium transition flex items-center gap-2 ${
         type === 'success' ? 'bg-emerald-500/10 border border-emerald-500/30 text-emerald-300' :
         type === 'error' ? 'bg-rose-500/10 border border-rose-500/30 text-rose-300' :
         'bg-blue-500/10 border border-blue-500/30 text-blue-300'
@@ -59,59 +114,209 @@
       setTimeout(() => statusAlert.classList.add('hidden'), 5000);
     }
 
-    async function loadNews(search = '') {
+    // Sesli Alarm Efekti (Web Audio API)
+    function playAlertBeep() {
       try {
-        let url = '/api/news?limit=90';
-        if (search) url += '&search=' + encodeURIComponent(search);
-        
-        const res = await fetch(url);
+        const ctx = new (window.AudioContext || window.webkitAudioContext)();
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.type = 'triangle';
+        osc.frequency.setValueAtTime(587.33, ctx.currentTime);
+        gain.gain.setValueAtTime(0.2, ctx.currentTime);
+        osc.start();
+        osc.stop(ctx.currentTime + 0.3);
+      } catch (e) {}
+    }
+
+    // Kaynakları Yükle
+    async function loadSources() {
+      try {
+        const res = await fetch('/api/sources');
         const data = await res.json();
-        if (!data.success) throw new Error(data.error || 'Veri alinamadi');
+        if (data.success && data.data.length > 0) {
+          sourcesContainer.innerHTML = data.data.map(src => {
+            selectedSources.add(src);
+            return `
+              <button data-src="${src}" class="source-chip bg-emerald-600/20 text-emerald-300 border border-emerald-500/30 px-2.5 py-0.5 rounded-full hover:opacity-80 transition flex items-center gap-1">
+                <span>${src}</span>
+                <i class="fa-solid fa-check text-[10px]"></i>
+              </button>
+            `;
+          }).join('');
 
-        countText.textContent = `Toplam ${data.count || 0} haber listeleniyor.`;
-        
-        if (!data.data || data.data.length === 0) {
-          grid.innerHTML = `
-            <div class="col-span-full py-16 text-center text-slate-500">
-              <i class="fa-regular fa-folder-open text-5xl mb-3 block text-slate-600"></i>
-              <p class="text-base text-slate-400 font-medium">Haber bulunamadı.</p>
-              <p class="text-xs text-slate-500 mt-1">Lütfen yukarıdaki "Kaynakları Şimdi Tara" butonuna tıklayın.</p>
-            </div>`;
-          return;
+          document.querySelectorAll('.source-chip').forEach(btn => {
+            btn.addEventListener('click', () => {
+              const src = btn.getAttribute('data-src');
+              if (selectedSources.has(src)) {
+                selectedSources.delete(src);
+                btn.className = 'source-chip bg-slate-800 text-slate-500 border border-slate-700 px-2.5 py-0.5 rounded-full hover:opacity-80 transition flex items-center gap-1';
+                btn.querySelector('i').className = 'fa-solid fa-xmark text-[10px]';
+              } else {
+                selectedSources.add(src);
+                btn.className = 'source-chip bg-emerald-600/20 text-emerald-300 border border-emerald-500/30 px-2.5 py-0.5 rounded-full hover:opacity-80 transition flex items-center gap-1';
+                btn.querySelector('i').className = 'fa-solid fa-check text-[10px]';
+              }
+              loadNews();
+            });
+          });
         }
+      } catch (e) {}
+    }
 
-        grid.innerHTML = data.data.map(item => `
-          <article class="bg-slate-800/80 border border-slate-700/60 rounded-xl p-5 hover:border-slate-500 transition-all flex flex-col justify-between group shadow-lg hover:shadow-emerald-950/20">
+    // Haberleri Ekrana Çiz ve Alarm Kelimelerini Yakala
+    function renderNews() {
+      countText.textContent = `Toplam ${currentNewsList.length} haber listeleniyor.`;
+
+      const watchKeywords = watchInput.value.toLowerCase().split(',').map(s => s.trim()).filter(Boolean);
+      let matchedAlarmCount = 0;
+
+      if (currentNewsList.length === 0) {
+        grid.innerHTML = `
+          <div class="col-span-full py-16 text-center text-slate-500">
+            <i class="fa-regular fa-folder-open text-4xl mb-3 block text-slate-600"></i>
+            <p class="text-sm text-slate-400">Gösterilecek haber bulunamadı.</p>
+          </div>`;
+        alarmBadge.classList.add('hidden');
+        return;
+      }
+
+      grid.innerHTML = currentNewsList.map(item => {
+        const itemText = `${item.title} ${item.description || ''}`.toLowerCase();
+        const hasAlarm = watchKeywords.some(kw => itemText.includes(kw));
+        if (hasAlarm) matchedAlarmCount++;
+
+        const dateObj = new Date(item.pubDate || item.createdAt);
+        const timeStr = dateObj.toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+        const dateStr = dateObj.toLocaleDateString('tr-TR', { day: '2-digit', month: '2-digit', year: 'numeric' });
+
+        return `
+          <article class="relative bg-slate-800/80 border ${hasAlarm ? 'border-amber-500/80 bg-amber-950/20 ring-1 ring-amber-500/50' : 'border-slate-700/60'} rounded-xl p-4 hover:border-slate-500 transition-all flex flex-col justify-between group shadow-md">
             <div>
-              <div class="flex items-center justify-between text-xs text-slate-400 mb-2.5">
-                <span class="bg-slate-700/80 px-2.5 py-0.5 rounded-md font-bold text-emerald-400 border border-slate-600">${item.source || 'Genel'}</span>
-                <span>${item.pubDate ? new Date(item.pubDate).toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' }) : ''}</span>
+              <div class="flex items-center justify-between text-[11px] text-slate-400 mb-2">
+                <span class="bg-slate-700/80 px-2 py-0.5 rounded font-bold text-emerald-400 border border-slate-600/50">${item.source || 'Genel'}</span>
+                <span class="font-mono text-emerald-300 font-semibold flex items-center gap-1">
+                  <i class="fa-regular fa-clock text-[10px]"></i> ${timeStr}
+                </span>
               </div>
-              <h2 class="text-base font-semibold text-slate-100 group-hover:text-emerald-400 transition line-clamp-2 mb-2 leading-snug">
+              
+              <h2 class="text-sm font-semibold text-slate-100 group-hover:text-emerald-400 transition line-clamp-2 mb-2 leading-snug">
                 <a href="${item.link}" target="_blank" rel="noopener noreferrer">${item.title}</a>
               </h2>
-              ${item.description ? `<p class="text-xs text-slate-400 line-clamp-3 mb-4 leading-relaxed">${item.description.replace(/<[^>]*>?/gm, '')}</p>` : ''}
+              
+              ${item.description ? `<p class="text-xs text-slate-400 line-clamp-3 mb-3 leading-relaxed">${item.description.replace(/<[^>]*>?/gm, '')}</p>` : ''}
             </div>
-            <div class="pt-3 border-t border-slate-700/50 flex justify-between items-center text-xs text-slate-500">
-              <span>${item.pubDate ? new Date(item.pubDate).toLocaleDateString('tr-TR') : ''}</span>
-              <a href="${item.link}" target="_blank" rel="noopener noreferrer" class="text-xs text-slate-400 hover:text-emerald-400 font-semibold inline-flex items-center gap-1 transition">
-                Habere Git <i class="fa-solid fa-arrow-up-right-from-square text-[10px]"></i>
-              </a>
+
+            <div class="pt-2.5 border-t border-slate-700/50 flex justify-between items-center text-[11px] text-slate-400">
+              <span class="text-slate-500 text-[10px]">${dateStr}</span>
+              <div class="flex items-center gap-2">
+                ${hasAlarm ? '<span class="text-[10px] bg-amber-500/20 text-amber-300 px-1.5 py-0.5 rounded font-semibold border border-amber-500/30">⚠️ ALARM</span>' : ''}
+                <a href="${item.link}" target="_blank" rel="noopener noreferrer" class="text-slate-300 hover:text-emerald-400 font-medium inline-flex items-center gap-1 transition">
+                  Habere Git <i class="fa-solid fa-arrow-up-right-from-square text-[9px]"></i>
+                </a>
+              </div>
             </div>
           </article>
-        `).join('');
-      } catch (err) {
-        grid.innerHTML = `<div class="col-span-full text-center py-10 text-rose-400 font-medium">Hata: ${err.message}</div>`;
+        `;
+      }).join('');
+
+      if (matchedAlarmCount > 0) {
+        alarmBadge.textContent = `${matchedAlarmCount} Takip Edilen Haber Bulundu!`;
+        alarmBadge.classList.remove('hidden');
+        playAlertBeep();
+      } else {
+        alarmBadge.classList.add('hidden');
       }
     }
 
-    // Arama kutusu
-    document.getElementById('searchInput').addEventListener('input', (e) => {
-      clearTimeout(searchTimeout);
-      searchTimeout = setTimeout(() => loadNews(e.target.value.trim()), 300);
+    // Haberleri API'den Çek
+    async function loadNews() {
+      try {
+        let url = `/api/news?limit=120`;
+        const search = document.getElementById('searchInput').value.trim();
+        if (search) url += `&search=${encodeURIComponent(search)}`;
+        if (selectedSources.size > 0) {
+          url += `&sources=${Array.from(selectedSources).join(',')}`;
+        }
+
+        const res = await fetch(url);
+        const data = await res.json();
+        if (!data.success) throw new Error(data.error || 'Veri çekilemedi');
+
+        currentNewsList = data.data || [];
+        renderNews();
+      } catch (err) {
+        grid.innerHTML = `<div class="col-span-full text-center py-10 text-rose-400 text-xs">Hata: ${err.message}</div>`;
+      }
+    }
+
+    // Word (.doc) Olarak Dışa Aktarma
+    document.getElementById('exportWordBtn').addEventListener('click', () => {
+      if (!currentNewsList || currentNewsList.length === 0) {
+        showAlert('Dışa aktarılacak haber bulunamadı!', 'error');
+        return;
+      }
+
+      let content = `
+        <html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word' xmlns='http://www.w3.org/TR/REC-html40'>
+        <head>
+          <meta charset='utf-8'>
+          <title>Haber Takip Raporu</title>
+          <style>
+            body { font-family: 'Segoe UI', Calibri, Arial, sans-serif; padding: 20px; color: #222; }
+            h1 { font-size: 20pt; color: #0f172a; border-bottom: 2px solid #10b981; padding-bottom: 8px; }
+            .meta { font-size: 9pt; color: #64748b; margin-bottom: 25px; }
+            .item { margin-bottom: 20px; padding-bottom: 15px; border-bottom: 1px solid #e2e8f0; }
+            .title { font-size: 13pt; font-weight: bold; color: #1e293b; margin-bottom: 4px; }
+            .badge { font-size: 8.5pt; font-weight: bold; background: #e0f2fe; color: #0369a1; padding: 2px 6px; border-radius: 4px; }
+            .date { font-size: 8.5pt; color: #059669; font-weight: 600; margin-left: 8px; }
+            .desc { font-size: 10pt; color: #334155; line-height: 1.5; margin: 8px 0; }
+            .link { font-size: 9pt; color: #2563eb; text-decoration: underline; }
+          </style>
+        </head>
+        <body>
+          <h1>Haber Takip - Özet Raporu</h1>
+          <div class="meta">Oluşturulma Tarihi: ${new Date().toLocaleString('tr-TR')} | Toplam Haber Sayısı: ${currentNewsList.length}</div>
+      `;
+
+      currentNewsList.forEach((n, idx) => {
+        const cleanDesc = (n.description || '').replace(/<[^>]*>?/gm, '');
+        const dateStr = new Date(n.pubDate || n.createdAt).toLocaleString('tr-TR');
+        content += `
+          <div class="item">
+            <div>
+              <span class="badge">${n.source || 'Genel'}</span>
+              <span class="date">${dateStr}</span>
+            </div>
+            <div class="title">${idx + 1}. ${n.title}</div>
+            ${cleanDesc ? `<div class="desc">${cleanDesc}</div>` : ''}
+            <div><a class="link" href="${n.link}">Habere Git: ${n.link}</a></div>
+          </div>
+        `;
+      });
+
+      content += `</body></html>`;
+
+      const blob = new Blob(['\ufeff', content], { type: 'application/msword' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `Haber_Takip_Raporu_${new Date().toISOString().slice(0, 10)}.doc`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      showAlert('Word raporu başarıyla indirildi!', 'success');
     });
 
-    // Yenile Butonu
+    // Arama Girişi
+    document.getElementById('searchInput').addEventListener('input', () => {
+      clearTimeout(searchTimeout);
+      searchTimeout = setTimeout(loadNews, 300);
+    });
+
+    // Yenileme Butonu
     document.getElementById('refreshBtn').addEventListener('click', () => {
       const icon = document.getElementById('refreshIcon');
       icon.classList.add('fa-spin');
@@ -122,29 +327,32 @@
     syncBtn.addEventListener('click', async () => {
       syncBtn.disabled = true;
       syncIcon.className = 'fa-solid fa-circle-notch fa-spin';
-      syncText.textContent = 'Kaynaklar taranıyor (5-8 sn)...';
-      showAlert('<i class="fa-solid fa-rotate fa-spin mr-2"></i>RSS kaynakları taranıyor, lütfen bekleyin...', 'info');
+      syncText.textContent = 'Taranıyor...';
+      showAlert('RSS kaynakları taranıyor, lütfen 5 saniye bekleyin...', 'info');
 
       try {
         await fetch('/api/sync');
-        // Veritabanına yazılması için 6 saniye mola verip listeyi tazeliyoruz
         setTimeout(async () => {
           await loadNews();
           syncIcon.className = 'fa-solid fa-cloud-arrow-down';
-          syncText.textContent = 'Kaynakları Şimdi Tara';
+          syncText.textContent = 'Kaynakları Tara';
           syncBtn.disabled = false;
-          showAlert('<i class="fa-solid fa-circle-check mr-2"></i>Tarama tamamlandı! Haberler güncellendi.', 'success');
-        }, 6000);
+          showAlert('Kaynaklar güncellendi ve en yeni saat sırasına göre dizildi.', 'success');
+        }, 5000);
       } catch (e) {
         syncIcon.className = 'fa-solid fa-triangle-exclamation';
-        syncText.textContent = 'Hata Oluştu';
+        syncText.textContent = 'Hata!';
         syncBtn.disabled = false;
-        showAlert('Kaynaklar taranırken bir hata oluştu: ' + e.message, 'error');
+        showAlert('Tarama hatası: ' + e.message, 'error');
       }
     });
 
-    // İlk açılışta yükle
+    // Başlangıç Yüklemeleri
+    loadSources();
     loadNews();
+
+    // 60 saniyede bir otomatik tazeleyip yeni haber var mı kontrol et
+    setInterval(loadNews, 60000);
   </script>
 </body>
 </html>

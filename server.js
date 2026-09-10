@@ -26,15 +26,16 @@ const newsSchema = new mongoose.Schema({
   createdAt: { type: Date, default: Date.now }
 });
 
+// Hem pubDate hem createdAt için indexleme (hızlı sıralama)
+newsSchema.index({ pubDate: -1, createdAt: -1 });
+
 const News = mongoose.model('News', newsSchema);
 
 // 2. Veritabanı Bağlantısı
 if (MONGODB_URI) {
-  mongoose.connect(MONGODB_URI, {
-    serverSelectionTimeoutMS: 5000 // 5 saniyede MongoDB yanıt vermezse kilitlenme
-  })
-  .then(() => console.log('MongoDB Atlas baglantisi basarili.'))
-  .catch(err => console.error('MongoDB baglanti hatasi:', err.message));
+  mongoose.connect(MONGODB_URI, { serverSelectionTimeoutMS: 5000 })
+    .then(() => console.log('MongoDB Atlas baglantisi basarili.'))
+    .catch(err => console.error('MongoDB baglanti hatasi:', err.message));
 }
 
 function extractText(val) {
@@ -48,19 +49,19 @@ function extractText(val) {
   return String(val).trim();
 }
 
-// 3. Hafif ve Hızlı RSS Çekici
+// 3. RSS Çekme
 async function fetchRssFeed(sourceName, url) {
   try {
     const response = await axios.get(url, {
       headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)' },
-      timeout: 6000 // Hızlı zaman aşımı (sunucuyu bekletmez)
+      timeout: 8000
     });
 
     const parser = new xml2js.Parser({ explicitArray: false, trim: true });
     const result = await parser.parseStringPromise(response.data);
     const channel = result.rss ? result.rss.channel : (result.feed || {});
     const items = channel.item || channel.entry || [];
-    const itemList = (Array.isArray(items) ? items : [items]).slice(0, 15); // İlk 15 haber (hız için)
+    const itemList = (Array.isArray(items) ? items : [items]).slice(0, 20);
 
     for (const item of itemList) {
       const rawTitle = extractText(item.title);
@@ -69,7 +70,12 @@ async function fetchRssFeed(sourceName, url) {
       let rawLink = typeof item.link === 'string' ? item.link : (item.link?.$?.href || extractText(item.link));
       let rawGuid = extractText(item.guid) || rawLink || rawTitle;
       const rawDesc = extractText(item.description || item.summary || '');
-      const pubDate = item.pubDate ? new Date(item.pubDate) : new Date();
+      
+      let parsedDate = new Date();
+      if (item.pubDate) {
+        const d = new Date(item.pubDate);
+        if (!isNaN(d.getTime())) parsedDate = d;
+      }
 
       if (!rawGuid || !rawLink) continue;
 
@@ -81,68 +87,85 @@ async function fetchRssFeed(sourceName, url) {
             title: rawTitle,
             link: String(rawLink),
             description: rawDesc,
-            pubDate: isNaN(pubDate.getTime()) ? new Date() : pubDate,
+            pubDate: parsedDate,
             source: sourceName,
-            category: 'Gündem'
+            category: 'Gündem',
+            createdAt: new Date()
           }
         },
         { upsert: true }
       ).catch(() => {});
     }
-    console.log(`[${sourceName}] Basariyla cekildi.`);
   } catch (error) {
-    console.log(`[${sourceName}] RSS Atlaniyor: ${error.message}`);
+    console.log(`[${sourceName}] RSS Hatasi: ${error.message}`);
   }
 }
 
-// En hızlı açılan güvenilir RSS kaynakları
-const fastSources = [
+const defaultSources = [
   { name: 'NTV', rss: 'https://www.ntv.com.tr/son-dakika.rss' },
   { name: 'Ensonhaber', rss: 'https://www.ensonhaber.com/rss/ensonhaber.xml' },
-  { name: 'BBC Türkçe', rss: 'https://feeds.bbci.co.uk/turkce/rss.xml' }
+  { name: 'BBC Türkçe', rss: 'https://feeds.bbci.co.uk/turkce/rss.xml' },
+  { name: 'Hürriyet', rss: 'https://www.hurriyet.com.tr/rss/gundem' },
+  { name: 'Milliyet', rss: 'https://www.milliyet.com.tr/rss/rssnew/sondakikarss.xml' }
 ];
 
 let isSyncing = false;
 async function fetchAllSources() {
   if (isSyncing) return;
   isSyncing = true;
-  console.log("RSS senkronizasyonu basladi...");
-  
-  for (const src of fastSources) {
+  for (const src of defaultSources) {
     await fetchRssFeed(src.name, src.rss);
   }
-  
-  console.log("RSS senkronizasyonu bitti.");
   isSyncing = false;
 }
 
 // 4. API Endpointleri
+// Mevcut kaynakları listele
+app.get('/api/sources', async (req, res) => {
+  try {
+    const sources = await News.distinct('source');
+    res.json({ success: true, data: sources });
+  } catch (err) {
+    res.json({ success: true, data: defaultSources.map(s => s.name) });
+  }
+});
+
+// Haberleri getir (geliş / yayın sırasına göre sıralı)
 app.get('/api/news', async (req, res) => {
   try {
-    const limit = parseInt(req.query.limit) || 50;
+    const limit = parseInt(req.query.limit) || 100;
     const query = {};
-    if (req.query.search) {
-      query.title = { $regex: req.query.search, $options: 'i' };
+    
+    // Çoklu kaynak filtreleme (virgülle ayrılmış: NTV,BBC)
+    if (req.query.sources) {
+      const srcList = req.query.sources.split(',').filter(Boolean);
+      if (srcList.length > 0) {
+        query.source = { $in: srcList };
+      }
     }
-    // Maksimum 3 saniye sorgu süresi
-    const news = await News.find(query).sort({ pubDate: -1 }).limit(limit).maxTimeMS(4000);
+
+    if (req.query.search) {
+      query.$or = [
+        { title: { $regex: req.query.search, $options: 'i' } },
+        { description: { $regex: req.query.search, $options: 'i' } }
+      ];
+    }
+
+    // Kesin sıralama: En son gelen/yayınlanan en üstte
+    const news = await News.find(query).sort({ pubDate: -1, createdAt: -1 }).limit(limit).maxTimeMS(4000);
     res.json({ success: true, count: news.length, data: news });
   } catch (err) {
     res.status(500).json({ success: false, error: err.message, data: [] });
   }
 });
 
-// Senkronizasyonu arka planda tetikler ve ANINDA yanıt döner (504 yemez!)
 app.get('/api/sync', (req, res) => {
-  fetchAllSources(); // Arka planda başlar, kullanıcıyı bekletmez
+  fetchAllSources();
   res.json({ success: true, message: "Tarama arka planda baslatildi." });
 });
 
-// Periyodik görev (15 dakikada bir)
-setInterval(fetchAllSources, 15 * 60 * 1000);
-
-// Sunucu açıldıktan 5 saniye sonra ilk taramayı sessizce yap
-setTimeout(fetchAllSources, 5000);
+setInterval(fetchAllSources, 10 * 60 * 1000);
+setTimeout(fetchAllSources, 4000);
 
 app.listen(PORT, () => {
   console.log(`Haber Takip Web Sunucusu ${PORT} portunda calisiyor.`);
