@@ -606,7 +606,7 @@
       } catch (e) {}
     }
 
-    function updateTicker(newsItems) {
+       function updateTicker(newsItems) {
       if (!newsItems || newsItems.length === 0) {
         tickerTrack.innerHTML = `<span class="text-slate-500">Bu kategoriye ait kayan haber akışı bulunamadı.</span>`;
         return;
@@ -616,6 +616,10 @@
         const timeStr = new Date(item.pubDate || item.createdAt).toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' });
         const fav = getFaviconUrl(item.link);
 
+        // Kaynağın admin panelinde yabancı (en) seçilip seçilmediğini kontrol et
+        const srcObj = allSourcesList.find(s => s.name === item.source);
+        const isForeign = item.lang === 'en' || (srcObj && srcObj.lang === 'en');
+
         return `
           <div class="inline-flex items-center gap-2 font-medium">
             <a href="${item.link}" target="_blank" rel="noopener noreferrer" onclick="trackNewsClick('${item._id}')" class="inline-flex items-center gap-1.5 hover:text-emerald-400 transition group">
@@ -624,6 +628,7 @@
               <span class="text-slate-300 font-semibold text-[11px] bg-slate-800/80 px-1.5 py-0.5 rounded">${item.source}</span>
             </a>
 
+            ${isForeign ? `
             <button 
               type="button" 
               onclick="translateTickerHeadline(event, ${index}, '${encodeURIComponent(item.title)}')" 
@@ -631,6 +636,7 @@
               class="ticker-tr-btn-${index} inline-flex items-center gap-1 bg-sky-950 hover:bg-sky-700 text-sky-400 hover:text-white border border-sky-600/50 text-[10px] px-1.5 py-0.2 rounded font-bold transition cursor-pointer">
               <i class="fa-solid fa-language"></i> TR
             </button>
+            ` : ''}
 
             <a href="${item.link}" target="_blank" rel="noopener noreferrer" onclick="trackNewsClick('${item._id}')" class="hover:text-emerald-400 transition">
               <span id="ticker-headline-${index}" class="text-slate-100 hover:underline">${item.title}</span>
@@ -673,6 +679,10 @@
         const isTrending = viewsCount >= 5;
         const rawSummary = (item.description || '').replace(/<[^>]*>?/gm, '');
 
+        // Kaynağın admin panelinde yabancı (en) seçilip seçilmediğini kontrol et
+        const srcObj = allSourcesList.find(s => s.name === item.source);
+        const isForeign = item.lang === 'en' || (srcObj && srcObj.lang === 'en');
+
         return `
           <article class="relative bg-slate-800/80 border ${isChecked ? 'border-emerald-500 bg-slate-800 ring-2 ring-emerald-500/40' : (hasAlarm ? 'border-amber-500/80 bg-amber-950/20 ring-1 ring-amber-500/50' : 'border-slate-700/60')} rounded-xl p-4 hover:border-slate-500 transition-all flex flex-col justify-between group shadow-md">
             
@@ -706,6 +716,7 @@
                 </div>
 
                 <div class="flex items-center gap-2">
+                  ${isForeign ? `
                   <button 
                     type="button" 
                     onclick="translateCard(event, '${item._id}', '${encodeURIComponent(item.title)}', '${encodeURIComponent(rawSummary)}')" 
@@ -713,6 +724,7 @@
                     title="Sadece başlık ve özeti Türkçeye çevir">
                     <i class="fa-solid fa-language text-xs"></i> TR Çevir
                   </button>
+                  ` : ''}
                   <span class="text-slate-500 text-[10px] whitespace-nowrap">${dateStr}</span>
                 </div>
               </div>
@@ -753,6 +765,7 @@
         alarmBadge.classList.add('hidden');
       }
     }
+
     // 1. Haber Kartı Çevirisi (Sadece Başlık ve Özet)
     async function translateCard(event, id, encTitle, encDesc) {
       if (event) {
