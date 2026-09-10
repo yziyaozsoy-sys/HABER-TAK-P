@@ -185,7 +185,7 @@
       <!-- Haber Grid -->
       <div id="newsGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 gap-5"></div>
 
-      <!-- Y. ZİYA ÖZSOY İMZA / FOOTER BÖLÜMÜ -->
+      <!-- Y. ZİYA ÖZSOY İMZA FOOTER -->
       <footer class="mt-12 py-6 border-t border-slate-800/80 text-center">
         <p class="text-xs text-slate-400 font-medium tracking-wide flex items-center justify-center gap-2">
           <span>Haber Takip Portalı</span>
@@ -205,7 +205,7 @@
 
   </div>
 
-  <!-- ASILI POP-UP CANLI KAYAN BANT (SABİT ALT BANT + HIZ SEÇİMİ) -->
+  <!-- ASILI POP-UP CANLI KAYAN BANT (SABİT ALT BANT + HIZ SEÇİMİ + AYRI PENCERE AÇ) -->
   <aside class="fixed bottom-3 left-3 right-3 md:left-6 md:right-6 h-11 bg-slate-950/90 border border-slate-700/80 z-50 flex items-center rounded-xl shadow-2xl backdrop-blur-md overflow-hidden">
     <!-- Başlık & Kategori Rozeti -->
     <div class="bg-rose-600 text-white font-bold text-xs uppercase px-3.5 h-full flex items-center gap-2 shrink-0 shadow-md">
@@ -220,7 +220,7 @@
       </div>
     </div>
 
-    <!-- Hız Kontrolleri (Yavaş / Orta / Hızlı / Durdur) -->
+    <!-- Hız Kontrolleri, Durdur ve Ayrı Mini Pencere Butonu -->
     <div class="bg-slate-900/90 border-l border-slate-700/80 px-2.5 h-full flex items-center gap-1 text-[11px] shrink-0">
       <span class="text-slate-500 hidden sm:inline mr-1 text-[10px] font-medium">Hız:</span>
       <button data-speed="slow" class="speed-btn px-2 py-0.5 rounded text-slate-400 hover:text-white transition">Yavaş</button>
@@ -228,6 +228,12 @@
       <button data-speed="fast" class="speed-btn px-2 py-0.5 rounded text-slate-400 hover:text-white transition">Hızlı</button>
       <button id="togglePlayBtn" title="Durdur / Başlat" class="ml-1 text-slate-400 hover:text-amber-400 transition px-1">
         <i class="fa-solid fa-pause text-xs" id="playIcon"></i>
+      </button>
+
+      <!-- AYRI PENCERE (STANDALONE POP-UP) BUTONU -->
+      <button id="openStandaloneTickerBtn" title="Kayan Bandı Ayrı Mini Pencere Olarak Aç (Ekranın köşesinde tutun)" class="ml-1.5 bg-slate-800 hover:bg-emerald-600 text-emerald-400 hover:text-white px-2 py-1 rounded transition flex items-center gap-1 text-[11px] border border-slate-700 shadow-sm">
+        <i class="fa-solid fa-up-right-from-square text-[10px]"></i>
+        <span class="hidden lg:inline">Pencereyi Ayır</span>
       </button>
     </div>
   </aside>
@@ -240,6 +246,20 @@
     let selectedCategory = 'Tümü';
     let searchTimeout;
     let isPaused = false;
+
+    // Bağımsız Mini Pencere (Pop-up Ticker) Açma
+    document.getElementById('openStandaloneTickerBtn').addEventListener('click', () => {
+      const width = 1100;
+      const height = 75;
+      const left = (window.screen.width - width) / 2;
+      const top = window.screen.height - height - 80;
+      
+      window.open(
+        `/ticker.html?category=${encodeURIComponent(selectedCategory)}`,
+        'CanliHaberBandi',
+        `width=${width},height=${height},top=${top},left=${left},resizable=yes,scrollbars=no,status=no,location=no,toolbar=no,menubar=no`
+      );
+    });
 
     // Talep Modalı
     const reqModal = document.getElementById('requestModal');

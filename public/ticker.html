@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Canlı Haber Bandı - Y. Ziya Özsoy</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      overflow: hidden;
+      user-select: none;
+    }
+    @keyframes ticker-scroll {
+      0% { transform: translateX(100%); }
+      100% { transform: translateX(-100%); }
+    }
+    .ticker-track {
+      display: inline-flex;
+      white-space: nowrap;
+      will-change: transform;
+      animation: ticker-scroll 90s linear infinite;
+    }
+    .ticker-track.paused {
+      animation-play-state: paused !important;
+    }
+    .ticker-track.speed-slow {
+      animation-duration: 150s !important;
+    }
+    .ticker-track.speed-normal {
+      animation-duration: 90s !important;
+    }
+    .ticker-track.speed-fast {
+      animation-duration: 45s !important;
+    }
+    .ticker-container:hover .ticker-track {
+      animation-play-state: paused;
+    }
+  </style>
+</head>
+<body class="bg-slate-950 text-slate-100 h-screen flex flex-col justify-center border-t-2 border-emerald-500">
+
+  <div class="h-full flex items-center bg-slate-950 px-2 justify-between">
+    
+    <!-- Kategori Rozeti ve Seçimi -->
+    <div class="flex items-center gap-2 bg-slate-900 border border-slate-800 rounded-lg px-2.5 py-1 shrink-0">
+      <span class="w-2 h-2 rounded-full bg-rose-500 animate-ping"></span>
+      <select id="catSelect" class="bg-transparent text-emerald-400 font-bold text-xs uppercase focus:outline-none cursor-pointer">
+        <option value="Tümü" class="bg-slate-900 text-slate-200">TÜMÜ</option>
+        <option value="Gündem" class="bg-slate-900 text-slate-200">GÜNDEM</option>
+        <option value="Spor" class="bg-slate-900 text-slate-200">SPOR</option>
+        <option value="Ekonomi" class="bg-slate-900 text-slate-200">EKONOMİ</option>
+        <option value="Dünya" class="bg-slate-900 text-slate-200">DÜNYA</option>
+        <option value="Teknoloji" class="bg-slate-900 text-slate-200">TEKNOLOJİ</option>
+        <option value="Magazin" class="bg-slate-900 text-slate-200">MAGAZİN</option>
+      </select>
+    </div>
+
+    <!-- Kayan İçerik -->
+    <div class="ticker-container flex-1 overflow-hidden relative h-full flex items-center px-4 cursor-pointer">
+      <div id="tickerTrack" class="ticker-track speed-normal flex items-center gap-10 text-xs text-slate-200">
+        <span class="text-slate-400 italic">Haber akışı bağlanıyor...</span>
+      </div>
+    </div>
+
+    <!-- Kontroller -->
+    <div class="flex items-center gap-1 bg-slate-900 border border-slate-800 rounded-lg px-2 py-1 shrink-0 text-[11px]">
+      <button data-speed="slow" class="speed-btn px-1.5 py-0.5 rounded text-slate-400 hover:text-white transition">Yavaş</button>
+      <button data-speed="normal" class="speed-btn px-1.5 py-0.5 rounded bg-emerald-600/30 text-emerald-300 font-semibold border border-emerald-500/40 transition">Orta</button>
+      <button data-speed="fast" class="speed-btn px-1.5 py-0.5 rounded text-slate-400 hover:text-white transition">Hızlı</button>
+      
+      <button id="togglePlayBtn" title="Durdur / Başlat" class="ml-1 text-slate-400 hover:text-amber-400 transition px-1">
+        <i class="fa-solid fa-pause text-xs" id="playIcon"></i>
+      </button>
+
+      <span class="text-slate-600 mx-1">|</span>
+      <span class="text-[10px] text-slate-500 hidden md:inline">Y. Ziya Özsoy</span>
+    </div>
+
+  </div>
+
+  <script>
+    const tickerTrack = document.getElementById('tickerTrack');
+    const catSelect = document.getElementById('catSelect');
+    const togglePlayBtn = document.getElementById('togglePlayBtn');
+    const playIcon = document.getElementById('playIcon');
+    let isPaused = false;
+
+    // URL parametresinden kategori al
+    const urlParams = new URLSearchParams(window.location.search);
+    let selectedCategory = urlParams.get('category') || 'Tümü';
+    catSelect.value = selectedCategory;
+
+    catSelect.addEventListener('change', () => {
+      selectedCategory = catSelect.value;
+      loadNews();
+    });
+
+    function getFaviconUrl(linkUrl) {
+      try {
+        const parsed = new URL(linkUrl);
+        return `https://www.google.com/s2/favicons?domain=${parsed.hostname}&sz=64`;
+      } catch (e) {
+        return 'https://placehold.co/32x32/1e293b/10b981?text=N';
+      }
+    }
+
+    function setTickerSpeed(speed) {
+      localStorage.setItem('haber_ticker_speed', speed);
+      tickerTrack.classList.remove('speed-slow', 'speed-normal', 'speed-fast');
+      tickerTrack.classList.add(`speed-${speed}`);
+
+      document.querySelectorAll('.speed-btn').forEach(b => {
+        if (b.getAttribute('data-speed') === speed) {
+          b.className = 'speed-btn px-1.5 py-0.5 rounded bg-emerald-600/30 text-emerald-300 font-semibold border border-emerald-500/40 transition';
+        } else {
+          b.className = 'speed-btn px-1.5 py-0.5 rounded text-slate-400 hover:text-white transition';
+        }
+      });
+    }
+
+    document.querySelectorAll('.speed-btn').forEach(btn => {
+      btn.addEventListener('click', () => setTickerSpeed(btn.getAttribute('data-speed')));
+    });
+
+    togglePlayBtn.addEventListener('click', () => {
+      isPaused = !isPaused;
+      if (isPaused) {
+        tickerTrack.classList.add('paused');
+        playIcon.className = 'fa-solid fa-play text-xs';
+      } else {
+        tickerTrack.classList.remove('paused');
+        playIcon.className = 'fa-solid fa-pause text-xs';
+      }
+    });
+
+    async function loadNews() {
+      try {
+        let url = `/api/news?limit=40`;
+        if (selectedCategory && selectedCategory !== 'Tümü') {
+          url += `&category=${encodeURIComponent(selectedCategory)}`;
+        }
+        const res = await fetch(url);
+        const data = await res.json();
+        const newsItems = data.data || [];
+
+        if (newsItems.length === 0) {
+          tickerTrack.innerHTML = `<span class="text-slate-500">Bu kategoride son dakika haberi bulunamadı.</span>`;
+          return;
+        }
+
+        tickerTrack.innerHTML = newsItems.map(item => {
+          const timeStr = new Date(item.pubDate || item.createdAt).toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' });
+          const fav = getFaviconUrl(item.link);
+          return `
+            <a href="${item.link}" target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-2 hover:text-emerald-400 transition font-medium group">
+              <img src="${fav}" alt="" class="w-4 h-4 object-contain rounded bg-slate-900 border border-slate-700">
+              <span class="text-emerald-400 font-bold font-mono text-[11px]">[${timeStr}]</span>
+              <span class="text-slate-300 font-semibold text-[11px] bg-slate-800 px-1.5 py-0.5 rounded">${item.source}</span>
+              <span class="group-hover:underline text-slate-100">${item.title}</span>
+              <span class="text-slate-600 font-bold ml-4">✦</span>
+            </a>
+          `;
+        }).join('');
+      } catch (e) {
+        tickerTrack.innerHTML = `<span class="text-rose-400">Veri bağlantısı kurulamadı.</span>`;
+      }
+    }
+
+    setTickerSpeed(localStorage.getItem('haber_ticker_speed') || 'normal');
+    loadNews();
+    setInterval(loadNews, 60000); // 1 dakikada bir otomatik tazele
+  </script>
+</body>
+</html>
