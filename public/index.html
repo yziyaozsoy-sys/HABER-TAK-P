@@ -14,7 +14,6 @@
       position: sticky;
       top: 85px;
     }
-    /* Kayan Bant Animasyonu */
     @keyframes ticker-scroll {
       0% { transform: translateX(100%); }
       100% { transform: translateX(-100%); }
@@ -22,17 +21,67 @@
     .ticker-track {
       display: inline-flex;
       white-space: nowrap;
-      animation: ticker-scroll 45s linear infinite;
+      will-change: transform;
+      animation: ticker-scroll 90s linear infinite;
+    }
+    .ticker-track.paused {
+      animation-play-state: paused !important;
+    }
+    .ticker-track.speed-slow {
+      animation-duration: 150s !important;
+    }
+    .ticker-track.speed-normal {
+      animation-duration: 90s !important;
+    }
+    .ticker-track.speed-fast {
+      animation-duration: 45s !important;
     }
     .ticker-container:hover .ticker-track {
       animation-play-state: paused;
     }
   </style>
 </head>
-<body class="bg-slate-900 text-slate-100 min-h-screen flex flex-col font-sans pb-14">
+<body class="bg-slate-900 text-slate-100 min-h-screen flex flex-col font-sans pb-20">
+
+  <!-- KULLANICI TALEP & İSTEK MODALI -->
+  <div id="requestModal" class="hidden fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+    <div class="bg-slate-800 border border-slate-700 w-full max-w-md rounded-2xl p-6 shadow-2xl relative">
+      <button id="closeRequestModalBtn" class="absolute top-4 right-4 text-slate-400 hover:text-white transition">
+        <i class="fa-solid fa-xmark text-lg"></i>
+      </button>
+
+      <div class="text-center mb-5">
+        <div class="inline-flex bg-amber-500/20 p-3 rounded-xl border border-amber-500/30 text-amber-400 mb-2">
+          <i class="fa-solid fa-paper-plane text-2xl"></i>
+        </div>
+        <h2 class="text-lg font-bold">Yönetime Talep / İstek İlet</h2>
+        <p class="text-xs text-slate-400 mt-1">Öneri, yeni kaynak talebi veya bildirimlerinizi iletin.</p>
+      </div>
+
+      <div id="requestAlert" class="hidden mb-4 p-2.5 rounded-lg text-xs font-medium text-center"></div>
+
+      <form id="userRequestForm" class="space-y-3.5 text-xs">
+        <div>
+          <label class="block text-slate-400 mb-1">E-posta Adresiniz</label>
+          <input type="email" id="reqEmail" required placeholder="ornek@mail.com" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-slate-200 focus:outline-none focus:border-amber-500">
+        </div>
+        <div>
+          <label class="block text-slate-400 mb-1">Konu</label>
+          <input type="text" id="reqSubject" placeholder="Yeni Kaynak / Hata Bildirimi / Genel" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-slate-200 focus:outline-none focus:border-amber-500">
+        </div>
+        <div>
+          <label class="block text-slate-400 mb-1">Mesajınız / Talebiniz</label>
+          <textarea id="reqMessage" rows="4" required placeholder="Talebinizi buraya detaylıca yazabilirsiniz..." class="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-slate-200 focus:outline-none focus:border-amber-500"></textarea>
+        </div>
+        <button type="submit" id="submitRequestBtn" class="w-full bg-amber-600 hover:bg-amber-500 text-white py-2 rounded-lg font-semibold transition flex items-center justify-center gap-2">
+          <i class="fa-solid fa-paper-plane"></i> Gönder
+        </button>
+      </form>
+    </div>
+  </div>
 
   <!-- Üst Bar -->
-  <header class="bg-slate-800 border-b border-slate-700 sticky top-0 z-50 px-6 py-3.5 shadow-md">
+  <header class="bg-slate-800 border-b border-slate-700 sticky top-0 z-40 px-6 py-3.5 shadow-md">
     <div class="max-w-7xl mx-auto flex flex-wrap justify-between items-center gap-4">
       <div class="flex items-center gap-3">
         <div class="bg-emerald-500/20 p-2 rounded-lg border border-emerald-500/30">
@@ -60,6 +109,10 @@
           <i class="fa-solid fa-file-word"></i>
           <span id="exportBtnText">Word İndir</span>
         </button>
+        <button id="openRequestModalBtn" title="Yönetime Talep İlet" class="bg-amber-600/20 hover:bg-amber-600 text-amber-300 hover:text-white border border-amber-500/30 px-2.5 py-1.5 rounded-lg text-xs font-medium transition flex items-center gap-1">
+          <i class="fa-regular fa-comment-dots"></i>
+          <span class="hidden md:inline">Talep</span>
+        </button>
         <a href="/admin.html" title="Admin & Personel Paneli" class="bg-slate-700 hover:bg-slate-600 text-amber-400 border border-slate-600 px-2.5 py-1.5 rounded-lg text-xs font-medium transition flex items-center gap-1">
           <i class="fa-solid fa-lock"></i>
         </a>
@@ -67,8 +120,8 @@
     </div>
   </header>
 
-  <!-- Kategori Sekmeleri (Tabs) -->
-  <nav class="bg-slate-850 bg-slate-800/80 border-b border-slate-700 px-6 py-2 sticky top-[65px] z-40 backdrop-blur-md">
+  <!-- Kategori Sekmeleri -->
+  <nav class="bg-slate-850 bg-slate-800/80 border-b border-slate-700 px-6 py-2 sticky top-[65px] z-30 backdrop-blur-md">
     <div class="max-w-7xl mx-auto flex items-center gap-2 overflow-x-auto text-xs" id="categoryTabs">
       <button data-cat="Tümü" class="cat-btn px-3 py-1 rounded-lg font-semibold bg-emerald-600 text-white transition">Tümü</button>
       <button data-cat="Gündem" class="cat-btn px-3 py-1 rounded-lg font-medium text-slate-300 hover:bg-slate-700 transition">Gündem</button>
@@ -80,10 +133,9 @@
     </div>
   </nav>
 
-  <!-- Kategoriye Göre Filtrelenen Kaynaklar & Takip Paneli -->
+  <!-- Filtreleme & Takip Kontrol Paneli -->
   <div class="bg-slate-900 border-b border-slate-800 px-6 py-2.5">
     <div class="max-w-7xl mx-auto flex flex-wrap items-center justify-between gap-4">
-      <!-- Dinamik Kaynaklar Bölümü -->
       <div class="flex items-center gap-2 flex-wrap text-xs">
         <span class="text-slate-400 font-medium flex items-center gap-1">
           <i class="fa-solid fa-filter text-emerald-400"></i> Kaynaklar:
@@ -93,7 +145,6 @@
         </div>
       </div>
 
-      <!-- Kelime Takip & Alarm -->
       <div class="flex items-center gap-2 text-xs">
         <span class="text-amber-400 font-medium flex items-center gap-1"><i class="fa-solid fa-bell"></i> Alarm Kelimeleri:</span>
         <input type="text" id="watchWordsInput" placeholder="örn: deprem, dolar, borsa" class="bg-slate-950 border border-slate-700 rounded-md px-2.5 py-1 text-xs text-slate-200 placeholder-slate-600 focus:outline-none focus:border-amber-500 w-52">
@@ -143,19 +194,32 @@
 
   </div>
 
-  <!-- ALT BANT: SEÇİLİ KATEGORİYE ÖZEL CANLI KAYAN BANT (BREAKING NEWS TICKER) -->
-  <footer class="fixed bottom-0 left-0 right-0 h-10 bg-slate-950/95 border-t border-slate-700/80 z-50 flex items-center shadow-2xl backdrop-blur-md">
-    <div class="bg-rose-650 bg-rose-600 text-white font-bold text-xs uppercase px-4 h-full flex items-center gap-2 shrink-0 z-10 shadow-md">
+  <!-- ASILI POP-UP CANLI KAYAN BANT (SABİT ALT BANT + HIZ SEÇİMİ) -->
+  <aside class="fixed bottom-3 left-3 right-3 md:left-6 md:right-6 h-11 bg-slate-950/90 border border-slate-700/80 z-50 flex items-center rounded-xl shadow-2xl backdrop-blur-md overflow-hidden">
+    <!-- Başlık & Kategori Rozeti -->
+    <div class="bg-rose-600 text-white font-bold text-xs uppercase px-3.5 h-full flex items-center gap-2 shrink-0 shadow-md">
       <span class="w-2 h-2 rounded-full bg-white animate-ping"></span>
-      <span id="tickerCategoryTitle">GÜNCEL AKIŞ</span>
+      <span id="tickerCategoryTitle" class="whitespace-nowrap">GÜNCEL AKIŞ</span>
     </div>
     
-    <div class="ticker-container flex-1 overflow-hidden relative h-full flex items-center cursor-pointer">
-      <div id="tickerTrack" class="ticker-track flex items-center gap-10 text-xs text-slate-200">
-        <span class="text-slate-400 italic">Haber akışı bekleniyor...</span>
+    <!-- Kayan İçerik Alanı -->
+    <div class="ticker-container flex-1 overflow-hidden relative h-full flex items-center px-4 cursor-pointer">
+      <div id="tickerTrack" class="ticker-track speed-normal flex items-center gap-10 text-xs text-slate-200">
+        <span class="text-slate-400 italic">Haber akışı yükleniyor...</span>
       </div>
     </div>
-  </footer>
+
+    <!-- Hız Kontrolleri (Yavaş / Orta / Hızlı / Durdur) -->
+    <div class="bg-slate-900/90 border-l border-slate-700/80 px-2.5 h-full flex items-center gap-1 text-[11px] shrink-0">
+      <span class="text-slate-500 hidden sm:inline mr-1 text-[10px] font-medium">Hız:</span>
+      <button data-speed="slow" class="speed-btn px-2 py-0.5 rounded text-slate-400 hover:text-white transition">Yavaş</button>
+      <button data-speed="normal" class="speed-btn px-2 py-0.5 rounded bg-emerald-600/30 text-emerald-300 font-semibold border border-emerald-500/40 transition">Orta</button>
+      <button data-speed="fast" class="speed-btn px-2 py-0.5 rounded text-slate-400 hover:text-white transition">Hızlı</button>
+      <button id="togglePlayBtn" title="Durdur / Başlat" class="ml-1 text-slate-400 hover:text-amber-400 transition px-1">
+        <i class="fa-solid fa-pause text-xs" id="playIcon"></i>
+      </button>
+    </div>
+  </aside>
 
   <script>
     let allSourcesList = [];
@@ -164,6 +228,102 @@
     let selectedNewsGuids = new Set();
     let selectedCategory = 'Tümü';
     let searchTimeout;
+    let isPaused = false;
+
+    // Talep Modalı
+    const reqModal = document.getElementById('requestModal');
+    const openReqBtn = document.getElementById('openRequestModalBtn');
+    const closeReqBtn = document.getElementById('closeRequestModalBtn');
+    const reqAlert = document.getElementById('requestAlert');
+    const userReqForm = document.getElementById('userRequestForm');
+
+    openReqBtn.addEventListener('click', () => {
+      reqModal.classList.remove('hidden');
+      reqAlert.classList.add('hidden');
+    });
+
+    closeReqBtn.addEventListener('click', () => {
+      reqModal.classList.add('hidden');
+    });
+
+    userReqForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const email = document.getElementById('reqEmail').value.trim();
+      const subject = document.getElementById('reqSubject').value.trim();
+      const message = document.getElementById('reqMessage').value.trim();
+      const submitBtn = document.getElementById('submitRequestBtn');
+
+      submitBtn.disabled = true;
+      submitBtn.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin"></i> Gönderiliyor...';
+
+      try {
+        const res = await fetch('/api/requests', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email, subject, message })
+        });
+        const d = await res.json();
+        if (d.success) {
+          reqAlert.className = 'mb-4 p-2.5 rounded-lg text-xs font-medium text-center bg-emerald-500/20 text-emerald-300 border border-emerald-500/30';
+          reqAlert.textContent = d.message;
+          reqAlert.classList.remove('hidden');
+          userReqForm.reset();
+          setTimeout(() => reqModal.classList.add('hidden'), 2500);
+        } else {
+          reqAlert.className = 'mb-4 p-2.5 rounded-lg text-xs font-medium text-center bg-rose-500/20 text-rose-300 border border-rose-500/30';
+          reqAlert.textContent = d.message || 'Gönderilemedi.';
+          reqAlert.classList.remove('hidden');
+        }
+      } catch (err) {
+        reqAlert.className = 'mb-4 p-2.5 rounded-lg text-xs font-medium text-center bg-rose-500/20 text-rose-300 border border-rose-500/30';
+        reqAlert.textContent = 'Bağlantı hatası: ' + err.message;
+        reqAlert.classList.remove('hidden');
+      } finally {
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = '<i class="fa-solid fa-paper-plane"></i> Gönder';
+      }
+    });
+
+    // Hız Butonları Yönetimi
+    const tickerTrack = document.getElementById('tickerTrack');
+    const tickerCategoryTitle = document.getElementById('tickerCategoryTitle');
+    const togglePlayBtn = document.getElementById('togglePlayBtn');
+    const playIcon = document.getElementById('playIcon');
+
+    const savedSpeed = localStorage.getItem('haber_ticker_speed') || 'normal';
+    setTickerSpeed(savedSpeed);
+
+    document.querySelectorAll('.speed-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const speed = btn.getAttribute('data-speed');
+        setTickerSpeed(speed);
+      });
+    });
+
+    function setTickerSpeed(speed) {
+      localStorage.setItem('haber_ticker_speed', speed);
+      tickerTrack.classList.remove('speed-slow', 'speed-normal', 'speed-fast');
+      tickerTrack.classList.add(`speed-${speed}`);
+
+      document.querySelectorAll('.speed-btn').forEach(b => {
+        if (b.getAttribute('data-speed') === speed) {
+          b.className = 'speed-btn px-2 py-0.5 rounded bg-emerald-600/30 text-emerald-300 font-semibold border border-emerald-500/40 transition';
+        } else {
+          b.className = 'speed-btn px-2 py-0.5 rounded text-slate-400 hover:text-white transition';
+        }
+      });
+    }
+
+    togglePlayBtn.addEventListener('click', () => {
+      isPaused = !isPaused;
+      if (isPaused) {
+        tickerTrack.classList.add('paused');
+        playIcon.className = 'fa-solid fa-play text-xs';
+      } else {
+        tickerTrack.classList.remove('paused');
+        playIcon.className = 'fa-solid fa-pause text-xs';
+      }
+    });
 
     const watchInput = document.getElementById('watchWordsInput');
     watchInput.value = localStorage.getItem('haber_watch_words') || '';
@@ -183,8 +343,6 @@
     const exportBtnText = document.getElementById('exportBtnText');
     const toggleSelectAllBtn = document.getElementById('toggleSelectAllBtn');
     const toggleSelectAllText = document.getElementById('toggleSelectAllText');
-    const tickerTrack = document.getElementById('tickerTrack');
-    const tickerCategoryTitle = document.getElementById('tickerCategoryTitle');
 
     function showAlert(message, type = 'info') {
       statusAlert.className = `mb-4 p-3 rounded-xl text-xs font-medium transition flex items-center gap-2 ${
@@ -221,7 +379,6 @@
       }
     }
 
-    // Kategoriye Göre Üstteki Kaynakları Dinamik Yeniden Listele
     function renderCategorySources() {
       let filtered = allSourcesList.filter(s => s.isActive);
       if (selectedCategory !== 'Tümü') {
@@ -261,7 +418,6 @@
       });
     }
 
-    // Kategori Sekmeleri Tıklaması
     document.querySelectorAll('.cat-btn').forEach(btn => {
       btn.addEventListener('click', () => {
         document.querySelectorAll('.cat-btn').forEach(b => {
@@ -291,7 +447,6 @@
       renderNews();
     });
 
-    // Kaynakları API'den Getir
     async function loadSources() {
       try {
         const res = await fetch('/api/sources');
@@ -303,14 +458,12 @@
       } catch (e) {}
     }
 
-    // Alt Kayan Bandı Güncelle
     function updateTicker(newsItems) {
       if (!newsItems || newsItems.length === 0) {
         tickerTrack.innerHTML = `<span class="text-slate-500">Bu kategoriye ait kayan haber akışı bulunamadı.</span>`;
         return;
       }
-      // En son gelen ilk 15 haberi kayan banta yerleştir
-      const topNews = newsItems.slice(0, 15);
+      const topNews = newsItems.slice(0, 20);
       tickerTrack.innerHTML = topNews.map(item => {
         const timeStr = new Date(item.pubDate || item.createdAt).toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' });
         const fav = getFaviconUrl(item.link);
@@ -326,7 +479,6 @@
       }).join('');
     }
 
-    // Haberleri Ekrana Çiz
     function renderNews() {
       countText.textContent = `Toplam ${currentNewsList.length} haber listeleniyor.`;
       updateExportButtonState();
@@ -359,7 +511,6 @@
         return `
           <article class="relative bg-slate-800/80 border ${isChecked ? 'border-emerald-500 bg-slate-800 ring-2 ring-emerald-500/40' : (hasAlarm ? 'border-amber-500/80 bg-amber-950/20 ring-1 ring-amber-500/50' : 'border-slate-700/60')} rounded-xl p-4 hover:border-slate-500 transition-all flex flex-col justify-between group shadow-md">
             
-            <!-- Seçenek / Checkbox & Saat Satırı -->
             <div class="flex items-center justify-between pb-2 mb-2 border-b border-slate-700/60">
               <label class="flex items-center gap-2 cursor-pointer select-none">
                 <input type="checkbox" data-guid="${item.guid}" class="news-select-chk w-4 h-4 rounded text-emerald-500 bg-slate-900 border-slate-600 focus:ring-emerald-500 cursor-pointer" ${isChecked ? 'checked' : ''}>
@@ -373,7 +524,6 @@
               </div>
             </div>
 
-            <!-- Kaynak Başlığı ve Orta Boy Logo -->
             <div>
               <div class="flex items-center justify-between gap-2 mb-3">
                 <div class="flex items-center gap-2">
@@ -392,7 +542,6 @@
               ${item.description ? `<p class="text-xs text-slate-400 line-clamp-3 mb-3 leading-relaxed">${item.description.replace(/<[^>]*>?/gm, '')}</p>` : ''}
             </div>
 
-            <!-- Alt Kısım: Alarm & Link -->
             <div class="pt-2 border-t border-slate-700/50 flex justify-between items-center text-[11px] text-slate-400">
               <div>
                 ${hasAlarm ? '<span class="text-[10px] bg-amber-500/20 text-amber-300 px-1.5 py-0.5 rounded font-semibold border border-amber-500/30">⚠️ ALARM</span>' : ''}
@@ -423,7 +572,6 @@
       }
     }
 
-    // Haberleri API'den Çek
     async function loadNews() {
       try {
         let url = `/api/news?limit=120`;
@@ -445,7 +593,6 @@
       }
     }
 
-    // Word İndir
     document.getElementById('exportWordBtn').addEventListener('click', () => {
       if (!currentNewsList || currentNewsList.length === 0) {
         showAlert('Dışa aktarılacak haber bulunamadı!', 'error');
@@ -510,7 +657,6 @@
       showAlert(`${exportItems.length} adet haber başarıyla Word olarak indirildi!`, 'success');
     });
 
-    // Reklamları Yükleme Fonksiyonu
     async function loadBannerAds() {
       try {
         const res = await fetch('/api/ads');
@@ -541,20 +687,17 @@
       } catch (e) {}
     }
 
-    // Arama Girişi
     document.getElementById('searchInput').addEventListener('input', () => {
       clearTimeout(searchTimeout);
       searchTimeout = setTimeout(loadNews, 300);
     });
 
-    // Yenile Butonu
     document.getElementById('refreshBtn').addEventListener('click', () => {
       const icon = document.getElementById('refreshIcon');
       icon.classList.add('fa-spin');
       loadNews().finally(() => setTimeout(() => icon.classList.remove('fa-spin'), 600));
     });
 
-    // Kaynakları Tara Butonu
     syncBtn.addEventListener('click', async () => {
       syncBtn.disabled = true;
       syncIcon.className = 'fa-solid fa-circle-notch fa-spin';
@@ -578,7 +721,7 @@
       }
     });
 
-    // Başlangıç
+    // Başlat
     loadSources();
     loadNews();
     loadBannerAds();

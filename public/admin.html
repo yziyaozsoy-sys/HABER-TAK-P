@@ -7,7 +7,7 @@
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
-<body class="bg-slate-900 text-slate-100 min-h-screen flex flex-col font-sans">
+<body class="bg-slate-900 text-slate-100 min-h-screen flex flex-col font-sans pb-10">
 
   <!-- GİRİŞ EKRANI -->
   <div id="loginModal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
@@ -52,7 +52,7 @@
           <h1 class="text-lg font-bold tracking-wide flex items-center gap-2">
             Yönetim Paneli <span id="userBadge" class="text-[11px] bg-slate-700 text-emerald-400 px-2 py-0.5 rounded-md font-normal"></span>
           </h1>
-          <p class="text-[11px] text-slate-400">Kaynaklar, kategoriler, personeller ve reklam yönetimi</p>
+          <p class="text-[11px] text-slate-400">Kaynaklar, kategoriler, talepler ve reklam yönetimi</p>
         </div>
       </div>
       <div class="flex items-center gap-2">
@@ -69,15 +69,45 @@
   <main class="flex-1 max-w-6xl w-full mx-auto p-6 space-y-8">
     <div id="alertBox" class="hidden p-3.5 rounded-xl text-xs font-medium transition"></div>
 
-    <!-- 1. BÖLÜM: ŞİFRE DEĞİŞTİRME KARTI -->
+    <!-- 1. BÖLÜM: KULLANICI İSTEK & TALEPLERİ -->
     <section class="bg-slate-800/80 border border-slate-700 rounded-2xl p-6 shadow-lg">
       <div class="mb-4 pb-3 border-b border-slate-700 flex justify-between items-center">
         <div>
           <h2 class="text-base font-bold text-slate-100 flex items-center gap-2">
-            <i class="fa-solid fa-key text-emerald-400"></i> Kendi Şifrenizi Değiştirin
+            <i class="fa-solid fa-envelope-open-text text-amber-400"></i> Kullanıcı İstek ve Talepleri
           </h2>
-          <p class="text-xs text-slate-400 mt-0.5">Hesabınızın güvenliği için şifrenizi buradan güncelleyebilirsiniz.</p>
+          <p class="text-xs text-slate-400 mt-0.5">Ziyaretçilerin form üzerinden gönderdiği tüm öneri, kaynak ve bildirimler.</p>
         </div>
+        <button id="refreshReqsBtn" class="bg-slate-700 hover:bg-slate-600 text-slate-200 text-xs px-2.5 py-1 rounded-lg transition flex items-center gap-1">
+          <i class="fa-solid fa-arrows-rotate"></i> Yenile
+        </button>
+      </div>
+
+      <div class="overflow-x-auto">
+        <table class="w-full text-left text-xs">
+          <thead>
+            <tr class="text-slate-400 border-b border-slate-700 bg-slate-900/40">
+              <th class="py-2.5 px-3">Tarih</th>
+              <th class="py-2.5 px-3">E-posta</th>
+              <th class="py-2.5 px-3">Konu</th>
+              <th class="py-2.5 px-3">Mesaj</th>
+              <th class="py-2.5 px-3 text-right">İşlem</th>
+            </tr>
+          </thead>
+          <tbody id="requestsTableBody" class="divide-y divide-slate-700/40">
+            <tr><td colspan="5" class="text-center py-4 text-slate-500">Talepler yükleniyor...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- 2. BÖLÜM: ŞİFRE DEĞİŞTİRME -->
+    <section class="bg-slate-800/80 border border-slate-700 rounded-2xl p-6 shadow-lg">
+      <div class="mb-4 pb-3 border-b border-slate-700">
+        <h2 class="text-base font-bold text-slate-100 flex items-center gap-2">
+          <i class="fa-solid fa-key text-emerald-400"></i> Kendi Şifrenizi Değiştirin
+        </h2>
+        <p class="text-xs text-slate-400 mt-0.5">Hesabınızın güvenliği için mevcut şifrenizi girerek yenisini belirleyin.</p>
       </div>
 
       <form id="changePasswordForm" class="grid grid-cols-1 md:grid-cols-12 gap-3 bg-slate-900/60 p-4 rounded-xl border border-slate-700/60 text-xs">
@@ -97,13 +127,13 @@
       </form>
     </section>
 
-    <!-- 2. BÖLÜM: PERSONEL YÖNETİMİ (Sadece admin görebilir) -->
+    <!-- 3. BÖLÜM: PERSONEL YÖNETİMİ (Admin Only) -->
     <section id="personnelSection" class="bg-slate-800/80 border border-slate-700 rounded-2xl p-6 shadow-lg">
       <div class="mb-5 pb-4 border-b border-slate-700">
         <h2 class="text-base font-bold text-slate-100 flex items-center gap-2">
           <i class="fa-solid fa-users text-sky-400"></i> Personel & Editör Yönetimi
         </h2>
-        <p class="text-xs text-slate-400 mt-0.5">Sistemi yönetecek yeni personeller ekleyin, şifrelerini güncelleyin veya silin.</p>
+        <p class="text-xs text-slate-400 mt-0.5">Yeni personel tanımlayın veya şifrelerini doğrudan sıfırlayın.</p>
       </div>
 
       <form id="addStaffForm" class="grid grid-cols-1 md:grid-cols-12 gap-3 mb-6 bg-slate-900/60 p-4 rounded-xl border border-slate-700/60">
@@ -143,14 +173,14 @@
       </div>
     </section>
 
-    <!-- 3. BÖLÜM: RSS KAYNAK & KATEGORİ YÖNETİMİ -->
+    <!-- 4. BÖLÜM: RSS KAYNAK & KATEGORİ YÖNETİMİ -->
     <section class="bg-slate-800/80 border border-slate-700 rounded-2xl p-6 shadow-lg">
       <div class="flex flex-wrap justify-between items-center mb-5 pb-4 border-b border-slate-700 gap-3">
         <div>
           <h2 class="text-base font-bold text-slate-100 flex items-center gap-2">
             <i class="fa-solid fa-square-rss text-orange-400"></i> RSS Kaynak ve Kategori Yönetimi
           </h2>
-          <p class="text-xs text-slate-400 mt-0.5">Kaynakları kategorilerine (Gündem, Spor, Ekonomi vb.) göre belirleyin.</p>
+          <p class="text-xs text-slate-400 mt-0.5">Haber kaynaklarını uygun kategorilere bağlayarak yönetin.</p>
         </div>
         <button id="refreshSyncBtn" class="bg-emerald-600 hover:bg-emerald-500 text-white px-3 py-1.5 rounded-lg text-xs font-medium transition flex items-center gap-1.5">
           <i class="fa-solid fa-arrows-rotate"></i> Şimdi Tüm Kaynakları Tara
@@ -202,13 +232,13 @@
       </div>
     </section>
 
-    <!-- 4. BÖLÜM: REKLAM ALANLARI -->
+    <!-- 5. BÖLÜM: REKLAM ALANLARI -->
     <section class="bg-slate-800/80 border border-slate-700 rounded-2xl p-6 shadow-lg">
       <div class="mb-5 pb-4 border-b border-slate-700">
         <h2 class="text-base font-bold text-slate-100 flex items-center gap-2">
-          <i class="fa-solid fa-rectangle-ad text-yellow-400"></i> Reklam Alanları Yönetimi (Skyscraper Banner)
+          <i class="fa-solid fa-rectangle-ad text-yellow-400"></i> Reklam Alanları Yönetimi (Skyscraper)
         </h2>
-        <p class="text-xs text-slate-400 mt-0.5">Sol ve Sağ kule reklamlarına Google AdSense kodları veya özel sponsor görselleri atayın.</p>
+        <p class="text-xs text-slate-400 mt-0.5">Sol ve Sağ kule reklamlarına Google AdSense kodları veya özel görseller atayın.</p>
       </div>
 
       <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -321,6 +351,7 @@
         if (userRole !== 'admin') {
           document.getElementById('personnelSection').classList.add('hidden');
         }
+        fetchRequests();
         fetchSources();
         loadAds();
         if (userRole === 'admin') fetchStaff();
@@ -374,6 +405,46 @@
         'Authorization': `Bearer ${localStorage.getItem('haber_admin_token')}`
       };
     }
+
+    // Kullanıcı Taleplerini Getir
+    async function fetchRequests() {
+      try {
+        const res = await fetch('/api/requests', { headers: authHeaders() });
+        const data = await res.json();
+        const tbody = document.getElementById('requestsTableBody');
+        if (!data.data || data.data.length === 0) {
+          tbody.innerHTML = '<tr><td colspan="5" class="text-center py-4 text-slate-500">Henüz kullanıcı talebi bulunmuyor.</td></tr>';
+          return;
+        }
+        tbody.innerHTML = data.data.map(r => `
+          <tr class="hover:bg-slate-800/40 transition">
+            <td class="py-2.5 px-3 text-slate-400 whitespace-nowrap text-[11px] font-mono">${new Date(r.createdAt).toLocaleString('tr-TR')}</td>
+            <td class="py-2.5 px-3 font-semibold text-emerald-400">${r.email}</td>
+            <td class="py-2.5 px-3 text-slate-200 font-medium">${r.subject}</td>
+            <td class="py-2.5 px-3 text-slate-300 max-w-sm truncate" title="${r.message}">${r.message}</td>
+            <td class="py-2.5 px-3 text-right">
+              <button onclick="deleteRequest('${r._id}')" class="text-rose-400 hover:text-rose-300 text-xs px-2 py-1 rounded transition">
+                <i class="fa-solid fa-trash"></i> Sil
+              </button>
+            </td>
+          </tr>
+        `).join('');
+      } catch (e) {}
+    }
+
+    window.deleteRequest = async (id) => {
+      if (!confirm('Bu talebi silmek istediğinize emin misiniz?')) return;
+      try {
+        const res = await fetch(`/api/requests/${id}`, { method: 'DELETE', headers: authHeaders() });
+        const d = await res.json();
+        if (d.success) {
+          notify('Talep silindi.', 'success');
+          fetchRequests();
+        }
+      } catch (e) {}
+    };
+
+    document.getElementById('refreshReqsBtn').addEventListener('click', fetchRequests);
 
     // Kendi Şifresini Değiştirme
     document.getElementById('changePasswordForm').addEventListener('submit', async (e) => {
@@ -430,9 +501,8 @@
       } catch (e) {}
     }
 
-    // Personel Şifresi Sıfırla
     window.resetStaffPassword = async (userId, fullname) => {
-      const newPass = prompt(`"${fullname}" için yeni bir şifre girin (en az 5 karakter):`);
+      const newPass = prompt(`"${fullname}" için yeni şifre girin (en az 5 karakter):`);
       if (!newPass) return;
       if (newPass.length < 5) {
         alert('Şifre en az 5 karakter olmalıdır!');
@@ -452,7 +522,6 @@
       }
     };
 
-    // Personel Ekle
     document.getElementById('addStaffForm').addEventListener('submit', async (e) => {
       e.preventDefault();
       const fullname = document.getElementById('staffFullname').value.trim();
@@ -494,7 +563,7 @@
       } catch (e) {}
     };
 
-    // Kaynakları Listele
+    // Kaynaklar
     async function fetchSources() {
       try {
         const res = await fetch('/api/sources');
@@ -522,7 +591,6 @@
       } catch (e) {}
     }
 
-    // Kaynak Ekle
     document.getElementById('addSourceForm').addEventListener('submit', async (e) => {
       e.preventDefault();
       const name = document.getElementById('srcName').value.trim();
@@ -537,7 +605,7 @@
         });
         const resData = await res.json();
         if (resData.success) {
-          notify(`"${name}" (${category}) başarıyla eklendi!`, 'success');
+          notify(`"${name}" (${category}) eklendi!`, 'success');
           document.getElementById('srcName').value = '';
           document.getElementById('srcRss').value = '';
           fetchSources();

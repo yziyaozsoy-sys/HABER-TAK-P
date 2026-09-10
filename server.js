@@ -31,7 +31,6 @@ const newsSchema = new mongoose.Schema({
 newsSchema.index({ pubDate: -1, createdAt: -1 });
 const News = mongoose.model('News', newsSchema);
 
-// Kaynak Modeli (Kategori Alanı Eklendi)
 const sourceSchema = new mongoose.Schema({
   name: { type: String, required: true, unique: true },
   rss: { type: String, required: true },
@@ -61,6 +60,15 @@ const userSchema = new mongoose.Schema({
   createdAt: { type: Date, default: Date.now }
 });
 const User = mongoose.model('User', userSchema);
+
+// Kullanıcı Talep & İstek Modeli
+const requestSchema = new mongoose.Schema({
+  email: { type: String, required: true },
+  subject: { type: String, default: 'Genel Talep' },
+  message: { type: String, required: true },
+  createdAt: { type: Date, default: Date.now }
+});
+const Request = mongoose.model('Request', requestSchema);
 
 // Yetki Doğrulama
 const authMiddleware = (req, res, next) => {
@@ -231,7 +239,7 @@ app.post('/api/auth/login', async (req, res) => {
   }
 });
 
-// Kendi Şifresini Değiştirme (Tüm giriş yapmış kullanıcılar)
+// Şifre Değiştirme
 app.post('/api/auth/change-password', authMiddleware, async (req, res) => {
   try {
     const { currentPassword, newPassword } = req.body;
@@ -257,7 +265,7 @@ app.post('/api/auth/change-password', authMiddleware, async (req, res) => {
   }
 });
 
-// Admin'in İstediği Personelin Şifresini Değiştirmesi
+// Admin Şifre Sıfırlama
 app.post('/api/users/:id/password', authMiddleware, async (req, res) => {
   try {
     if (req.user.role !== 'admin') {
@@ -280,7 +288,7 @@ app.post('/api/users/:id/password', authMiddleware, async (req, res) => {
   }
 });
 
-// Personel Listele
+// Personel İşlemleri
 app.get('/api/users', authMiddleware, async (req, res) => {
   try {
     const users = await User.find().select('-password').sort({ createdAt: -1 });
@@ -290,7 +298,6 @@ app.get('/api/users', authMiddleware, async (req, res) => {
   }
 });
 
-// Yeni Personel Ekle
 app.post('/api/users', authMiddleware, async (req, res) => {
   try {
     if (req.user.role !== 'admin') {
@@ -316,7 +323,6 @@ app.post('/api/users', authMiddleware, async (req, res) => {
   }
 });
 
-// Personel Sil
 app.delete('/api/users/:id', authMiddleware, async (req, res) => {
   try {
     if (req.user.role !== 'admin') {
@@ -333,25 +339,47 @@ app.delete('/api/users/:id', authMiddleware, async (req, res) => {
   }
 });
 
-// Kategorileri Listele
-app.get('/api/categories', async (req, res) => {
+// KULLANICI TALEP & İSTEK API'LERİ
+// Ziyaretçiden Talep Al (Herkese açık)
+app.post('/api/requests', async (req, res) => {
   try {
-    const categories = await Source.distinct('category');
-    const defaults = ['Tümü', 'Gündem', 'Spor', 'Ekonomi', 'Dünya', 'Teknoloji', 'Magazin'];
-    const merged = Array.from(new Set([...defaults, ...categories])).filter(Boolean);
-    res.json({ success: true, data: merged });
+    const { email, subject, message } = req.body;
+    if (!email || !message) {
+      return res.status(400).json({ success: false, message: 'E-posta ve mesaj alanları zorunludur.' });
+    }
+    const newReq = await Request.create({ email, subject: subject || 'Genel Talep', message });
+    res.json({ success: true, message: 'Talebiniz başarıyla yönetime iletildi. Teşekkür ederiz!' });
   } catch (err) {
-    res.json({ success: true, data: ['Tümü', 'Gündem', 'Spor', 'Ekonomi', 'Dünya', 'Teknoloji'] });
+    res.status(500).json({ success: false, message: err.message });
   }
 });
 
-// Haberler (Kategori ve Kaynak Filtreli)
+// Talepleri Listele (Sadece Admin / Personel)
+app.get('/api/requests', authMiddleware, async (req, res) => {
+  try {
+    const requests = await Request.find().sort({ createdAt: -1 });
+    res.json({ success: true, data: requests });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
+// Talebi Sil (Sadece Admin / Personel)
+app.delete('/api/requests/:id', authMiddleware, async (req, res) => {
+  try {
+    await Request.findByIdAndDelete(req.params.id);
+    res.json({ success: true, message: 'Talep silindi.' });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
+// Haberler
 app.get('/api/news', async (req, res) => {
   try {
     const limit = parseInt(req.query.limit) || 120;
     const query = {};
 
-    // Kategori Filtresi
     if (req.query.category && req.query.category !== 'Tümü') {
       query.category = req.query.category;
     }
