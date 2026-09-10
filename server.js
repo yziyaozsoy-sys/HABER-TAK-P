@@ -622,28 +622,26 @@ app.delete('/api/requests/:id', authMiddleware, async (req, res) => {
   }
 });
 
-// --- HABERLER API'Sİ (HIZLANDIRILMIŞ VE KİLİTSİZ) ---
+// --- HABERLER API'Sİ (KAYNAK KİLİTSİZ & DAİMA EN YENİ) ---
 app.get('/api/news', async (req, res) => {
   try {
     const limit = parseInt(req.query.limit) || 120;
-    
-    const activeSources = await Source.find({ isActive: true }).select('name').lean();
-    const activeSourceNames = activeSources.map(s => s.name);
+    const query = {};
 
-    const query = {
-      source: { $in: activeSourceNames }
-    };
-
+    // Kategori filtresi
     if (req.query.category && req.query.category !== 'Tümü') {
       query.category = req.query.category;
     }
 
+    // Kullanıcı arayüzden kaynak seçtiyse filtrele, seçmediyse TÜMÜNÜ getir!
     if (req.query.sources) {
       const srcList = req.query.sources.split(',').map(s => s.trim()).filter(Boolean);
-      const filtered = srcList.filter(s => activeSourceNames.includes(s));
-      if (filtered.length > 0) query.source = { $in: filtered };
+      if (srcList.length > 0) {
+        query.source = { $in: srcList };
+      }
     }
 
+    // Arama filtresi
     if (req.query.search) {
       query.$or = [
         { title: { $regex: req.query.search, $options: 'i' } },
@@ -653,6 +651,7 @@ app.get('/api/news', async (req, res) => {
 
     const sortField = req.query.sort === 'rating' ? { views: -1, pubDate: -1 } : { pubDate: -1 };
 
+    // Doğrudan en güncel haberleri çek
     const news = await News.find(query)
       .sort(sortField)
       .limit(limit)
