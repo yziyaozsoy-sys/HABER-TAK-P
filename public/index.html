@@ -6,6 +6,15 @@
   <title>Haber Takip Web Pro</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    .ad-skyscraper {
+      width: 160px;
+      min-width: 160px;
+      height: 600px;
+      position: sticky;
+      top: 85px;
+    }
+  </style>
 </head>
 <body class="bg-slate-900 text-slate-100 min-h-screen flex flex-col font-sans">
 
@@ -24,7 +33,7 @@
         </div>
       </div>
 
-      <!-- Arama ve Dışa Aktarma Butonları -->
+      <!-- Arama, Butonlar ve Admin Girişi -->
       <div class="flex items-center gap-2 flex-1 max-w-xl">
         <div class="relative w-full">
           <i class="fa-solid fa-magnifying-glass absolute left-3 top-2.5 text-slate-400 text-xs"></i>
@@ -38,6 +47,9 @@
           <i class="fa-solid fa-file-word"></i>
           <span id="exportBtnText">Word İndir</span>
         </button>
+        <a href="/admin.html" title="Admin & Reklam Paneli" class="bg-slate-700 hover:bg-slate-600 text-amber-400 border border-slate-600 px-2.5 py-1.5 rounded-lg text-xs font-medium transition flex items-center gap-1">
+          <i class="fa-solid fa-gear"></i>
+        </a>
       </div>
     </div>
   </header>
@@ -62,42 +74,54 @@
     </div>
   </div>
 
-  <!-- Ana İçerik -->
-  <main class="flex-1 max-w-7xl w-full mx-auto p-6">
-    <div class="flex flex-wrap justify-between items-center mb-5 gap-3 text-xs text-slate-400">
-      
-      <!-- Sol: Sayı, Alarm ve Toplu Seçim Butonu -->
-      <div class="flex items-center gap-3">
-        <span id="newsCount" class="font-semibold text-slate-300">Yükleniyor...</span>
-        <span id="alarmBadge" class="hidden bg-amber-500/20 text-amber-300 px-2 py-0.5 rounded border border-amber-500/30 animate-pulse font-medium"></span>
-        
-        <!-- Toplu Seçim -->
-        <button id="toggleSelectAllBtn" class="bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 px-2.5 py-1 rounded text-xs transition flex items-center gap-1.5">
-          <i class="fa-regular fa-square-check text-emerald-400"></i>
-          <span id="toggleSelectAllText">Tümünü Seç</span>
+  <!-- Ana Düzen: SOL REKLAM + HABERLER + SAĞ REKLAM -->
+  <div class="flex-1 max-w-[1550px] w-full mx-auto px-4 py-6 flex gap-6 justify-center items-start">
+    
+    <!-- SOL REKLAM KULESİ -->
+    <aside id="leftAdContainer" class="hidden xl:flex ad-skyscraper flex-col justify-center items-center bg-slate-800/40 border border-slate-800 rounded-xl overflow-hidden shadow-sm">
+      <span class="text-[10px] text-slate-600 mb-1">REKLAM</span>
+      <div id="leftAdContent" class="w-full h-full flex items-center justify-center"></div>
+    </aside>
+
+    <!-- ORTA HABER İÇERİĞİ -->
+    <main class="flex-1 max-w-5xl w-full">
+      <div class="flex flex-wrap justify-between items-center mb-5 gap-3 text-xs text-slate-400">
+        <div class="flex items-center gap-3">
+          <span id="newsCount" class="font-semibold text-slate-300">Yükleniyor...</span>
+          <span id="alarmBadge" class="hidden bg-amber-500/20 text-amber-300 px-2 py-0.5 rounded border border-amber-500/30 animate-pulse font-medium"></span>
+          
+          <button id="toggleSelectAllBtn" class="bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 px-2.5 py-1 rounded text-xs transition flex items-center gap-1.5">
+            <i class="fa-regular fa-square-check text-emerald-400"></i>
+            <span id="toggleSelectAllText">Tümünü Seç</span>
+          </button>
+        </div>
+
+        <button id="syncRssBtn" class="bg-slate-800 hover:bg-slate-700 text-emerald-400 border border-slate-700 px-3 py-1 rounded-lg text-xs font-medium transition flex items-center gap-1.5">
+          <i class="fa-solid fa-cloud-arrow-down" id="syncIcon"></i>
+          <span id="syncText">Kaynakları Tara</span>
         </button>
       </div>
 
-      <!-- Sağ: Kaynakları Tara Butonu -->
-      <button id="syncRssBtn" class="bg-slate-800 hover:bg-slate-700 text-emerald-400 border border-slate-700 px-3 py-1 rounded-lg text-xs font-medium transition flex items-center gap-1.5">
-        <i class="fa-solid fa-cloud-arrow-down" id="syncIcon"></i>
-        <span id="syncText">Kaynakları Tara</span>
-      </button>
-    </div>
+      <div id="statusAlert" class="hidden mb-4 p-3 rounded-xl text-xs font-medium transition"></div>
 
-    <div id="statusAlert" class="hidden mb-4 p-3 rounded-xl text-xs font-medium transition"></div>
+      <!-- Haber Grid -->
+      <div id="newsGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 gap-5"></div>
+    </main>
 
-    <!-- Haber Grid -->
-    <div id="newsGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5"></div>
-  </main>
+    <!-- SAĞ REKLAM KULESİ -->
+    <aside id="rightAdContainer" class="hidden xl:flex ad-skyscraper flex-col justify-center items-center bg-slate-800/40 border border-slate-800 rounded-xl overflow-hidden shadow-sm">
+      <span class="text-[10px] text-slate-600 mb-1">REKLAM</span>
+      <div id="rightAdContent" class="w-full h-full flex items-center justify-center"></div>
+    </aside>
+
+  </div>
 
   <script>
     let currentNewsList = [];
     let selectedSources = new Set();
-    let selectedNewsGuids = new Set(); // Seçilen haberlerin guid'leri
+    let selectedNewsGuids = new Set();
     let searchTimeout;
 
-    // LocalStorage'dan kayıtlı takip kelimelerini çek
     const watchInput = document.getElementById('watchWordsInput');
     watchInput.value = localStorage.getItem('haber_watch_words') || '';
     watchInput.addEventListener('change', () => {
@@ -145,20 +169,10 @@
 
     function updateExportButtonState() {
       const count = selectedNewsGuids.size;
-      if (count > 0) {
-        exportBtnText.textContent = `Word İndir (${count} Seçili)`;
-      } else {
-        exportBtnText.textContent = 'Word İndir';
-      }
-
-      if (currentNewsList.length > 0 && selectedNewsGuids.size === currentNewsList.length) {
-        toggleSelectAllText.textContent = 'Seçimi Kaldır';
-      } else {
-        toggleSelectAllText.textContent = 'Tümünü Seç';
-      }
+      exportBtnText.textContent = count > 0 ? `Word İndir (${count} Seçili)` : 'Word İndir';
+      toggleSelectAllText.textContent = (currentNewsList.length > 0 && selectedNewsGuids.size === currentNewsList.length) ? 'Seçimi Kaldır' : 'Tümünü Seç';
     }
 
-    // Toplu Seç / Kaldır
     toggleSelectAllBtn.addEventListener('click', () => {
       if (selectedNewsGuids.size === currentNewsList.length) {
         selectedNewsGuids.clear();
@@ -174,11 +188,12 @@
         const res = await fetch('/api/sources');
         const data = await res.json();
         if (data.success && data.data.length > 0) {
-          sourcesContainer.innerHTML = data.data.map(src => {
-            selectedSources.add(src);
+          const activeSources = data.data.filter(s => s.isActive);
+          sourcesContainer.innerHTML = activeSources.map(src => {
+            selectedSources.add(src.name);
             return `
-              <button data-src="${src}" class="source-chip bg-emerald-600/20 text-emerald-300 border border-emerald-500/30 px-2.5 py-0.5 rounded-full hover:opacity-80 transition flex items-center gap-1">
-                <span>${src}</span>
+              <button data-src="${src.name}" class="source-chip bg-emerald-600/20 text-emerald-300 border border-emerald-500/30 px-2.5 py-0.5 rounded-full hover:opacity-80 transition flex items-center gap-1">
+                <span>${src.name}</span>
                 <i class="fa-solid fa-check text-[10px]"></i>
               </button>
             `;
@@ -221,7 +236,7 @@
         return;
       }
 
-      grid.innerHTML = currentNewsList.map((item, index) => {
+      grid.innerHTML = currentNewsList.map((item) => {
         const itemText = `${item.title} ${item.description || ''}`.toLowerCase();
         const hasAlarm = watchKeywords.some(kw => itemText.includes(kw));
         if (hasAlarm) matchedAlarmCount++;
@@ -234,19 +249,16 @@
         return `
           <article class="relative bg-slate-800/80 border ${isChecked ? 'border-emerald-500 bg-slate-800 ring-2 ring-emerald-500/40' : (hasAlarm ? 'border-amber-500/80 bg-amber-950/20 ring-1 ring-amber-500/50' : 'border-slate-700/60')} rounded-xl p-4 hover:border-slate-500 transition-all flex flex-col justify-between group shadow-md">
             
-            <!-- Seçenek / Checkbox Satırı -->
-            <div class="flex items-center justify-between pb-2.5 mb-2.5 border-b border-slate-700/60">
+            <div class="flex items-center justify-between pb-2 mb-2 border-b border-slate-700/60">
               <label class="flex items-center gap-2 cursor-pointer select-none">
                 <input type="checkbox" data-guid="${item.guid}" class="news-select-chk w-4 h-4 rounded text-emerald-500 bg-slate-900 border-slate-600 focus:ring-emerald-500 cursor-pointer" ${isChecked ? 'checked' : ''}>
-                <span class="text-[11px] font-medium ${isChecked ? 'text-emerald-400 font-bold' : 'text-slate-400'}">Bu Haberi Seç</span>
+                <span class="text-[11px] font-medium ${isChecked ? 'text-emerald-400 font-bold' : 'text-slate-400'}">Seç</span>
               </label>
-
               <span class="font-mono text-emerald-300 font-semibold text-[11px] flex items-center gap-1">
                 <i class="fa-regular fa-clock text-[10px]"></i> ${timeStr}
               </span>
             </div>
 
-            <!-- Haber Gövdesi -->
             <div>
               <div class="flex items-center justify-between text-[11px] text-slate-400 mb-2">
                 <span class="bg-slate-700/80 px-2 py-0.5 rounded font-bold text-emerald-400 border border-slate-600/50">${item.source || 'Genel'}</span>
@@ -260,8 +272,7 @@
               ${item.description ? `<p class="text-xs text-slate-400 line-clamp-3 mb-3 leading-relaxed">${item.description.replace(/<[^>]*>?/gm, '')}</p>` : ''}
             </div>
 
-            <!-- Kart Altı Link ve Alarm -->
-            <div class="pt-2.5 border-t border-slate-700/50 flex justify-between items-center text-[11px] text-slate-400">
+            <div class="pt-2 border-t border-slate-700/50 flex justify-between items-center text-[11px] text-slate-400">
               <div>
                 ${hasAlarm ? '<span class="text-[10px] bg-amber-500/20 text-amber-300 px-1.5 py-0.5 rounded font-semibold border border-amber-500/30">⚠️ ALARM</span>' : ''}
               </div>
@@ -273,21 +284,17 @@
         `;
       }).join('');
 
-      // Checkbox Olay Dinleyicileri
       document.querySelectorAll('.news-select-chk').forEach(chk => {
         chk.addEventListener('change', (e) => {
           const guid = e.target.getAttribute('data-guid');
-          if (e.target.checked) {
-            selectedNewsGuids.add(guid);
-          } else {
-            selectedNewsGuids.delete(guid);
-          }
+          if (e.target.checked) selectedNewsGuids.add(guid);
+          else selectedNewsGuids.delete(guid);
           renderNews();
         });
       });
 
       if (matchedAlarmCount > 0) {
-        alarmBadge.textContent = `${matchedAlarmCount} Takip Edilen Haber Bulundu!`;
+        alarmBadge.textContent = `${matchedAlarmCount} Takip Edilen Haber!`;
         alarmBadge.classList.remove('hidden');
         playAlertBeep();
       } else {
@@ -301,9 +308,7 @@
         let url = `/api/news?limit=120`;
         const search = document.getElementById('searchInput').value.trim();
         if (search) url += `&search=${encodeURIComponent(search)}`;
-        if (selectedSources.size > 0) {
-          url += `&sources=${Array.from(selectedSources).join(',')}`;
-        }
+        if (selectedSources.size > 0) url += `&sources=${Array.from(selectedSources).join(',')}`;
 
         const res = await fetch(url);
         const data = await res.json();
@@ -316,20 +321,16 @@
       }
     }
 
-    // Word (.doc) Olarak Dışa Aktarma (Seçilenleri veya Tümünü)
+    // Word İndir
     document.getElementById('exportWordBtn').addEventListener('click', () => {
       if (!currentNewsList || currentNewsList.length === 0) {
         showAlert('Dışa aktarılacak haber bulunamadı!', 'error');
         return;
       }
 
-      // Eğer kutucuk seçilmişse sadece seçilenleri, seçilmemişse ekrandakilerin tümünü aktar
-      let exportItems = [];
-      if (selectedNewsGuids.size > 0) {
-        exportItems = currentNewsList.filter(n => selectedNewsGuids.has(n.guid));
-      } else {
-        exportItems = currentNewsList;
-      }
+      let exportItems = selectedNewsGuids.size > 0 
+        ? currentNewsList.filter(n => selectedNewsGuids.has(n.guid))
+        : currentNewsList;
 
       let content = `
         <html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word' xmlns='http://www.w3.org/TR/REC-html40'>
@@ -341,7 +342,7 @@
             h1 { font-size: 20pt; color: #0f172a; border-bottom: 2px solid #10b981; padding-bottom: 8px; margin-bottom: 4px; }
             .meta { font-size: 9.5pt; color: #64748b; margin-bottom: 25px; }
             .item { margin-bottom: 22px; padding-bottom: 16px; border-bottom: 1px solid #e2e8f0; }
-            .title { font-size: 13pt; font-weight: bold; color: #0f172a; margin-top: 6px; margin-bottom: 6px; line-height: 1.3; }
+            .title { font-size: 13pt; font-weight: bold; color: #0f172a; margin-top: 6px; margin-bottom: 6px; }
             .badge { font-size: 8.5pt; font-weight: bold; background: #e0f2fe; color: #0369a1; padding: 3px 8px; border-radius: 4px; }
             .date { font-size: 8.5pt; color: #059669; font-weight: 600; margin-left: 10px; }
             .desc { font-size: 10pt; color: #334155; line-height: 1.5; margin: 8px 0; }
@@ -350,7 +351,7 @@
         </head>
         <body>
           <h1>Haber Takip - Seçilen Haberler Raporu</h1>
-          <div class="meta">Rapor Tarihi: ${new Date().toLocaleString('tr-TR')} | Dışa Aktarılan Haber Sayısı: <strong>${exportItems.length}</strong></div>
+          <div class="meta">Rapor Tarihi: ${new Date().toLocaleString('tr-TR')} | Aktarılan Haber Sayısı: <strong>${exportItems.length}</strong></div>
       `;
 
       exportItems.forEach((n, idx) => {
@@ -383,13 +384,42 @@
       showAlert(`${exportItems.length} adet haber başarıyla Word olarak indirildi!`, 'success');
     });
 
+    // Reklamları Yükleme Fonksiyonu
+    async function loadBannerAds() {
+      try {
+        const res = await fetch('/api/ads');
+        const data = await res.json();
+        if (data.success) {
+          data.data.forEach(ad => {
+            const container = document.getElementById(`${ad.position}AdContainer`);
+            const content = document.getElementById(`${ad.position}AdContent`);
+            if (!ad.isActive) {
+              container.classList.add('opacity-0', 'pointer-events-none');
+              return;
+            }
+            container.classList.remove('opacity-0', 'pointer-events-none');
+            
+            if (ad.type === 'code' && ad.code) {
+              content.innerHTML = ad.code;
+            } else if (ad.imageUrl) {
+              content.innerHTML = `
+                <a href="${ad.targetUrl || '#'}" target="_blank" rel="noopener noreferrer" class="block w-full h-full">
+                  <img src="${ad.imageUrl}" alt="Reklam" class="w-full h-full object-cover rounded-lg hover:opacity-90 transition">
+                </a>
+              `;
+            }
+          });
+        }
+      } catch (e) {}
+    }
+
     // Arama Girişi
     document.getElementById('searchInput').addEventListener('input', () => {
       clearTimeout(searchTimeout);
       searchTimeout = setTimeout(loadNews, 300);
     });
 
-    // Yenileme Butonu
+    // Yenile Butonu
     document.getElementById('refreshBtn').addEventListener('click', () => {
       const icon = document.getElementById('refreshIcon');
       icon.classList.add('fa-spin');
@@ -401,7 +431,7 @@
       syncBtn.disabled = true;
       syncIcon.className = 'fa-solid fa-circle-notch fa-spin';
       syncText.textContent = 'Taranıyor...';
-      showAlert('RSS kaynakları taranıyor, lütfen 5 saniye bekleyin...', 'info');
+      showAlert('RSS kaynakları taranıyor, lütfen bekleyin...', 'info');
 
       try {
         await fetch('/api/sync');
@@ -423,7 +453,7 @@
     // Başlangıç
     loadSources();
     loadNews();
-
+    loadBannerAds();
     setInterval(loadNews, 60000);
   </script>
 </body>

@@ -1,0 +1,340 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Haber Takip - Yönetim Paneli</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body class="bg-slate-900 text-slate-100 min-h-screen flex flex-col font-sans">
+
+  <header class="bg-slate-800 border-b border-slate-700 px-6 py-4 shadow-md sticky top-0 z-50">
+    <div class="max-w-6xl mx-auto flex justify-between items-center">
+      <div class="flex items-center gap-3">
+        <div class="bg-blue-500/20 p-2 rounded-lg border border-blue-500/30">
+          <i class="fa-solid fa-sliders text-blue-400 text-xl"></i>
+        </div>
+        <div>
+          <h1 class="text-lg font-bold tracking-wide">Yönetim & Reklam Paneli</h1>
+          <p class="text-[11px] text-slate-400">Kaynak ekle/çıkar ve reklam alanlarını yapılandır</p>
+        </div>
+      </div>
+      <a href="/" class="bg-slate-700 hover:bg-slate-600 text-slate-200 px-3.5 py-1.5 rounded-lg text-xs font-medium transition flex items-center gap-1.5">
+        <i class="fa-solid fa-arrow-left"></i> Canlı Siteye Dön
+      </a>
+    </div>
+  </header>
+
+  <main class="flex-1 max-w-6xl w-full mx-auto p-6 space-y-8">
+    <div id="alertBox" class="hidden p-3.5 rounded-xl text-xs font-medium transition"></div>
+
+    <!-- 1. BÖLÜM: RSS KAYNAK YÖNETİMİ -->
+    <section class="bg-slate-800/80 border border-slate-700 rounded-2xl p-6 shadow-lg">
+      <div class="flex flex-wrap justify-between items-center mb-5 pb-4 border-b border-slate-700 gap-3">
+        <div>
+          <h2 class="text-base font-bold text-slate-100 flex items-center gap-2">
+            <i class="fa-solid fa-square-rss text-orange-400"></i> RSS Kaynak Yönetimi
+          </h2>
+          <p class="text-xs text-slate-400 mt-0.5">Sisteme yeni haber siteleri ekleyin veya mevcut olanları açıp kapatın.</p>
+        </div>
+        <button id="refreshSyncBtn" class="bg-emerald-600 hover:bg-emerald-500 text-white px-3 py-1.5 rounded-lg text-xs font-medium transition flex items-center gap-1.5">
+          <i class="fa-solid fa-arrows-rotate"></i> Şimdi Tüm Kaynakları Tara
+        </button>
+      </div>
+
+      <!-- Yeni Kaynak Ekleme Formu -->
+      <form id="addSourceForm" class="grid grid-cols-1 md:grid-cols-12 gap-3 mb-6 bg-slate-900/60 p-4 rounded-xl border border-slate-700/60">
+        <div class="md:col-span-4">
+          <label class="block text-[11px] text-slate-400 mb-1">Kaynak / Gazete Adı</label>
+          <input type="text" id="srcName" required placeholder="örn: Sabah Gündem" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-1.5 text-xs text-slate-200 focus:outline-none focus:border-emerald-500">
+        </div>
+        <div class="md:col-span-6">
+          <label class="block text-[11px] text-slate-400 mb-1">RSS XML Bağlantısı (URL)</label>
+          <input type="url" id="srcRss" required placeholder="https://www.sabah.com.tr/rss/gundem.xml" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-1.5 text-xs text-slate-200 focus:outline-none focus:border-emerald-500">
+        </div>
+        <div class="md:col-span-2 flex items-end">
+          <button type="submit" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white py-1.5 px-3 rounded-lg text-xs font-semibold transition flex items-center justify-center gap-1.5">
+            <i class="fa-solid fa-plus"></i> Kaynak Ekle
+          </button>
+        </div>
+      </form>
+
+      <!-- Kaynak Listesi Tablosu -->
+      <div class="overflow-x-auto">
+        <table class="w-full text-left text-xs">
+          <thead>
+            <tr class="text-slate-400 border-b border-slate-700 bg-slate-900/40">
+              <th class="py-2.5 px-3">Kaynak Adı</th>
+              <th class="py-2.5 px-3">RSS Linki</th>
+              <th class="py-2.5 px-3 text-center">Durum</th>
+              <th class="py-2.5 px-3 text-right">İşlem</th>
+            </tr>
+          </thead>
+          <tbody id="sourcesTableBody" class="divide-y divide-slate-700/40">
+            <tr><td colspan="4" class="text-center py-6 text-slate-500">Kaynaklar yükleniyor...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- 2. BÖLÜM: REKLAM ALANLARI YÖNETİMİ -->
+    <section class="bg-slate-800/80 border border-slate-700 rounded-2xl p-6 shadow-lg">
+      <div class="mb-5 pb-4 border-b border-slate-700">
+        <h2 class="text-base font-bold text-slate-100 flex items-center gap-2">
+          <i class="fa-solid fa-rectangle-ad text-yellow-400"></i> Reklam Alanları Yönetimi (Skyscraper Banner)
+        </h2>
+        <p class="text-xs text-slate-400 mt-0.5">Sol ve Sağ kule reklamlarına Google AdSense kodları veya özel sponsor görselleri atayın.</p>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        
+        <!-- SOL REKLAM KARTI -->
+        <div class="bg-slate-900/60 p-5 rounded-xl border border-slate-700/60 flex flex-col justify-between">
+          <div>
+            <div class="flex justify-between items-center mb-3">
+              <span class="font-bold text-sm text-sky-400 flex items-center gap-1.5">
+                <i class="fa-solid fa-arrow-left"></i> Sol Kule Reklamı (160x600)
+              </span>
+              <label class="flex items-center gap-1.5 cursor-pointer text-xs">
+                <input type="checkbox" id="leftActive" class="w-4 h-4 rounded text-emerald-500 bg-slate-950 border-slate-700 focus:ring-emerald-500">
+                <span class="text-slate-300">Aktif</span>
+              </label>
+            </div>
+
+            <div class="space-y-3 text-xs">
+              <div>
+                <label class="block text-slate-400 mb-1">Reklam Tipi</label>
+                <select id="leftType" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-2.5 py-1.5 text-slate-200">
+                  <option value="custom">Özel Görsel + Tıklama Linki</option>
+                  <option value="code">Google AdSense / HTML Kodu</option>
+                </select>
+              </div>
+
+              <div id="leftCustomFields" class="space-y-2">
+                <div>
+                  <label class="block text-slate-400 mb-1">Görsel URL'si</label>
+                  <input type="url" id="leftImageUrl" placeholder="https://site.com/banner.jpg" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-2.5 py-1.5 text-slate-200 text-xs">
+                </div>
+                <div>
+                  <label class="block text-slate-400 mb-1">Yönlenecek Link (Hedef URL)</label>
+                  <input type="url" id="leftTargetUrl" placeholder="https://sponsor-site.com" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-2.5 py-1.5 text-slate-200 text-xs">
+                </div>
+              </div>
+
+              <div id="leftCodeField" class="hidden">
+                <label class="block text-slate-400 mb-1">Google Reklam HTML/JS Kodu</label>
+                <textarea id="leftCode" rows="4" placeholder="<script ...></script>" class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2 text-slate-200 font-mono text-[11px]"></textarea>
+              </div>
+            </div>
+          </div>
+
+          <button id="saveLeftAdBtn" class="mt-4 w-full bg-blue-600 hover:bg-blue-500 text-white py-1.5 rounded-lg text-xs font-semibold transition">
+            Sol Reklamı Kaydet
+          </button>
+        </div>
+
+        <!-- SAĞ REKLAM KARTI -->
+        <div class="bg-slate-900/60 p-5 rounded-xl border border-slate-700/60 flex flex-col justify-between">
+          <div>
+            <div class="flex justify-between items-center mb-3">
+              <span class="font-bold text-sm text-sky-400 flex items-center gap-1.5">
+                Sağ Kule Reklamı (160x600) <i class="fa-solid fa-arrow-right"></i>
+              </span>
+              <label class="flex items-center gap-1.5 cursor-pointer text-xs">
+                <input type="checkbox" id="rightActive" class="w-4 h-4 rounded text-emerald-500 bg-slate-950 border-slate-700 focus:ring-emerald-500">
+                <span class="text-slate-300">Aktif</span>
+              </label>
+            </div>
+
+            <div class="space-y-3 text-xs">
+              <div>
+                <label class="block text-slate-400 mb-1">Reklam Tipi</label>
+                <select id="rightType" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-2.5 py-1.5 text-slate-200">
+                  <option value="custom">Özel Görsel + Tıklama Linki</option>
+                  <option value="code">Google AdSense / HTML Kodu</option>
+                </select>
+              </div>
+
+              <div id="rightCustomFields" class="space-y-2">
+                <div>
+                  <label class="block text-slate-400 mb-1">Görsel URL'si</label>
+                  <input type="url" id="rightImageUrl" placeholder="https://site.com/banner.jpg" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-2.5 py-1.5 text-slate-200 text-xs">
+                </div>
+                <div>
+                  <label class="block text-slate-400 mb-1">Yönlenecek Link (Hedef URL)</label>
+                  <input type="url" id="rightTargetUrl" placeholder="https://sponsor-site.com" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-2.5 py-1.5 text-slate-200 text-xs">
+                </div>
+              </div>
+
+              <div id="rightCodeField" class="hidden">
+                <label class="block text-slate-400 mb-1">Google Reklam HTML/JS Kodu</label>
+                <textarea id="rightCode" rows="4" placeholder="<script ...></script>" class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2 text-slate-200 font-mono text-[11px]"></textarea>
+              </div>
+            </div>
+          </div>
+
+          <button id="saveRightAdBtn" class="mt-4 w-full bg-blue-600 hover:bg-blue-500 text-white py-1.5 rounded-lg text-xs font-semibold transition">
+            Sağ Reklamı Kaydet
+          </button>
+        </div>
+
+      </div>
+    </section>
+  </main>
+
+  <script>
+    const alertBox = document.getElementById('alertBox');
+    function notify(msg, type = 'success') {
+      alertBox.className = `p-3.5 rounded-xl text-xs font-medium transition ${type === 'success' ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30' : 'bg-rose-500/20 text-rose-300 border border-rose-500/30'}`;
+      alertBox.innerHTML = msg;
+      alertBox.classList.remove('hidden');
+      setTimeout(() => alertBox.classList.add('hidden'), 4000);
+    }
+
+    // 1. Kaynakları Listele
+    async function fetchSources() {
+      try {
+        const res = await fetch('/api/sources');
+        const data = await res.json();
+        const tbody = document.getElementById('sourcesTableBody');
+        if (!data.data || data.data.length === 0) {
+          tbody.innerHTML = '<tr><td colspan="4" class="text-center py-6 text-slate-500">Kayıtlı kaynak bulunmuyor.</td></tr>';
+          return;
+        }
+        tbody.innerHTML = data.data.map(s => `
+          <tr class="hover:bg-slate-800/40 transition">
+            <td class="py-2.5 px-3 font-semibold text-slate-200">${s.name}</td>
+            <td class="py-2.5 px-3 text-slate-400 font-mono text-[11px] truncate max-w-xs">${s.rss}</td>
+            <td class="py-2.5 px-3 text-center">
+              <button onclick="toggleSource('${s._id}')" class="px-2 py-0.5 rounded-full text-[10px] font-semibold transition ${s.isActive ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30' : 'bg-slate-700 text-slate-400'}">
+                ${s.isActive ? 'Aktif' : 'Pasif'}
+              </button>
+            </td>
+            <td class="py-2.5 px-3 text-right">
+              <button onclick="deleteSource('${s._id}')" class="text-rose-400 hover:text-rose-300 text-xs px-2 py-1 rounded transition">
+                <i class="fa-solid fa-trash"></i> Sil
+              </button>
+            </td>
+          </tr>
+        `).join('');
+      } catch (e) {
+        notify('Kaynaklar çekilemedi: ' + e.message, 'error');
+      }
+    }
+
+    // Kaynak Ekle
+    document.getElementById('addSourceForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const name = document.getElementById('srcName').value.trim();
+      const rss = document.getElementById('srcRss').value.trim();
+      try {
+        const res = await fetch('/api/sources', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ name, rss })
+        });
+        const resData = await res.json();
+        if (resData.success) {
+          notify(`"${name}" başarıyla eklendi ve ilk tarama başladı!`, 'success');
+          document.getElementById('srcName').value = '';
+          document.getElementById('srcRss').value = '';
+          fetchSources();
+        } else {
+          notify(resData.error || 'Eklenemedi', 'error');
+        }
+      } catch (e) {
+        notify('Hata: ' + e.message, 'error');
+      }
+    });
+
+    // Kaynak Durum Değiştir
+    window.toggleSource = async (id) => {
+      try {
+        await fetch(`/api/sources/${id}/toggle`, { method: 'PATCH' });
+        fetchSources();
+      } catch (e) {}
+    };
+
+    // Kaynak Sil
+    window.deleteSource = async (id) => {
+      if (!confirm('Bu kaynağı silmek istediğinize emin misiniz?')) return;
+      try {
+        await fetch(`/api/sources/${id}`, { method: 'DELETE' });
+        notify('Kaynak silindi.', 'success');
+        fetchSources();
+      } catch (e) {}
+    };
+
+    // Şimdi Tara Butonu
+    document.getElementById('refreshSyncBtn').addEventListener('click', async () => {
+      try {
+        await fetch('/api/sync');
+        notify('Tüm kaynakların taraması başlatıldı.', 'success');
+      } catch (e) {}
+    });
+
+    // 2. Reklamları Getir ve Kaydet
+    async function loadAds() {
+      try {
+        const res = await fetch('/api/ads');
+        const data = await res.json();
+        if (data.success) {
+          data.data.forEach(ad => {
+            const prefix = ad.position; // 'left' veya 'right'
+            document.getElementById(`${prefix}Active`).checked = ad.isActive;
+            document.getElementById(`${prefix}Type`).value = ad.type;
+            document.getElementById(`${prefix}ImageUrl`).value = ad.imageUrl || '';
+            document.getElementById(`${prefix}TargetUrl`).value = ad.targetUrl || '';
+            document.getElementById(`${prefix}Code`).value = ad.code || '';
+            handleTypeSwitch(prefix);
+          });
+        }
+      } catch (e) {}
+    }
+
+    function handleTypeSwitch(pos) {
+      const type = document.getElementById(`${pos}Type`).value;
+      if (type === 'code') {
+        document.getElementById(`${pos}CustomFields`).classList.add('hidden');
+        document.getElementById(`${pos}CodeField`).classList.remove('hidden');
+      } else {
+        document.getElementById(`${pos}CustomFields`).classList.remove('hidden');
+        document.getElementById(`${pos}CodeField`).classList.add('hidden');
+      }
+    }
+
+    document.getElementById('leftType').addEventListener('change', () => handleTypeSwitch('left'));
+    document.getElementById('rightType').addEventListener('change', () => handleTypeSwitch('right'));
+
+    async function saveAd(position) {
+      const type = document.getElementById(`${position}Type`).value;
+      const isActive = document.getElementById(`${position}Active`).checked;
+      const imageUrl = document.getElementById(`${position}ImageUrl`).value.trim();
+      const targetUrl = document.getElementById(`${position}TargetUrl`).value.trim();
+      const code = document.getElementById(`${position}Code`).value.trim();
+
+      try {
+        const res = await fetch('/api/ads', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ position, type, isActive, imageUrl, targetUrl, code })
+        });
+        const d = await res.json();
+        if (d.success) {
+          notify(`${position === 'left' ? 'Sol' : 'Sağ'} reklam alanı güncellendi!`, 'success');
+        }
+      } catch (e) {
+        notify('Kaydedilemedi: ' + e.message, 'error');
+      }
+    }
+
+    document.getElementById('saveLeftAdBtn').addEventListener('click', () => saveAd('left'));
+    document.getElementById('saveRightAdBtn').addEventListener('click', () => saveAd('right'));
+
+    // Başlangıç
+    fetchSources();
+    loadAds();
+  </script>
+</body>
+</html>
