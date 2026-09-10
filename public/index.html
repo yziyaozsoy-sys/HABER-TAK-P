@@ -27,81 +27,123 @@
 
   <main class="flex-1 max-w-7xl w-full mx-auto p-6">
     <div class="flex justify-between items-center mb-6 text-sm text-slate-400">
-      <span id="newsCount">Yükleniyor...</span>
-      <button id="syncRssBtn" class="text-xs text-slate-400 hover:text-emerald-400 underline transition">
-        <i class="fa-solid fa-cloud-arrow-down mr-1"></i>Kaynakları Şimdi Tara
+      <span id="newsCount" class="font-medium text-slate-300">Yükleniyor...</span>
+      <button id="syncRssBtn" class="bg-slate-800 hover:bg-slate-700 text-emerald-400 border border-slate-700 px-3 py-1.5 rounded-lg text-xs font-semibold transition flex items-center gap-1.5 shadow-sm">
+        <i class="fa-solid fa-cloud-arrow-down" id="syncIcon"></i>
+        <span id="syncText">Kaynakları Şimdi Tara</span>
       </button>
     </div>
+    
+    <div id="statusAlert" class="hidden mb-6 p-4 rounded-xl text-sm font-medium transition"></div>
+
     <div id="newsGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"></div>
   </main>
 
   <script>
     let searchTimeout;
+    const grid = document.getElementById('newsGrid');
+    const countText = document.getElementById('newsCount');
+    const syncBtn = document.getElementById('syncRssBtn');
+    const syncIcon = document.getElementById('syncIcon');
+    const syncText = document.getElementById('syncText');
+    const statusAlert = document.getElementById('statusAlert');
+
+    function showAlert(message, type = 'info') {
+      statusAlert.className = `mb-6 p-4 rounded-xl text-sm font-medium transition flex items-center gap-2 ${
+        type === 'success' ? 'bg-emerald-500/10 border border-emerald-500/30 text-emerald-300' :
+        type === 'error' ? 'bg-rose-500/10 border border-rose-500/30 text-rose-300' :
+        'bg-blue-500/10 border border-blue-500/30 text-blue-300'
+      }`;
+      statusAlert.innerHTML = message;
+      statusAlert.classList.remove('hidden');
+      setTimeout(() => statusAlert.classList.add('hidden'), 5000);
+    }
+
     async function loadNews(search = '') {
-      const grid = document.getElementById('newsGrid');
-      const countText = document.getElementById('newsCount');
       try {
-        let url = '/api/news?limit=60';
+        let url = '/api/news?limit=90';
         if (search) url += '&search=' + encodeURIComponent(search);
+        
         const res = await fetch(url);
         const data = await res.json();
-        if (!data.success) throw new Error(data.error);
+        if (!data.success) throw new Error(data.error || 'Veri alinamadi');
 
-        countText.textContent = `Toplam ${data.count} haber listeleniyor.`;
-        if (data.data.length === 0) {
-          grid.innerHTML = '<div class="col-span-full py-16 text-center text-slate-500"><i class="fa-regular fa-folder-open text-4xl mb-3"></i><p>Haber bulunamadı. Birazdan kaynaklar taranınca yüklenecektir.</p></div>';
+        countText.textContent = `Toplam ${data.count || 0} haber listeleniyor.`;
+        
+        if (!data.data || data.data.length === 0) {
+          grid.innerHTML = `
+            <div class="col-span-full py-16 text-center text-slate-500">
+              <i class="fa-regular fa-folder-open text-5xl mb-3 block text-slate-600"></i>
+              <p class="text-base text-slate-400 font-medium">Haber bulunamadı.</p>
+              <p class="text-xs text-slate-500 mt-1">Lütfen yukarıdaki "Kaynakları Şimdi Tara" butonuna tıklayın.</p>
+            </div>`;
           return;
         }
 
         grid.innerHTML = data.data.map(item => `
-          <article class="bg-slate-800/80 border border-slate-700/60 rounded-xl p-5 hover:border-slate-600 transition flex flex-col justify-between group shadow-sm">
+          <article class="bg-slate-800/80 border border-slate-700/60 rounded-xl p-5 hover:border-slate-500 transition-all flex flex-col justify-between group shadow-lg hover:shadow-emerald-950/20">
             <div>
-              <div class="flex items-center justify-between text-xs text-slate-400 mb-2">
-                <span class="bg-slate-700 px-2.5 py-0.5 rounded-md font-semibold text-emerald-400">${item.source || 'Genel'}</span>
-                <span>${new Date(item.pubDate).toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' })}</span>
+              <div class="flex items-center justify-between text-xs text-slate-400 mb-2.5">
+                <span class="bg-slate-700/80 px-2.5 py-0.5 rounded-md font-bold text-emerald-400 border border-slate-600">${item.source || 'Genel'}</span>
+                <span>${item.pubDate ? new Date(item.pubDate).toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' }) : ''}</span>
               </div>
-              <h2 class="text-base font-semibold text-slate-100 group-hover:text-emerald-400 transition line-clamp-2 mb-2">
+              <h2 class="text-base font-semibold text-slate-100 group-hover:text-emerald-400 transition line-clamp-2 mb-2 leading-snug">
                 <a href="${item.link}" target="_blank" rel="noopener noreferrer">${item.title}</a>
               </h2>
-              ${item.description ? `<p class="text-xs text-slate-400 line-clamp-3 mb-4">${item.description.replace(/<[^>]*>?/gm, '')}</p>` : ''}
+              ${item.description ? `<p class="text-xs text-slate-400 line-clamp-3 mb-4 leading-relaxed">${item.description.replace(/<[^>]*>?/gm, '')}</p>` : ''}
             </div>
-            <div class="pt-3 border-t border-slate-700/50 flex justify-end">
-              <a href="${item.link}" target="_blank" rel="noopener noreferrer" class="text-xs text-slate-400 hover:text-emerald-400 font-medium inline-flex items-center gap-1 transition">
+            <div class="pt-3 border-t border-slate-700/50 flex justify-between items-center text-xs text-slate-500">
+              <span>${item.pubDate ? new Date(item.pubDate).toLocaleDateString('tr-TR') : ''}</span>
+              <a href="${item.link}" target="_blank" rel="noopener noreferrer" class="text-xs text-slate-400 hover:text-emerald-400 font-semibold inline-flex items-center gap-1 transition">
                 Habere Git <i class="fa-solid fa-arrow-up-right-from-square text-[10px]"></i>
               </a>
             </div>
           </article>
         `).join('');
       } catch (err) {
-        grid.innerHTML = '<div class="col-span-full text-center py-10 text-rose-400">Hata: ' + err.message + '</div>';
+        grid.innerHTML = `<div class="col-span-full text-center py-10 text-rose-400 font-medium">Hata: ${err.message}</div>`;
       }
     }
 
+    // Arama kutusu
     document.getElementById('searchInput').addEventListener('input', (e) => {
       clearTimeout(searchTimeout);
       searchTimeout = setTimeout(() => loadNews(e.target.value.trim()), 300);
     });
 
+    // Yenile Butonu
     document.getElementById('refreshBtn').addEventListener('click', () => {
       const icon = document.getElementById('refreshIcon');
       icon.classList.add('fa-spin');
       loadNews().finally(() => setTimeout(() => icon.classList.remove('fa-spin'), 600));
     });
 
-    document.getElementById('syncRssBtn').addEventListener('click', async () => {
-      const btn = document.getElementById('syncRssBtn');
-      btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin mr-1"></i>Taranıyor...';
+    // Kaynakları Tara Butonu
+    syncBtn.addEventListener('click', async () => {
+      syncBtn.disabled = true;
+      syncIcon.className = 'fa-solid fa-circle-notch fa-spin';
+      syncText.textContent = 'Kaynaklar taranıyor (5-8 sn)...';
+      showAlert('<i class="fa-solid fa-rotate fa-spin mr-2"></i>RSS kaynakları taranıyor, lütfen bekleyin...', 'info');
+
       try {
         await fetch('/api/sync');
-        setTimeout(() => {
-          loadNews();
-          btn.innerHTML = '<i class="fa-solid fa-cloud-arrow-down mr-1"></i>Kaynakları Şimdi Tara';
-        }, 2500);
+        // Veritabanına yazılması için 6 saniye mola verip listeyi tazeliyoruz
+        setTimeout(async () => {
+          await loadNews();
+          syncIcon.className = 'fa-solid fa-cloud-arrow-down';
+          syncText.textContent = 'Kaynakları Şimdi Tara';
+          syncBtn.disabled = false;
+          showAlert('<i class="fa-solid fa-circle-check mr-2"></i>Tarama tamamlandı! Haberler güncellendi.', 'success');
+        }, 6000);
       } catch (e) {
-        btn.innerHTML = 'Hata!';
+        syncIcon.className = 'fa-solid fa-triangle-exclamation';
+        syncText.textContent = 'Hata Oluştu';
+        syncBtn.disabled = false;
+        showAlert('Kaynaklar taranırken bir hata oluştu: ' + e.message, 'error');
       }
     });
 
+    // İlk açılışta yükle
     loadNews();
   </script>
 </body>
