@@ -789,11 +789,26 @@ app.post('/api/ads', authMiddleware, async (req, res) => {
     res.status(500).json({ success: false, error: err.message });
   }
 });
-
-// --- SENKRONİZASYON & ZAMANLAYICI ---
-app.get('/api/sync', (req, res) => {
-  fetchAllSources();
-  res.json({ success: true, message: "Tarama arka planda paralel olarak başlatıldı." });
+// --- SENKRONİZASYON & ZAMANLAYICI (DÜZELTİLMİŞ & RAPORLU) ---
+app.get('/api/sync', async (req, res) => {
+  try {
+    console.log("--> Manuel tarama tetiklendi, siteler taranıyor...");
+    // await koyuyoruz ki sitelerin taranması tamamlansın, sonucu görelim!
+    await fetchAllSources();
+    
+    // Son 5 haberi çekip bakalım güncel saat gelmiş mi?
+    const latestNews = await News.find().sort({ pubDate: -1, createdAt: -1 }).limit(3).lean();
+    
+    res.json({
+      success: true,
+      message: "Tüm kaynaklar başarıyla tarandı!",
+      son_haber_saati: latestNews[0] ? (latestNews[0].pubDate || latestNews[0].createdAt) : "Haber yok",
+      son_haber_basligi: latestNews[0] ? latestNews[0].title : "Haber yok"
+    });
+  } catch (err) {
+    console.error("Tarama hatası:", err);
+    res.status(500).json({ success: false, error: err.message });
+  }
 });
 
 // 3 dakikada bir otomatik tara
