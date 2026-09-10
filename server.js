@@ -622,18 +622,16 @@ app.delete('/api/requests/:id', authMiddleware, async (req, res) => {
   }
 });
 
-// --- HABERLER API'Sİ (KAYNAK KİLİTSİZ & DAİMA EN YENİ) ---
+// --- HABERLER API'Sİ (KAYNAK KİLİTSİZ & TAM ZAMANLI) ---
 app.get('/api/news', async (req, res) => {
   try {
     const limit = parseInt(req.query.limit) || 120;
     const query = {};
 
-    // Kategori filtresi
     if (req.query.category && req.query.category !== 'Tümü') {
       query.category = req.query.category;
     }
 
-    // Kullanıcı arayüzden kaynak seçtiyse filtrele, seçmediyse TÜMÜNÜ getir!
     if (req.query.sources) {
       const srcList = req.query.sources.split(',').map(s => s.trim()).filter(Boolean);
       if (srcList.length > 0) {
@@ -641,7 +639,6 @@ app.get('/api/news', async (req, res) => {
       }
     }
 
-    // Arama filtresi
     if (req.query.search) {
       query.$or = [
         { title: { $regex: req.query.search, $options: 'i' } },
@@ -651,7 +648,6 @@ app.get('/api/news', async (req, res) => {
 
     const sortField = req.query.sort === 'rating' ? { views: -1, pubDate: -1 } : { pubDate: -1 };
 
-    // Doğrudan en güncel haberleri çek
     const news = await News.find(query)
       .sort(sortField)
       .limit(limit)
