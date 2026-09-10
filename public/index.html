@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <!-- GOOGLE BAŞLIĞI & 1. SLOGAN -->
+  <!-- GOOGLE BAŞLIĞI & SLOGAN -->
   <title>Haber Takip | Türkiye ve Dünyadan Anlık Son Dakika Haberleri</title>
   <meta name="description" content="Türkiye ve dünyadan anlık son dakika haberleri, güncel manşetler ve tarafsız canlı haber takibi tek adreste.">
   <meta name="keywords" content="haber takip, son dakika, haberler, güncel haber, ekonomi, spor, gündem, manşetler">
@@ -96,70 +96,85 @@
     </div>
   </div>
 
-  <!-- Üst Bar -->
-  <header class="bg-slate-800 border-b border-slate-700 sticky top-0 z-40 px-6 py-3.5 shadow-md">
-    <div class="max-w-7xl mx-auto flex flex-wrap justify-between items-center gap-4">
-      <div class="flex items-center gap-3">
-        <div class="bg-emerald-500/20 p-2 rounded-lg border border-emerald-500/30">
-          <i class="fa-solid fa-bolt text-emerald-400 text-xl"></i>
-        </div>
-        <div>
-          <a href="/" class="flex items-center gap-3 hover:opacity-90 transition">
-            <img src="/favicon.svg" alt="Haber Takip" class="w-10 h-10 rounded-xl shadow-md border border-slate-700 bg-slate-800 p-0.5">
-            <div class="flex flex-col">
-              <div class="flex items-center gap-2">
-                <span class="text-lg font-black tracking-tight text-white">HABER <span class="text-emerald-400">TAKİP</span></span>
-                <span class="inline-flex items-center px-1.5 py-0.5 rounded text-[9px] font-bold bg-rose-500/20 text-rose-400 border border-rose-500/30 animate-pulse">CANLI</span>
-              </div>
-              <p class="text-[11px] text-slate-400 font-medium hidden sm:block">
-                Türkiye ve Dünyadan Anlık Son Dakika Haberleri
-              </p>
+  <!-- ÜST BAR: ARAMA KUTUSU GENİŞLETİLMİŞ VE ASLA DARALMAYACAK HALE GETİRİLDİ -->
+  <header class="bg-slate-800 border-b border-slate-700 sticky top-0 z-40 px-4 sm:px-6 py-3 shadow-md">
+    <div class="max-w-[1550px] mx-auto flex flex-wrap items-center justify-between gap-3">
+      
+      <!-- Sol: Logo & Başlık -->
+      <div class="flex items-center gap-3 shrink-0">
+        <a href="/" class="flex items-center gap-2.5 hover:opacity-90 transition">
+          <img src="/favicon.svg" alt="Haber Takip" class="w-9 h-9 rounded-xl shadow-md border border-slate-700 bg-slate-850 p-0.5">
+          <div class="flex flex-col">
+            <div class="flex items-center gap-1.5">
+              <span class="text-base sm:text-lg font-black tracking-tight text-white">HABER <span class="text-emerald-400">TAKİP</span></span>
+              <span class="inline-flex items-center px-1.5 py-0.2 rounded text-[9px] font-bold bg-rose-500/20 text-rose-400 border border-rose-500/30 animate-pulse">CANLI</span>
             </div>
-          </a>
+            <p class="text-[10px] text-slate-400 font-medium hidden md:block">
+              Türkiye ve Dünyadan Anlık Son Dakika Haberleri
+            </p>
+          </div>
+        </a>
+      </div>
+
+      <!-- Orta: GENİŞ VE BELİRGİN ARAMA KUTUSU (flex-1 ve min-w-[260px] ile asla kaybolmaz) -->
+      <div class="flex-1 min-w-[260px] max-w-2xl order-3 lg:order-2 w-full lg:w-auto">
+        <div class="relative w-full">
+          <i class="fa-solid fa-magnifying-glass absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 text-xs"></i>
+          <input 
+            type="text" 
+            id="searchInput" 
+            placeholder="Haber başlığı veya özetinde ara... (Örn: borsa, enflasyon, maç)" 
+            class="w-full bg-slate-950 border border-slate-700/80 rounded-xl pl-9 pr-3 py-2 text-xs text-slate-100 placeholder-slate-400 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 transition shadow-inner"
+          >
         </div>
       </div>
 
-      <!-- Arama, Sıralama, Butonlar ve Admin Girişi -->
-      <div class="flex items-center gap-2 flex-1 max-w-xl">
-        <div class="relative w-full">
-          <i class="fa-solid fa-magnifying-glass absolute left-3 top-2.5 text-slate-400 text-xs"></i>
-          <input type="text" id="searchInput" placeholder="Başlık veya özette ara..." class="w-full bg-slate-950 border border-slate-700 rounded-lg pl-8 pr-3 py-1.5 text-xs text-slate-200 placeholder-slate-500 focus:outline-none focus:border-emerald-500">
-        </div>
-
+      <!-- Sağ: Sıralama, Sayaçlı Yenile Butonu, Word, Talep ve Admin Girişi -->
+      <div class="flex items-center gap-2 shrink-0 order-2 lg:order-3 ml-auto lg:ml-0 flex-wrap sm:flex-nowrap">
         <!-- Sıralama Modu -->
-        <select id="sortModeSelect" class="bg-slate-950 border border-slate-700 rounded-lg px-2.5 py-1.5 text-xs text-emerald-400 font-semibold focus:outline-none cursor-pointer shrink-0">
+        <select id="sortModeSelect" class="bg-slate-950 border border-slate-700 rounded-lg px-2.5 py-1.5 text-xs text-emerald-400 font-semibold focus:outline-none cursor-pointer">
           <option value="latest">En Son Gelen</option>
           <option value="rating">🔥 Çok Okunanlar (Rating)</option>
         </select>
 
+        <!-- Sayaçlı Otomatik Yenile Butonu -->
         <button id="refreshBtn" title="Listeyi Tazele" class="bg-slate-700 hover:bg-slate-600 text-white px-3 py-1.5 rounded-lg text-xs font-medium transition flex items-center gap-1.5">
           <i class="fa-solid fa-arrows-rotate" id="refreshIcon"></i>
           <span class="hidden sm:inline">Yenile</span>
+          <span id="autoRefreshCountdown" class="text-[10px] bg-slate-900/90 text-emerald-400 font-mono px-1.5 py-0.2 rounded border border-slate-600/60">30s</span>
         </button>
-        <button id="exportWordBtn" title="Seçili veya tüm haberleri Word olarak aktar" class="bg-blue-600 hover:bg-blue-500 text-white px-3.5 py-1.5 rounded-lg text-xs font-medium transition flex items-center gap-1.5 shadow-sm whitespace-nowrap">
+
+        <!-- Word İndir -->
+        <button id="exportWordBtn" title="Seçili veya tüm haberleri Word olarak aktar" class="bg-blue-600 hover:bg-blue-500 text-white px-3 py-1.5 rounded-lg text-xs font-medium transition flex items-center gap-1.5 shadow-sm whitespace-nowrap">
           <i class="fa-solid fa-file-word"></i>
           <span id="exportBtnText">Word</span>
         </button>
+
+        <!-- Talep Gönder -->
         <button id="openRequestModalBtn" title="Yönetime Talep İlet" class="bg-amber-600/20 hover:bg-amber-600 text-amber-300 hover:text-white border border-amber-500/30 px-2.5 py-1.5 rounded-lg text-xs font-medium transition flex items-center gap-1">
           <i class="fa-regular fa-comment-dots"></i>
           <span class="hidden md:inline">Talep</span>
         </button>
+
+        <!-- Admin Giriş İkonu -->
         <a href="/admin.html" title="Admin & Personel Paneli" class="bg-slate-700 hover:bg-slate-600 text-amber-400 border border-slate-600 px-2.5 py-1.5 rounded-lg text-xs font-medium transition flex items-center gap-1">
           <i class="fa-solid fa-lock"></i>
         </a>
       </div>
+
     </div>
   </header>
-  <!-- Kategori Sekmeleri (Dinamik Yüklenir) -->
-  <nav class="bg-slate-850 bg-slate-800/80 border-b border-slate-700 px-6 py-2 sticky top-[65px] z-30 backdrop-blur-md">
-    <div class="max-w-7xl mx-auto flex items-center gap-2 overflow-x-auto text-xs" id="categoryTabs">
+  <!-- Kategori Sekmeleri (Dinamik Olarak Yüklenir) -->
+  <nav class="bg-slate-800/90 border-b border-slate-700/80 px-4 sm:px-6 py-2 sticky top-[61px] z-30 backdrop-blur-md shadow-sm">
+    <div class="max-w-[1550px] mx-auto flex items-center gap-2 overflow-x-auto text-xs no-scrollbar" id="categoryTabs">
       <span class="text-xs text-slate-500">Kategoriler yükleniyor...</span>
     </div>
   </nav>
 
   <!-- Filtreleme & Takip Kontrol Paneli -->
-  <div class="bg-slate-900 border-b border-slate-800 px-6 py-2.5">
-    <div class="max-w-7xl mx-auto flex flex-wrap items-center justify-between gap-4">
+  <div class="bg-slate-900/95 border-b border-slate-800 px-4 sm:px-6 py-2.5">
+    <div class="max-w-[1550px] mx-auto flex flex-wrap items-center justify-between gap-4">
+      <!-- Kaynak Filtreleme Butonları (Chip'ler) -->
       <div class="flex items-center gap-2 flex-wrap text-xs">
         <span class="text-slate-400 font-medium flex items-center gap-1">
           <i class="fa-solid fa-filter text-emerald-400"></i> Kaynaklar:
@@ -169,49 +184,60 @@
         </div>
       </div>
 
+      <!-- Alarm / Takip Kelimeleri Kutusu -->
       <div class="flex items-center gap-2 text-xs">
-        <span class="text-amber-400 font-medium flex items-center gap-1"><i class="fa-solid fa-bell"></i> Alarm Kelimeleri:</span>
-        <input type="text" id="watchWordsInput" placeholder="örn: deprem, dolar, borsa" class="bg-slate-950 border border-slate-700 rounded-md px-2.5 py-1 text-xs text-slate-200 placeholder-slate-600 focus:outline-none focus:border-amber-500 w-52">
+        <span class="text-amber-400 font-medium flex items-center gap-1">
+          <i class="fa-solid fa-bell"></i> Alarm Kelimeleri:
+        </span>
+        <input 
+          type="text" 
+          id="watchWordsInput" 
+          placeholder="örn: deprem, dolar, borsa" 
+          class="bg-slate-950 border border-slate-700/80 rounded-lg px-3 py-1.5 text-xs text-slate-200 placeholder-slate-600 focus:outline-none focus:border-amber-500 w-48 sm:w-56 transition shadow-inner"
+        >
       </div>
     </div>
   </div>
 
-  <!-- Ana Düzen: SOL REKLAM + HABERLER + SAĞ REKLAM -->
-  <div class="flex-1 max-w-[1550px] w-full mx-auto px-4 py-6 flex gap-6 justify-center items-start">
+  <!-- Ana Düzen: SOL REKLAM + ORTA HABER İÇERİĞİ + SAĞ REKLAM -->
+  <div class="flex-1 max-w-[1550px] w-full mx-auto px-3 sm:px-6 py-6 flex gap-6 justify-center items-start">
     
     <!-- SOL REKLAM KULESİ -->
-    <aside id="leftAdContainer" class="hidden xl:flex ad-skyscraper flex-col justify-center items-center bg-slate-800/40 border border-slate-800 rounded-xl overflow-hidden shadow-sm">
+    <aside id="leftAdContainer" class="hidden xl:flex ad-skyscraper flex-col justify-center items-center bg-slate-800/40 border border-slate-800 rounded-xl overflow-hidden shadow-sm shrink-0">
       <span class="text-[10px] text-slate-600 mb-1">REKLAM</span>
       <div id="leftAdContent" class="w-full h-full flex items-center justify-center p-1"></div>
     </aside>
 
     <!-- ORTA HABER İÇERİĞİ -->
-    <main class="flex-1 max-w-5xl w-full">
-      <div class="flex flex-wrap justify-between items-center mb-5 gap-3 text-xs text-slate-400">
-        <div class="flex items-center gap-3">
-          <span id="newsCount" class="font-semibold text-slate-300">Yükleniyor...</span>
+    <main class="flex-1 max-w-5xl w-full min-w-0">
+      
+      <!-- Üst Araç Çubuğu: Sayaç, Alarm Rozeti, Seçim Butonu, Kaynakları Tara -->
+      <div class="flex flex-wrap justify-between items-center mb-5 gap-3 text-xs text-slate-400 bg-slate-850/40 p-3 rounded-xl border border-slate-800/60">
+        <div class="flex items-center gap-3 flex-wrap">
+          <span id="newsCount" class="font-semibold text-slate-200">Haberler taranıyor...</span>
           <span id="alarmBadge" class="hidden bg-amber-500/20 text-amber-300 px-2 py-0.5 rounded border border-amber-500/30 animate-pulse font-medium"></span>
           
-          <button id="toggleSelectAllBtn" class="bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 px-2.5 py-1 rounded text-xs transition flex items-center gap-1.5">
+          <button id="toggleSelectAllBtn" class="bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 px-2.5 py-1 rounded-lg text-xs transition flex items-center gap-1.5 shadow-sm">
             <i class="fa-regular fa-square-check text-emerald-400"></i>
             <span id="toggleSelectAllText">Tümünü Seç</span>
           </button>
         </div>
 
-        <button id="syncRssBtn" class="bg-slate-800 hover:bg-slate-700 text-emerald-400 border border-slate-700 px-3 py-1 rounded-lg text-xs font-medium transition flex items-center gap-1.5">
+        <button id="syncRssBtn" class="bg-slate-800 hover:bg-slate-700 text-emerald-400 border border-slate-700 px-3 py-1.5 rounded-lg text-xs font-semibold transition flex items-center gap-1.5 shadow-sm">
           <i class="fa-solid fa-cloud-arrow-down" id="syncIcon"></i>
           <span id="syncText">Kaynakları Tara</span>
         </button>
       </div>
 
+      <!-- Durum Bildirim Kutusu -->
       <div id="statusAlert" class="hidden mb-4 p-3 rounded-xl text-xs font-medium transition"></div>
 
-      <!-- Haber Grid -->
+      <!-- Haber Grid (Kartların Dinamik Basıldığı Alan) -->
       <div id="newsGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 gap-5"></div>
 
       <!-- Y. ZİYA ÖZSOY İMZA FOOTER -->
       <footer class="mt-12 py-6 border-t border-slate-800/80 text-center">
-        <p class="text-xs text-slate-400 font-medium tracking-wide flex items-center justify-center gap-2">
+        <p class="text-xs text-slate-400 font-medium tracking-wide flex items-center justify-center gap-2 flex-wrap">
           <span>Haber Takip Portalı</span>
           <span class="text-slate-600">•</span>
           <span>Tasarım & Geliştirme: <strong class="text-emerald-400 font-semibold tracking-wider">Y. Ziya Özsoy</strong></span>
@@ -222,13 +248,12 @@
     </main>
 
     <!-- SAĞ REKLAM KULESİ -->
-    <aside id="rightAdContainer" class="hidden xl:flex ad-skyscraper flex-col justify-center items-center bg-slate-800/40 border border-slate-800 rounded-xl overflow-hidden shadow-sm">
+    <aside id="rightAdContainer" class="hidden xl:flex ad-skyscraper flex-col justify-center items-center bg-slate-800/40 border border-slate-800 rounded-xl overflow-hidden shadow-sm shrink-0">
       <span class="text-[10px] text-slate-600 mb-1">REKLAM</span>
       <div id="rightAdContent" class="w-full h-full flex items-center justify-center p-1"></div>
     </aside>
 
   </div>
-
   <!-- ASILI POP-UP CANLI KAYAN BANT -->
   <aside id="mainTickerBar" class="fixed bottom-3 left-3 right-3 md:left-6 md:right-6 h-11 bg-slate-950/90 border border-slate-700/80 z-50 flex items-center rounded-xl shadow-2xl backdrop-blur-md overflow-hidden transition-all duration-300">
     <!-- Başlık & Kategori Rozeti -->
@@ -274,6 +299,7 @@
     <i class="fa-solid fa-bars-staggered"></i>
     <span>Canlı Bandı Göster</span>
   </button>
+
   <script>
     let allCategoriesList = [];
     let allSourcesList = [];
@@ -436,6 +462,7 @@
       }
     });
 
+    // Alarm Kelimeleri
     const watchInput = document.getElementById('watchWordsInput');
     watchInput.value = localStorage.getItem('haber_watch_words') || '';
     watchInput.addEventListener('change', () => {
@@ -443,6 +470,84 @@
       renderNews();
     });
 
+    // Kategorileri Yükleme
+    async function loadCategories() {
+      try {
+        const res = await fetch('/api/categories');
+        const data = await res.json();
+        const catTabsContainer = document.getElementById('categoryTabs');
+        
+        let cats = ['Tümü'];
+        if (data.success && data.data) {
+          allCategoriesList = data.data;
+          data.data.forEach(c => {
+            if (!cats.includes(c.name)) cats.push(c.name);
+          });
+        }
+
+        catTabsContainer.innerHTML = cats.map(cat => `
+          <button data-cat="${cat}" class="cat-btn px-3 py-1 rounded-lg font-medium transition ${cat === selectedCategory ? 'bg-emerald-600 text-white font-semibold' : 'text-slate-300 hover:bg-slate-700'}">
+            ${cat}
+          </button>
+        `).join('');
+
+        document.querySelectorAll('.cat-btn').forEach(btn => {
+          btn.addEventListener('click', () => {
+            document.querySelectorAll('.cat-btn').forEach(b => {
+              b.className = 'cat-btn px-3 py-1 rounded-lg font-medium text-slate-300 hover:bg-slate-700 transition';
+            });
+            btn.className = 'cat-btn px-3 py-1 rounded-lg font-semibold bg-emerald-600 text-white transition';
+            selectedCategory = btn.getAttribute('data-cat');
+            
+            tickerCategoryTitle.textContent = selectedCategory.toUpperCase() + ' AKIŞI';
+            renderCategorySources();
+            loadNews();
+          });
+        });
+      } catch (e) {}
+    }
+
+    // Seçili Kategoriye Göre Kaynakları Listeleme
+    function renderCategorySources() {
+      let filtered = allSourcesList.filter(s => s.isActive);
+      if (selectedCategory !== 'Tümü') {
+        filtered = filtered.filter(s => (s.category || 'Gündem') === selectedCategory);
+      }
+
+      selectedSources.clear();
+      if (filtered.length === 0) {
+        sourcesContainer.innerHTML = `<span class="text-slate-500 text-[11px] italic">Bu kategoride aktif kaynak bulunamadı.</span>`;
+        return;
+      }
+
+      sourcesContainer.innerHTML = filtered.map(src => {
+        selectedSources.add(src.name);
+        const isEn = src.lang === 'en';
+        return `
+          <button data-src="${src.name}" class="source-chip bg-emerald-600/20 text-emerald-300 border border-emerald-500/30 px-2.5 py-0.5 rounded-full hover:opacity-80 transition flex items-center gap-1">
+            <span>${src.name}</span>
+            ${isEn ? '<span class="text-[9px] bg-indigo-500/30 text-indigo-200 px-1 rounded font-bold">TR Çeviri</span>' : ''}
+            <i class="fa-solid fa-check text-[10px]"></i>
+          </button>
+        `;
+      }).join('');
+
+      document.querySelectorAll('.source-chip').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const src = btn.getAttribute('data-src');
+          if (selectedSources.has(src)) {
+            selectedSources.delete(src);
+            btn.className = 'source-chip bg-slate-800 text-slate-500 border border-slate-700 px-2.5 py-0.5 rounded-full hover:opacity-80 transition flex items-center gap-1';
+            btn.querySelector('i').className = 'fa-solid fa-xmark text-[10px]';
+          } else {
+            selectedSources.add(src);
+            btn.className = 'source-chip bg-emerald-600/20 text-emerald-300 border border-emerald-500/30 px-2.5 py-0.5 rounded-full hover:opacity-80 transition flex items-center gap-1';
+            btn.querySelector('i').className = 'fa-solid fa-check text-[10px]';
+          }
+          loadNews();
+        });
+      });
+    }
     const grid = document.getElementById('newsGrid');
     const countText = document.getElementById('newsCount');
     const alarmBadge = document.getElementById('alarmBadge');
@@ -455,6 +560,7 @@
     const toggleSelectAllBtn = document.getElementById('toggleSelectAllBtn');
     const toggleSelectAllText = document.getElementById('toggleSelectAllText');
     const sortModeSelect = document.getElementById('sortModeSelect');
+    const autoRefreshBadge = document.getElementById('autoRefreshCountdown');
 
     sortModeSelect.addEventListener('change', () => {
       currentSortMode = sortModeSelect.value;
@@ -496,86 +602,9 @@
       }
     }
 
-    async function loadCategories() {
-      try {
-        const res = await fetch('/api/categories');
-        const data = await res.json();
-        const catTabsContainer = document.getElementById('categoryTabs');
-        
-        let cats = ['Tümü'];
-        if (data.success && data.data) {
-          allCategoriesList = data.data;
-          data.data.forEach(c => {
-            if (!cats.includes(c.name)) cats.push(c.name);
-          });
-        }
-
-        catTabsContainer.innerHTML = cats.map(cat => `
-          <button data-cat="${cat}" class="cat-btn px-3 py-1 rounded-lg font-medium transition ${cat === selectedCategory ? 'bg-emerald-600 text-white font-semibold' : 'text-slate-300 hover:bg-slate-700'}">
-            ${cat}
-          </button>
-        `).join('');
-
-        document.querySelectorAll('.cat-btn').forEach(btn => {
-          btn.addEventListener('click', () => {
-            document.querySelectorAll('.cat-btn').forEach(b => {
-              b.className = 'cat-btn px-3 py-1 rounded-lg font-medium text-slate-300 hover:bg-slate-700 transition';
-            });
-            btn.className = 'cat-btn px-3 py-1 rounded-lg font-semibold bg-emerald-600 text-white transition';
-            selectedCategory = btn.getAttribute('data-cat');
-            
-            tickerCategoryTitle.textContent = selectedCategory.toUpperCase() + ' AKIŞI';
-            renderCategorySources();
-            loadNews();
-          });
-        });
-      } catch (e) {}
-    }
-
-    function renderCategorySources() {
-      let filtered = allSourcesList.filter(s => s.isActive);
-      if (selectedCategory !== 'Tümü') {
-        filtered = filtered.filter(s => (s.category || 'Gündem') === selectedCategory);
-      }
-
-      selectedSources.clear();
-      if (filtered.length === 0) {
-        sourcesContainer.innerHTML = `<span class="text-slate-500 text-[11px] italic">Bu kategoride aktif kaynak bulunamadı.</span>`;
-        return;
-      }
-
-      sourcesContainer.innerHTML = filtered.map(src => {
-        selectedSources.add(src.name);
-        const isEn = src.lang === 'en';
-        return `
-          <button data-src="${src.name}" class="source-chip bg-emerald-600/20 text-emerald-300 border border-emerald-500/30 px-2.5 py-0.5 rounded-full hover:opacity-80 transition flex items-center gap-1">
-            <span>${src.name}</span>
-            ${isEn ? '<span class="text-[9px] bg-indigo-500/30 text-indigo-200 px-1 rounded font-bold">TR Çeviri</span>' : ''}
-            <i class="fa-solid fa-check text-[10px]"></i>
-          </button>
-        `;
-      }).join('');
-
-      document.querySelectorAll('.source-chip').forEach(btn => {
-        btn.addEventListener('click', () => {
-          const src = btn.getAttribute('data-src');
-          if (selectedSources.has(src)) {
-            selectedSources.delete(src);
-            btn.className = 'source-chip bg-slate-800 text-slate-500 border border-slate-700 px-2.5 py-0.5 rounded-full hover:opacity-80 transition flex items-center gap-1';
-            btn.querySelector('i').className = 'fa-solid fa-xmark text-[10px]';
-          } else {
-            selectedSources.add(src);
-            btn.className = 'source-chip bg-emerald-600/20 text-emerald-300 border border-emerald-500/30 px-2.5 py-0.5 rounded-full hover:opacity-80 transition flex items-center gap-1';
-            btn.querySelector('i').className = 'fa-solid fa-check text-[10px]';
-          }
-          loadNews();
-        });
-      });
-    }
-
     function updateExportButtonState() {
       const count = selectedNewsGuids.size;
-      exportBtnText.textContent = count > 0 ? `Word (${count})` : 'Word İndir';
+      exportBtnText.textContent = count > 0 ? `Word (${count})` : 'Word';
       toggleSelectAllText.textContent = (currentNewsList.length > 0 && selectedNewsGuids.size === currentNewsList.length) ? 'Seçimi Kaldır' : 'Tümünü Seç';
     }
 
@@ -608,7 +637,8 @@
       tickerTrack.innerHTML = topNews.map(item => {
         const timeStr = new Date(item.pubDate || item.createdAt).toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' });
         const fav = getFaviconUrl(item.link);
-        const translateBadge = (item.isTranslated || item.lang === 'en')
+        const isTr = (item.isTranslated || item.lang === 'en');
+        const translateBadge = isTr
           ? `<span class="inline-flex items-center gap-1 bg-sky-950/80 text-sky-400 border border-sky-600/50 text-[10px] px-1.5 py-0.2 rounded font-bold mr-1" title="Otomatik Türkçe Çeviri"><i class="fa-solid fa-language text-[10px]"></i> TR</span>`
           : '';
 
@@ -669,7 +699,6 @@
               <div class="flex items-center gap-1.5">
                 ${isTrending ? '<span class="text-[10px] bg-rose-500/20 text-rose-300 border border-rose-500/30 px-1.5 py-0.5 rounded font-bold animate-pulse"><i class="fa-solid fa-fire text-rose-400 mr-0.5"></i>Trend</span>' : ''}
                 
-                <!-- RATING / OKUNMA ROZETİ -->
                 <span id="viewsBadge_${item._id}" class="text-[10px] bg-slate-900 text-slate-300 border border-slate-700 px-1.5 py-0.5 rounded font-mono font-semibold" title="${viewsCount} kişi okudu">
                   <i class="fa-regular fa-eye text-[10px] text-emerald-400 mr-0.5"></i>${viewsCount}
                 </span>
@@ -687,9 +716,8 @@
                   <div class="w-8 h-8 rounded-lg bg-slate-900 border border-slate-700 flex items-center justify-center overflow-hidden p-1 shadow-inner shrink-0">
                     <img src="${faviconSrc}" alt="${item.source}" class="w-full h-full object-contain" onerror="this.src='https://placehold.co/32x32/1e293b/10b981?text=N'">
                   </div>
-                  <span class="bg-slate-700/80 px-2 py-0.5 rounded font-bold text-xs text-emerald-400 border border-slate-600/50 truncate max-w-[140px]">${item.source || 'Genel'}</span>
+                  <span class="bg-slate-700/80 px-2 py-0.5 rounded font-bold text-xs text-emerald-400 border border-slate-600/50 truncate max-w-[130px]">${item.source || 'Genel'}</span>
                   
-                  <!-- ÇEVİRİ ROZETİ -->
                   ${isTranslated ? `
                     <span class="inline-flex items-center gap-1 bg-indigo-500/20 text-indigo-300 border border-indigo-500/40 text-[10px] px-1.5 py-0.5 rounded font-semibold" title="Bu haber orijinal kaynağından otomatik olarak Türkçeye çevrildi">
                       <i class="fa-solid fa-language text-sky-400"></i> TR Çeviri
@@ -735,6 +763,8 @@
         alarmBadge.classList.add('hidden');
       }
     }
+
+    // Haberleri Canlı Sunucudan Çeken Fonksiyon
     async function loadNews() {
       try {
         let url = `/api/news?limit=120&sort=${currentSortMode}`;
@@ -756,6 +786,22 @@
       }
     }
 
+    // --- OTOMATİK YENİLEME DÖNGÜSÜ (30 SANİYEDE BİR CANLI WEB AKIŞI) ---
+    let refreshSeconds = 30;
+    setInterval(() => {
+      refreshSeconds--;
+      if (autoRefreshBadge) autoRefreshBadge.textContent = `${refreshSeconds}s`;
+
+      if (refreshSeconds <= 0) {
+        refreshSeconds = 30;
+        // Kullanıcı arama input'una odaklanmamışsa arka planda sessizce yenile
+        if (document.activeElement !== document.getElementById('searchInput')) {
+          loadNews();
+        }
+      }
+    }, 1000);
+
+    // Word Olarak İndirme
     document.getElementById('exportWordBtn').addEventListener('click', () => {
       if (!currentNewsList || currentNewsList.length === 0) {
         showAlert('Dışa aktarılacak haber bulunamadı!', 'error');
@@ -854,17 +900,21 @@
       } catch (e) {}
     }
 
+    // Arama Kutusu Filtreleme (Debounce)
     document.getElementById('searchInput').addEventListener('input', () => {
       clearTimeout(searchTimeout);
       searchTimeout = setTimeout(loadNews, 300);
     });
 
+    // Manuel Yenile Butonu
     document.getElementById('refreshBtn').addEventListener('click', () => {
       const icon = document.getElementById('refreshIcon');
       icon.classList.add('fa-spin');
+      refreshSeconds = 30;
       loadNews().finally(() => setTimeout(() => icon.classList.remove('fa-spin'), 600));
     });
 
+    // Kaynakları Tara Butonu
     syncBtn.addEventListener('click', async () => {
       syncBtn.disabled = true;
       syncIcon.className = 'fa-solid fa-circle-notch fa-spin';
@@ -888,12 +938,11 @@
       }
     });
 
-    // Başlat
+    // İlk Yüklemeyi Başlat
     loadCategories();
     loadSources();
     loadNews();
     loadBannerAds();
-    setInterval(loadNews, 60000);
   </script>
 </body>
 </html>
