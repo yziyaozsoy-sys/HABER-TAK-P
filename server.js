@@ -603,6 +603,43 @@ app.post('/api/sources', authMiddleware, async (req, res) => {
   }
 });
 
+// KAYNAK DÜZENLEME (PUT) - YENİ EKLENEN ÖZELLİK
+app.put('/api/sources/:id', authMiddleware, async (req, res) => {
+  try {
+    const { name, url, rss, type, category, selector, isActive } = req.body;
+    const targetUrl = url || rss;
+
+    const updateFields = {};
+    if (name) updateFields.name = name.trim();
+    if (targetUrl) updateFields.url = targetUrl.trim();
+    if (type) updateFields.type = type;
+    if (category) updateFields.category = category;
+    if (typeof selector !== 'undefined') updateFields.selector = selector.trim();
+    if (typeof isActive !== 'undefined') updateFields.isActive = isActive;
+
+    const updatedSource = await Source.findByIdAndUpdate(
+      req.params.id,
+      updateFields,
+      { new: true, runValidators: true }
+    );
+
+    if (!updatedSource) {
+      return res.status(404).json({ success: false, message: 'Kaynak bulunamadı' });
+    }
+
+    // Bilgiler güncellendiği için arka planda yeni ayarlarla taramayı tetikle
+    fetchAllSources();
+
+    res.json({ 
+      success: true, 
+      message: 'Kaynak başarıyla güncellendi.', 
+      data: updatedSource 
+    });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
 app.delete('/api/sources/:id', authMiddleware, async (req, res) => {
   try {
     await Source.findByIdAndDelete(req.params.id);

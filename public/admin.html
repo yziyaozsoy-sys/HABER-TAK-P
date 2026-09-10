@@ -41,6 +41,67 @@
     </div>
   </div>
 
+  <!-- KAYNAK DÜZENLEME MODALI (YENİ EKLENDİ) -->
+  <div id="editSourceModal" class="hidden fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+    <div class="bg-slate-800 border border-slate-700 w-full max-w-lg rounded-2xl p-6 shadow-2xl relative">
+      <button id="closeEditModalBtn" class="absolute top-4 right-4 text-slate-400 hover:text-white transition">
+        <i class="fa-solid fa-xmark text-lg"></i>
+      </button>
+
+      <div class="flex items-center gap-2 mb-4 pb-3 border-b border-slate-700">
+        <div class="bg-amber-500/20 p-2 rounded-lg text-amber-400 border border-amber-500/30">
+          <i class="fa-solid fa-pen-to-square"></i>
+        </div>
+        <div>
+          <h3 class="text-sm font-bold text-slate-100">Kaynağı Düzenle</h3>
+          <p class="text-[11px] text-slate-400">Kaynak URL'sini, kategorisini veya kazıma ayarlarını güncelleyin.</p>
+        </div>
+      </div>
+
+      <form id="editSourceForm" class="space-y-3 text-xs">
+        <input type="hidden" id="editSrcId">
+
+        <div>
+          <label class="block text-slate-400 mb-1">Kaynak Adı</label>
+          <input type="text" id="editSrcName" required class="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-slate-200 focus:outline-none focus:border-amber-500">
+        </div>
+
+        <div>
+          <label class="block text-slate-400 mb-1">URL (RSS veya Web Sitesi Linki)</label>
+          <input type="url" id="editSrcUrl" required class="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-slate-200 focus:outline-none focus:border-amber-500 font-mono text-[11px]">
+        </div>
+
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-slate-400 mb-1">Kaynak Tipi</label>
+            <select id="editSrcType" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-2.5 py-2 text-slate-200 focus:outline-none focus:border-amber-500">
+              <option value="rss">RSS XML Akışı</option>
+              <option value="html">Web Sitesi (HTML Kazıma)</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-slate-400 mb-1">Kategori</label>
+            <select id="editSrcCategory" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-2.5 py-2 text-slate-200 focus:outline-none focus:border-amber-500"></select>
+          </div>
+        </div>
+
+        <div id="editHtmlSelectorDiv" class="hidden text-xs bg-slate-900/60 p-3 rounded-xl border border-slate-700/60">
+          <label class="block text-[11px] text-amber-400 mb-1">Özel CSS Seçici (HTML Kazıma için):</label>
+          <input type="text" id="editSrcSelector" placeholder="örn: .headline-card a, article h2 a" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-1.5 text-slate-200 font-mono text-xs">
+        </div>
+
+        <div class="flex justify-end gap-2 pt-3 border-t border-slate-700">
+          <button type="button" id="cancelEditBtn" class="bg-slate-700 hover:bg-slate-600 text-slate-300 px-4 py-2 rounded-lg font-medium transition">
+            Vazgeç
+          </button>
+          <button type="submit" class="bg-amber-600 hover:bg-amber-500 text-white px-5 py-2 rounded-lg font-bold transition flex items-center gap-1.5">
+            <i class="fa-solid fa-floppy-disk"></i> Değişiklikleri Kaydet
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
   <!-- ADMIN ÜST BAR -->
   <header class="bg-slate-800 border-b border-slate-700 px-6 py-4 shadow-md sticky top-0 z-40">
     <div class="max-w-6xl mx-auto flex justify-between items-center">
@@ -118,7 +179,6 @@
 
       <!-- Rating Detay Tabloları -->
       <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
-        <!-- En Çok Okunan İlk 10 Haber -->
         <div class="lg:col-span-8 bg-slate-900/60 p-4 rounded-xl border border-slate-700/60">
           <h3 class="text-xs font-bold text-slate-200 mb-3 flex items-center gap-1.5">
             <i class="fa-solid fa-arrow-trend-up text-emerald-400"></i> En Çok Tıklanan / Okunan Haberler (Top 10)
@@ -140,9 +200,7 @@
           </div>
         </div>
 
-        <!-- Kaynak ve Kategori Popülerlik Sıralaması -->
         <div class="lg:col-span-4 space-y-4">
-          <!-- Kaynak Rating -->
           <div class="bg-slate-900/60 p-4 rounded-xl border border-slate-700/60">
             <h3 class="text-xs font-bold text-slate-200 mb-3 flex items-center gap-1.5">
               <i class="fa-solid fa-ranking-star text-amber-400"></i> Kaynak İlgi Sıralaması
@@ -152,7 +210,6 @@
             </div>
           </div>
 
-          <!-- Kategori Rating -->
           <div class="bg-slate-900/60 p-4 rounded-xl border border-slate-700/60">
             <h3 class="text-xs font-bold text-slate-200 mb-3 flex items-center gap-1.5">
               <i class="fa-solid fa-layer-group text-sky-400"></i> Kategori İlgi Dağılımı
@@ -279,7 +336,7 @@
               <th class="py-2.5 px-3">Kategori</th>
               <th class="py-2.5 px-3">Bağlantı URL</th>
               <th class="py-2.5 px-3 text-center">Durum</th>
-              <th class="py-2.5 px-3 text-right">İşlem</th>
+              <th class="py-2.5 px-3 text-right">İşlemler</th>
             </tr>
           </thead>
           <tbody id="sourcesTableBody" class="divide-y divide-slate-700/40">
@@ -463,7 +520,6 @@
       </div>
     </section>
   </main>
-
   <script>
     const token = localStorage.getItem('haber_admin_token');
     const userRole = localStorage.getItem('haber_admin_role');
@@ -471,6 +527,7 @@
     const loginModal = document.getElementById('loginModal');
     const alertBox = document.getElementById('alertBox');
     let categoriesList = [];
+    let sourcesList = [];
 
     function checkAuth() {
       if (!token) {
@@ -538,7 +595,7 @@
       };
     }
 
-    // --- 1. RATING & ANALİTİK VERİLERİNİ ÇEKME ---
+    // --- 1. RATING & ANALİTİK ---
     async function fetchRatings() {
       try {
         const res = await fetch('/api/analytics/ratings', { headers: authHeaders() });
@@ -553,7 +610,6 @@
           document.getElementById('topSourceDisplay').textContent = data.sourceRatings[0]._id;
         }
 
-        // Top 10 Haber Tablosu
         const topNewsTbody = document.getElementById('topNewsTableBody');
         if (!data.topNews || data.topNews.length === 0) {
           topNewsTbody.innerHTML = '<tr><td colspan="4" class="text-center py-4 text-slate-500">Henüz tıklanma verisi oluşmadı.</td></tr>';
@@ -572,7 +628,6 @@
           `).join('');
         }
 
-        // Kaynak İlgi Sıralaması
         const srcContainer = document.getElementById('sourceRatingsContainer');
         if (!data.sourceRatings || data.sourceRatings.length === 0) {
           srcContainer.innerHTML = '<span class="text-slate-500 text-[11px]">Kayıt yok.</span>';
@@ -585,7 +640,6 @@
           `).join('');
         }
 
-        // Kategori İlgi Dağılımı
         const catContainer = document.getElementById('categoryRatingsContainer');
         if (!data.categoryRatings || data.categoryRatings.length === 0) {
           catContainer.innerHTML = '<span class="text-slate-500 text-[11px]">Kayıt yok.</span>';
@@ -634,8 +688,10 @@
     }
 
     function populateCategorySelect() {
-      const select = document.getElementById('srcCategory');
-      select.innerHTML = categoriesList.map(c => `<option value="${c.name}">${c.name}</option>`).join('');
+      const options = categoriesList.map(c => `<option value="${c.name}">${c.name}</option>`).join('');
+      document.getElementById('srcCategory').innerHTML = options;
+      const editCat = document.getElementById('editSrcCategory');
+      if (editCat) editCat.innerHTML = options;
     }
 
     document.getElementById('addCategoryForm').addEventListener('submit', async (e) => {
@@ -679,15 +735,16 @@
       }
     };
 
-    // Kaynak Tipi Değişince CSS Seçici Alanını Göster/Gizle
     const srcTypeSelect = document.getElementById('srcType');
     const htmlSelectorDiv = document.getElementById('htmlSelectorDiv');
     srcTypeSelect.addEventListener('change', () => {
-      if (srcTypeSelect.value === 'html') {
-        htmlSelectorDiv.classList.remove('hidden');
-      } else {
-        htmlSelectorDiv.classList.add('hidden');
-      }
+      htmlSelectorDiv.classList.toggle('hidden', srcTypeSelect.value !== 'html');
+    });
+
+    const editSrcTypeSelect = document.getElementById('editSrcType');
+    const editHtmlSelectorDiv = document.getElementById('editHtmlSelectorDiv');
+    editSrcTypeSelect.addEventListener('change', () => {
+      editHtmlSelectorDiv.classList.toggle('hidden', editSrcTypeSelect.value !== 'html');
     });
 
     // --- 3. KULLANICI TALEPLERİ ---
@@ -755,7 +812,7 @@
       }
     });
 
-    // --- 5. PERSONEL YÖNETİMİ (ADMIN ONLY) ---
+    // --- 5. PERSONEL YÖNETİMİ ---
     async function fetchStaff() {
       try {
         const res = await fetch('/api/users', { headers: authHeaders() });
@@ -847,13 +904,15 @@
       } catch (e) {}
     };
 
-    // --- 6. KAYNAKLAR (RSS & HTML SİTELER) ---
+    // --- 6. KAYNAKLAR & DÜZENLEME ---
     async function fetchSources() {
       try {
         const res = await fetch('/api/sources');
         const data = await res.json();
         const tbody = document.getElementById('sourcesTableBody');
-        tbody.innerHTML = data.data.map(s => `
+        sourcesList = data.data || [];
+
+        tbody.innerHTML = sourcesList.map(s => `
           <tr class="hover:bg-slate-800/40 transition">
             <td class="py-2.5 px-3 font-semibold text-slate-200">${s.name}</td>
             <td class="py-2.5 px-3">
@@ -870,8 +929,11 @@
                 ${s.isActive ? 'Aktif' : 'Pasif'}
               </button>
             </td>
-            <td class="py-2.5 px-3 text-right">
-              <button onclick="deleteSource('${s._id}')" class="text-rose-400 hover:text-rose-300 text-xs px-2 py-1 rounded transition">
+            <td class="py-2.5 px-3 text-right space-x-1.5 whitespace-nowrap">
+              <button onclick="openEditModal('${s._id}')" class="bg-amber-500/20 hover:bg-amber-500 text-amber-300 hover:text-white px-2.5 py-1 rounded transition text-xs" title="Kaynağı Düzenle">
+                <i class="fa-solid fa-pen-to-square"></i> Düzenle
+              </button>
+              <button onclick="deleteSource('${s._id}')" class="text-rose-400 hover:text-rose-300 text-xs px-2 py-1 rounded transition" title="Kaynağı Sil">
                 <i class="fa-solid fa-trash"></i> Sil
               </button>
             </td>
@@ -896,7 +958,7 @@
         });
         const resData = await res.json();
         if (resData.success) {
-          notify(`"${name}" (${type.toUpperCase()} - ${category}) eklendi!`, 'success');
+          notify(`"${name}" eklendi!`, 'success');
           document.getElementById('srcName').value = '';
           document.getElementById('srcUrl').value = '';
           document.getElementById('srcSelector').value = '';
@@ -924,6 +986,64 @@
         fetchSources();
       } catch (e) {}
     };
+
+       // --- KAYNAK DÜZENLEME MODALI FONKSİYONLARI ---
+    const editModal = document.getElementById('editSourceModal');
+    const closeEditModalBtn = document.getElementById('closeEditModalBtn');
+    const cancelEditBtn = document.getElementById('cancelEditBtn');
+    const editForm = document.getElementById('editSourceForm');
+
+    window.openEditModal = (sourceId) => {
+      const source = sourcesList.find(s => s._id === sourceId);
+      if (!source) return;
+
+      document.getElementById('editSrcId').value = source._id;
+      document.getElementById('editSrcName').value = source.name;
+      document.getElementById('editSrcUrl').value = source.url || source.rss || '';
+      document.getElementById('editSrcType').value = source.type || 'rss';
+      document.getElementById('editSrcCategory').value = source.category || 'Gündem';
+      document.getElementById('editSrcSelector').value = source.selector || '';
+
+      const editHtmlSelectorDiv = document.getElementById('editHtmlSelectorDiv');
+      if (source.type === 'html') {
+        editHtmlSelectorDiv.classList.remove('hidden');
+      } else {
+        editHtmlSelectorDiv.classList.add('hidden');
+      }
+
+      editModal.classList.remove('hidden');
+    };
+
+    closeEditModalBtn.addEventListener('click', () => editModal.classList.add('hidden'));
+    cancelEditBtn.addEventListener('click', () => editModal.classList.add('hidden'));
+
+    editForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const id = document.getElementById('editSrcId').value;
+      const name = document.getElementById('editSrcName').value.trim();
+      const url = document.getElementById('editSrcUrl').value.trim();
+      const type = document.getElementById('editSrcType').value;
+      const category = document.getElementById('editSrcCategory').value;
+      const selector = document.getElementById('editSrcSelector').value.trim();
+
+      try {
+        const res = await fetch(`/api/sources/${id}`, {
+          method: 'PUT',
+          headers: authHeaders(),
+          body: JSON.stringify({ name, url, type, category, selector })
+        });
+        const d = await res.json();
+        if (d.success) {
+          notify(d.message || 'Kaynak başarıyla güncellendi!', 'success');
+          editModal.classList.add('hidden');
+          fetchSources();
+        } else {
+          notify(d.message || 'Güncellenemedi', 'error');
+        }
+      } catch (err) {
+        notify('Hata: ' + err.message, 'error');
+      }
+    });
 
     document.getElementById('refreshSyncBtn').addEventListener('click', async () => {
       try {
