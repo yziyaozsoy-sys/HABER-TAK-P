@@ -243,7 +243,7 @@ async function fetchRssFeed(sourceName, rawUrl, categoryName = 'Gündem', lang =
         }
       }
 
-      // Upsert: Haber varsa bile başlık ve linki güncel tutar
+      // --- YENİ VE DÜZELTİLMİŞ KISIM ---
       await News.updateOne(
         { guid: String(rawGuid) },
         {
@@ -251,6 +251,7 @@ async function fetchRssFeed(sourceName, rawUrl, categoryName = 'Gündem', lang =
             title: finalTitle,
             link: String(rawLink),
             description: finalDesc,
+            pubDate: parsedDate,          // <--- BURAYA ALDIK (Artık en yeni saat neyse o geçerli!)
             source: sourceName,
             category: categoryName,
             lang: lang || 'tr',
@@ -258,7 +259,6 @@ async function fetchRssFeed(sourceName, rawUrl, categoryName = 'Gündem', lang =
           },
           $setOnInsert: {
             guid: String(rawGuid),
-            pubDate: parsedDate,
             views: 0,
             createdAt: new Date()
           }
@@ -796,8 +796,8 @@ app.get('/api/sync', (req, res) => {
   res.json({ success: true, message: "Tarama arka planda paralel olarak başlatıldı." });
 });
 
-// 5 dakikada bir otomatik tara
-setInterval(fetchAllSources, 5 * 60 * 1000);
+// 3 dakikada bir otomatik tara
+setInterval(fetchAllSources, 3 * 60 * 1000);
 // Sunucu açıldıktan 3 saniye sonra ilk taramayı başlat
 setTimeout(fetchAllSources, 3000);
 
