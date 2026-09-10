@@ -24,7 +24,7 @@
         </div>
       </div>
 
-      <!-- Arama ve Butonlar -->
+      <!-- Arama ve Dışa Aktarma Butonları -->
       <div class="flex items-center gap-2 flex-1 max-w-xl">
         <div class="relative w-full">
           <i class="fa-solid fa-magnifying-glass absolute left-3 top-2.5 text-slate-400 text-xs"></i>
@@ -34,9 +34,9 @@
           <i class="fa-solid fa-arrows-rotate" id="refreshIcon"></i>
           <span class="hidden sm:inline">Yenile</span>
         </button>
-        <button id="exportWordBtn" title="Listelenen haberleri Word (.doc) olarak indir" class="bg-blue-600 hover:bg-blue-500 text-white px-3 py-1.5 rounded-lg text-xs font-medium transition flex items-center gap-1.5 shadow-sm whitespace-nowrap">
+        <button id="exportWordBtn" title="Seçili veya tüm haberleri Word olarak aktar" class="bg-blue-600 hover:bg-blue-500 text-white px-3.5 py-1.5 rounded-lg text-xs font-medium transition flex items-center gap-1.5 shadow-sm whitespace-nowrap">
           <i class="fa-solid fa-file-word"></i>
-          <span>Word İndir</span>
+          <span id="exportBtnText">Word İndir</span>
         </button>
       </div>
     </div>
@@ -64,11 +64,21 @@
 
   <!-- Ana İçerik -->
   <main class="flex-1 max-w-7xl w-full mx-auto p-6">
-    <div class="flex justify-between items-center mb-5 text-xs text-slate-400">
-      <div class="flex items-center gap-2">
+    <div class="flex flex-wrap justify-between items-center mb-5 gap-3 text-xs text-slate-400">
+      
+      <!-- Sol: Sayı, Alarm ve Toplu Seçim Butonu -->
+      <div class="flex items-center gap-3">
         <span id="newsCount" class="font-semibold text-slate-300">Yükleniyor...</span>
         <span id="alarmBadge" class="hidden bg-amber-500/20 text-amber-300 px-2 py-0.5 rounded border border-amber-500/30 animate-pulse font-medium"></span>
+        
+        <!-- Toplu Seçim -->
+        <button id="toggleSelectAllBtn" class="bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 px-2.5 py-1 rounded text-xs transition flex items-center gap-1.5">
+          <i class="fa-regular fa-square-check text-emerald-400"></i>
+          <span id="toggleSelectAllText">Tümünü Seç</span>
+        </button>
       </div>
+
+      <!-- Sağ: Kaynakları Tara Butonu -->
       <button id="syncRssBtn" class="bg-slate-800 hover:bg-slate-700 text-emerald-400 border border-slate-700 px-3 py-1 rounded-lg text-xs font-medium transition flex items-center gap-1.5">
         <i class="fa-solid fa-cloud-arrow-down" id="syncIcon"></i>
         <span id="syncText">Kaynakları Tara</span>
@@ -84,6 +94,7 @@
   <script>
     let currentNewsList = [];
     let selectedSources = new Set();
+    let selectedNewsGuids = new Set(); // Seçilen haberlerin guid'leri
     let searchTimeout;
 
     // LocalStorage'dan kayıtlı takip kelimelerini çek
@@ -102,6 +113,9 @@
     const syncText = document.getElementById('syncText');
     const statusAlert = document.getElementById('statusAlert');
     const sourcesContainer = document.getElementById('sourcesFilter');
+    const exportBtnText = document.getElementById('exportBtnText');
+    const toggleSelectAllBtn = document.getElementById('toggleSelectAllBtn');
+    const toggleSelectAllText = document.getElementById('toggleSelectAllText');
 
     function showAlert(message, type = 'info') {
       statusAlert.className = `mb-4 p-3 rounded-xl text-xs font-medium transition flex items-center gap-2 ${
@@ -114,7 +128,6 @@
       setTimeout(() => statusAlert.classList.add('hidden'), 5000);
     }
 
-    // Sesli Alarm Efekti (Web Audio API)
     function playAlertBeep() {
       try {
         const ctx = new (window.AudioContext || window.webkitAudioContext)();
@@ -129,6 +142,31 @@
         osc.stop(ctx.currentTime + 0.3);
       } catch (e) {}
     }
+
+    function updateExportButtonState() {
+      const count = selectedNewsGuids.size;
+      if (count > 0) {
+        exportBtnText.textContent = `Word İndir (${count} Seçili)`;
+      } else {
+        exportBtnText.textContent = 'Word İndir';
+      }
+
+      if (currentNewsList.length > 0 && selectedNewsGuids.size === currentNewsList.length) {
+        toggleSelectAllText.textContent = 'Seçimi Kaldır';
+      } else {
+        toggleSelectAllText.textContent = 'Tümünü Seç';
+      }
+    }
+
+    // Toplu Seç / Kaldır
+    toggleSelectAllBtn.addEventListener('click', () => {
+      if (selectedNewsGuids.size === currentNewsList.length) {
+        selectedNewsGuids.clear();
+      } else {
+        currentNewsList.forEach(n => selectedNewsGuids.add(n.guid));
+      }
+      renderNews();
+    });
 
     // Kaynakları Yükle
     async function loadSources() {
@@ -165,9 +203,10 @@
       } catch (e) {}
     }
 
-    // Haberleri Ekrana Çiz ve Alarm Kelimelerini Yakala
+    // Haberleri Ekrana Çiz
     function renderNews() {
       countText.textContent = `Toplam ${currentNewsList.length} haber listeleniyor.`;
+      updateExportButtonState();
 
       const watchKeywords = watchInput.value.toLowerCase().split(',').map(s => s.trim()).filter(Boolean);
       let matchedAlarmCount = 0;
@@ -182,23 +221,36 @@
         return;
       }
 
-      grid.innerHTML = currentNewsList.map(item => {
+      grid.innerHTML = currentNewsList.map((item, index) => {
         const itemText = `${item.title} ${item.description || ''}`.toLowerCase();
         const hasAlarm = watchKeywords.some(kw => itemText.includes(kw));
         if (hasAlarm) matchedAlarmCount++;
 
+        const isChecked = selectedNewsGuids.has(item.guid);
         const dateObj = new Date(item.pubDate || item.createdAt);
         const timeStr = dateObj.toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
         const dateStr = dateObj.toLocaleDateString('tr-TR', { day: '2-digit', month: '2-digit', year: 'numeric' });
 
         return `
-          <article class="relative bg-slate-800/80 border ${hasAlarm ? 'border-amber-500/80 bg-amber-950/20 ring-1 ring-amber-500/50' : 'border-slate-700/60'} rounded-xl p-4 hover:border-slate-500 transition-all flex flex-col justify-between group shadow-md">
+          <article class="relative bg-slate-800/80 border ${isChecked ? 'border-emerald-500 bg-slate-800 ring-2 ring-emerald-500/40' : (hasAlarm ? 'border-amber-500/80 bg-amber-950/20 ring-1 ring-amber-500/50' : 'border-slate-700/60')} rounded-xl p-4 hover:border-slate-500 transition-all flex flex-col justify-between group shadow-md">
+            
+            <!-- Seçenek / Checkbox Satırı -->
+            <div class="flex items-center justify-between pb-2.5 mb-2.5 border-b border-slate-700/60">
+              <label class="flex items-center gap-2 cursor-pointer select-none">
+                <input type="checkbox" data-guid="${item.guid}" class="news-select-chk w-4 h-4 rounded text-emerald-500 bg-slate-900 border-slate-600 focus:ring-emerald-500 cursor-pointer" ${isChecked ? 'checked' : ''}>
+                <span class="text-[11px] font-medium ${isChecked ? 'text-emerald-400 font-bold' : 'text-slate-400'}">Bu Haberi Seç</span>
+              </label>
+
+              <span class="font-mono text-emerald-300 font-semibold text-[11px] flex items-center gap-1">
+                <i class="fa-regular fa-clock text-[10px]"></i> ${timeStr}
+              </span>
+            </div>
+
+            <!-- Haber Gövdesi -->
             <div>
               <div class="flex items-center justify-between text-[11px] text-slate-400 mb-2">
                 <span class="bg-slate-700/80 px-2 py-0.5 rounded font-bold text-emerald-400 border border-slate-600/50">${item.source || 'Genel'}</span>
-                <span class="font-mono text-emerald-300 font-semibold flex items-center gap-1">
-                  <i class="fa-regular fa-clock text-[10px]"></i> ${timeStr}
-                </span>
+                <span class="text-slate-500 text-[10px]">${dateStr}</span>
               </div>
               
               <h2 class="text-sm font-semibold text-slate-100 group-hover:text-emerald-400 transition line-clamp-2 mb-2 leading-snug">
@@ -208,18 +260,31 @@
               ${item.description ? `<p class="text-xs text-slate-400 line-clamp-3 mb-3 leading-relaxed">${item.description.replace(/<[^>]*>?/gm, '')}</p>` : ''}
             </div>
 
+            <!-- Kart Altı Link ve Alarm -->
             <div class="pt-2.5 border-t border-slate-700/50 flex justify-between items-center text-[11px] text-slate-400">
-              <span class="text-slate-500 text-[10px]">${dateStr}</span>
-              <div class="flex items-center gap-2">
+              <div>
                 ${hasAlarm ? '<span class="text-[10px] bg-amber-500/20 text-amber-300 px-1.5 py-0.5 rounded font-semibold border border-amber-500/30">⚠️ ALARM</span>' : ''}
-                <a href="${item.link}" target="_blank" rel="noopener noreferrer" class="text-slate-300 hover:text-emerald-400 font-medium inline-flex items-center gap-1 transition">
-                  Habere Git <i class="fa-solid fa-arrow-up-right-from-square text-[9px]"></i>
-                </a>
               </div>
+              <a href="${item.link}" target="_blank" rel="noopener noreferrer" class="text-slate-300 hover:text-emerald-400 font-medium inline-flex items-center gap-1 transition">
+                Habere Git <i class="fa-solid fa-arrow-up-right-from-square text-[9px]"></i>
+              </a>
             </div>
           </article>
         `;
       }).join('');
+
+      // Checkbox Olay Dinleyicileri
+      document.querySelectorAll('.news-select-chk').forEach(chk => {
+        chk.addEventListener('change', (e) => {
+          const guid = e.target.getAttribute('data-guid');
+          if (e.target.checked) {
+            selectedNewsGuids.add(guid);
+          } else {
+            selectedNewsGuids.delete(guid);
+          }
+          renderNews();
+        });
+      });
 
       if (matchedAlarmCount > 0) {
         alarmBadge.textContent = `${matchedAlarmCount} Takip Edilen Haber Bulundu!`;
@@ -251,11 +316,19 @@
       }
     }
 
-    // Word (.doc) Olarak Dışa Aktarma
+    // Word (.doc) Olarak Dışa Aktarma (Seçilenleri veya Tümünü)
     document.getElementById('exportWordBtn').addEventListener('click', () => {
       if (!currentNewsList || currentNewsList.length === 0) {
         showAlert('Dışa aktarılacak haber bulunamadı!', 'error');
         return;
+      }
+
+      // Eğer kutucuk seçilmişse sadece seçilenleri, seçilmemişse ekrandakilerin tümünü aktar
+      let exportItems = [];
+      if (selectedNewsGuids.size > 0) {
+        exportItems = currentNewsList.filter(n => selectedNewsGuids.has(n.guid));
+      } else {
+        exportItems = currentNewsList;
       }
 
       let content = `
@@ -264,23 +337,23 @@
           <meta charset='utf-8'>
           <title>Haber Takip Raporu</title>
           <style>
-            body { font-family: 'Segoe UI', Calibri, Arial, sans-serif; padding: 20px; color: #222; }
-            h1 { font-size: 20pt; color: #0f172a; border-bottom: 2px solid #10b981; padding-bottom: 8px; }
-            .meta { font-size: 9pt; color: #64748b; margin-bottom: 25px; }
-            .item { margin-bottom: 20px; padding-bottom: 15px; border-bottom: 1px solid #e2e8f0; }
-            .title { font-size: 13pt; font-weight: bold; color: #1e293b; margin-bottom: 4px; }
-            .badge { font-size: 8.5pt; font-weight: bold; background: #e0f2fe; color: #0369a1; padding: 2px 6px; border-radius: 4px; }
-            .date { font-size: 8.5pt; color: #059669; font-weight: 600; margin-left: 8px; }
+            body { font-family: 'Segoe UI', Calibri, Arial, sans-serif; padding: 25px; color: #1e293b; }
+            h1 { font-size: 20pt; color: #0f172a; border-bottom: 2px solid #10b981; padding-bottom: 8px; margin-bottom: 4px; }
+            .meta { font-size: 9.5pt; color: #64748b; margin-bottom: 25px; }
+            .item { margin-bottom: 22px; padding-bottom: 16px; border-bottom: 1px solid #e2e8f0; }
+            .title { font-size: 13pt; font-weight: bold; color: #0f172a; margin-top: 6px; margin-bottom: 6px; line-height: 1.3; }
+            .badge { font-size: 8.5pt; font-weight: bold; background: #e0f2fe; color: #0369a1; padding: 3px 8px; border-radius: 4px; }
+            .date { font-size: 8.5pt; color: #059669; font-weight: 600; margin-left: 10px; }
             .desc { font-size: 10pt; color: #334155; line-height: 1.5; margin: 8px 0; }
-            .link { font-size: 9pt; color: #2563eb; text-decoration: underline; }
+            .link { font-size: 9pt; color: #2563eb; text-decoration: underline; word-break: break-all; }
           </style>
         </head>
         <body>
-          <h1>Haber Takip - Özet Raporu</h1>
-          <div class="meta">Oluşturulma Tarihi: ${new Date().toLocaleString('tr-TR')} | Toplam Haber Sayısı: ${currentNewsList.length}</div>
+          <h1>Haber Takip - Seçilen Haberler Raporu</h1>
+          <div class="meta">Rapor Tarihi: ${new Date().toLocaleString('tr-TR')} | Dışa Aktarılan Haber Sayısı: <strong>${exportItems.length}</strong></div>
       `;
 
-      currentNewsList.forEach((n, idx) => {
+      exportItems.forEach((n, idx) => {
         const cleanDesc = (n.description || '').replace(/<[^>]*>?/gm, '');
         const dateStr = new Date(n.pubDate || n.createdAt).toLocaleString('tr-TR');
         content += `
@@ -302,12 +375,12 @@
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = `Haber_Takip_Raporu_${new Date().toISOString().slice(0, 10)}.doc`;
+      a.download = `Haber_Raporu_${exportItems.length}_Adet_${new Date().toISOString().slice(0, 10)}.doc`;
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
       URL.revokeObjectURL(url);
-      showAlert('Word raporu başarıyla indirildi!', 'success');
+      showAlert(`${exportItems.length} adet haber başarıyla Word olarak indirildi!`, 'success');
     });
 
     // Arama Girişi
@@ -337,7 +410,7 @@
           syncIcon.className = 'fa-solid fa-cloud-arrow-down';
           syncText.textContent = 'Kaynakları Tara';
           syncBtn.disabled = false;
-          showAlert('Kaynaklar güncellendi ve en yeni saat sırasına göre dizildi.', 'success');
+          showAlert('Kaynaklar güncellendi.', 'success');
         }, 5000);
       } catch (e) {
         syncIcon.className = 'fa-solid fa-triangle-exclamation';
@@ -347,11 +420,10 @@
       }
     });
 
-    // Başlangıç Yüklemeleri
+    // Başlangıç
     loadSources();
     loadNews();
 
-    // 60 saniyede bir otomatik tazeleyip yeni haber var mı kontrol et
     setInterval(loadNews, 60000);
   </script>
 </body>
