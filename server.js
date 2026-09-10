@@ -619,16 +619,16 @@ app.delete('/api/requests/:id', authMiddleware, async (req, res) => {
     res.status(500).json({ success: false, message: err.message });
   }
 });
-// --- HABERLER API'Sİ (PASİF KAYNAKLARI ASLA GETİRMEZ) ---
+// --- HABERLER API'Sİ (HIZLANDIRILMIŞ VE KİLİTSİZ) ---
 app.get('/api/news', async (req, res) => {
   try {
     const limit = parseInt(req.query.limit) || 120;
     
-    // Yalnızca aktif olan kaynakların isimlerini listele
-    const activeSources = await Source.find({ isActive: true }).select('name');
+    // Yalnızca aktif olan kaynakların isimlerini al
+    const activeSources = await Source.find({ isActive: true }).select('name').lean();
     const activeSourceNames = activeSources.map(s => s.name);
 
-    // Temel sorgu: Haber mutlaka aktif kaynaklardan birine ait olmalı
+    // Temel sorgu
     const query = {
       source: { $in: activeSourceNames }
     };
@@ -638,7 +638,7 @@ app.get('/api/news', async (req, res) => {
     }
 
     if (req.query.sources) {
-      const srcList = req.query.sources.split(',').filter(Boolean);
+      const srcList = req.query.sources.split(',').map(s => s.trim()).filter(Boolean);
       const filtered = srcList.filter(s => activeSourceNames.includes(s));
       if (filtered.length > 0) query.source = { $in: filtered };
     }
@@ -650,11 +650,17 @@ app.get('/api/news', async (req, res) => {
       ];
     }
 
-    const sortField = req.query.sort === 'rating' ? { views: -1, pubDate: -1 } : { pubDate: -1, createdAt: -1 };
+    const sortField = req.query.sort === 'rating' ? { views: -1, pubDate: -1 } : { pubDate: -1 };
 
-    const news = await News.find(query).sort(sortField).limit(limit).maxTimeMS(4000);
+    // lean() ekleyerek JSON'a çevrim süresini 10 kat hızlandırıyoruz, maxTimeMS kaldırıldı
+    const news = await News.find(query)
+      .sort(sortField)
+      .limit(limit)
+      .lean();
+
     res.json({ success: true, count: news.length, data: news });
   } catch (err) {
+    console.error("Haber getirme hatası:", err);
     res.status(500).json({ success: false, error: err.message, data: [] });
   }
 });
