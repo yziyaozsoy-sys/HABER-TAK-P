@@ -820,7 +820,7 @@ app.get('/api/sync', async (req, res) => {
   }
 });
 
-/let isSyncing = false;
+let isSyncing = false;
 async function fetchAllSources() {
   if (isSyncing) {
     console.log("Tarama zaten devam ediyor, atlandı.");
