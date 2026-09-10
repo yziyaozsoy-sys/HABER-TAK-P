@@ -18,7 +18,7 @@ app.use(cors());
 app.use(express.json());
 app.use(express.static(path.join(__dirname, 'public')));
 
-// 1. MODELLER
+// 1. VERİ MODELLERİ (SCHEMAS)
 const categorySchema = new mongoose.Schema({
   name: { type: String, required: true, unique: true, trim: true },
   createdAt: { type: Date, default: Date.now }
@@ -31,11 +31,11 @@ const newsSchema = new mongoose.Schema({
   link: { type: String, required: true },
   description: { type: String, default: '' },
   pubDate: { type: Date, default: Date.now },
-  source: { type: String, default: 'Genel' },
+  source: { type: String, default: 'Genel', index: true },
   category: { type: String, default: 'Gündem', index: true },
-  lang: { type: String, default: 'tr' }, // Haberin dili veya kaynağın dili
-  isTranslated: { type: Boolean, default: false }, // Çevrildi rozeti için
-  views: { type: Number, default: 0, index: true }, // RATING
+  lang: { type: String, default: 'tr' },
+  isTranslated: { type: Boolean, default: false },
+  views: { type: Number, default: 0, index: true },
   createdAt: { type: Date, default: Date.now }
 });
 newsSchema.index({ pubDate: -1, createdAt: -1 });
@@ -48,8 +48,8 @@ const sourceSchema = new mongoose.Schema({
   url: { type: String, required: true },
   selector: { type: String, default: '' },
   category: { type: String, default: 'Gündem' },
-  lang: { type: String, enum: ['tr', 'en'], default: 'tr' }, // Kaynak Dili
-  isActive: { type: Boolean, default: true },
+  lang: { type: String, enum: ['tr', 'en'], default: 'tr' },
+  isActive: { type: Boolean, default: true, index: true },
   createdAt: { type: Date, default: Date.now }
 });
 const Source = mongoose.model('Source', sourceSchema);
@@ -83,7 +83,7 @@ const requestSchema = new mongoose.Schema({
 });
 const Request = mongoose.model('Request', requestSchema);
 
-// Yetki Doğrulama
+// Yetki Doğrulama Ara Yazılımı (JWT)
 const authMiddleware = (req, res, next) => {
   const token = req.headers.authorization?.replace('Bearer ', '');
   if (!token) return res.status(401).json({ success: false, message: 'Yetkisiz erişim. Lütfen giriş yapın.' });
@@ -154,7 +154,6 @@ if (MONGODB_URI) {
     })
     .catch(err => console.error('MongoDB bağlantı hatası:', err.message));
 }
-
 function extractText(val) {
   if (!val) return '';
   if (typeof val === 'string') return val.trim();
@@ -165,7 +164,8 @@ function extractText(val) {
   }
   return String(val).trim();
 }
-// YARDIMCI: Metni Otomatik Türkçeye Çevir (Hafif ve Ücretsiz Google Çeviri API'si)
+
+// Otomatik Türkçeye Çeviri Servisi
 async function translateToTurkish(text) {
   if (!text || typeof text !== 'string' || !text.trim()) return '';
   const clean = text.replace(/<[^>]*>?/gm, '').trim();
@@ -173,30 +173,32 @@ async function translateToTurkish(text) {
   
   try {
     const url = `https://translate.googleapis.com/translate_a/single?client=gtx&sl=auto&tl=tr&dt=t&q=${encodeURIComponent(clean)}`;
-    const res = await axios.get(url, { timeout: 6000 });
+    const res = await axios.get(url, { timeout: 4000 });
     if (res.data && Array.isArray(res.data[0])) {
       return res.data[0].map(segment => segment[0]).join('');
     }
     return clean;
   } catch (e) {
-    // Çeviri servisinde anlık kesinti olursa orijinal metni koru
     return clean;
   }
 }
 
-// 3. TARAMA MOTORLARI
+// 3. TARAMA MOTORLARI (RSS & HTML)
 async function fetchRssFeed(sourceName, url, categoryName = 'Gündem', lang = 'tr') {
   try {
     const response = await axios.get(url, {
-      headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36' },
-      timeout: 9000
+      headers: { 
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+        'Accept': 'application/rss+xml, application/xml, text/xml, */*'
+      },
+      timeout: 6000 // 6 saniyede yanıt vermeyen kaynak döngüyü tıkamaz
     });
 
     const parser = new xml2js.Parser({ explicitArray: false, trim: true });
     const result = await parser.parseStringPromise(response.data);
     const channel = result.rss ? result.rss.channel : (result.feed || {});
     const items = channel.item || channel.entry || [];
-    const itemList = (Array.isArray(items) ? items : [items]).slice(0, 20);
+    const itemList = (Array.isArray(items) ? items : [items]).slice(0, 25);
 
     for (const item of itemList) {
       let rawTitle = extractText(item.title);
@@ -214,7 +216,6 @@ async function fetchRssFeed(sourceName, url, categoryName = 'Gündem', lang = 't
 
       if (!rawGuid || !rawLink) continue;
 
-      // Eğer kaynak yabancı (İngilizce vb.) ise başlık ve açıklamayı Türkçeye çevir
       const isEnglish = (lang === 'en');
       let finalTitle = rawTitle;
       let finalDesc = rawDesc;
@@ -253,7 +254,7 @@ async function fetchRssFeed(sourceName, url, categoryName = 'Gündem', lang = 't
       ).catch(() => {});
     }
   } catch (error) {
-    console.log(`[${sourceName} - RSS] Hata: ${error.message}`);
+    console.log(`[${sourceName} - RSS Atlandı]: ${error.message}`);
   }
 }
 
@@ -264,7 +265,7 @@ async function scrapeHtmlSite(sourceName, siteUrl, categoryName = 'Gündem', cus
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
         'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8'
       },
-      timeout: 10000
+      timeout: 6000
     });
 
     const $ = cheerio.load(response.data);
@@ -279,7 +280,7 @@ async function scrapeHtmlSite(sourceName, siteUrl, categoryName = 'Gündem', cus
       : 'article a, .news-item a, .card a, h2 a, h3 a, a[href*="/haber/"], a[href*="/son-dakika/"], a[href*=".html"]';
 
     $(targetSelector).each((i, el) => {
-      if (scrapedList.length >= 20) return false;
+      if (scrapedList.length >= 25) return false;
 
       const title = $(el).text().replace(/\s+/g, ' ').trim() || $(el).attr('title') || '';
       let href = $(el).attr('href');
@@ -342,32 +343,44 @@ async function scrapeHtmlSite(sourceName, siteUrl, categoryName = 'Gündem', cus
       ).catch(() => {});
     }
   } catch (error) {
-    console.log(`[${sourceName} - HTML Kazıma] Hata: ${error.message}`);
+    console.log(`[${sourceName} - HTML Kazıma Atlandı]: ${error.message}`);
   }
 }
 
+// PARALEL VE ASLA KİLİTLENMEYEN ANA TARAMA FONKSİYONU
 let isSyncing = false;
 async function fetchAllSources() {
   if (isSyncing) return;
   isSyncing = true;
+  console.log("--> [TARAMA BAŞLADI] Aktif kaynaklar taranıyor...");
+
   try {
     const sources = await Source.find({ isActive: true });
-    for (const src of sources) {
-      if (src.type === 'html') {
-        await scrapeHtmlSite(src.name, src.url, src.category || 'Gündem', src.selector || '', src.lang || 'tr');
-      } else {
-        await fetchRssFeed(src.name, src.url, src.category || 'Gündem', src.lang || 'tr');
+    
+    // Promise.allSettled sayesinde bir kaynak çökse bile diğerleri saniyeler içinde işlenir
+    const tasks = sources.map(async (src) => {
+      try {
+        if (src.type === 'html') {
+          await scrapeHtmlSite(src.name, src.url, src.category || 'Gündem', src.selector || '', src.lang || 'tr');
+        } else {
+          await fetchRssFeed(src.name, src.url, src.category || 'Gündem', src.lang || 'tr');
+        }
+      } catch (err) {
+        console.error(`[HATA] ${src.name} taranamadı:`, err.message);
       }
-    }
+    });
+
+    await Promise.allSettled(tasks);
+    console.log("<-- [TARAMA BİTTİ] Tüm aktif kaynaklar güncellendi.");
   } catch (err) {
-    console.error("Kaynak tarama hatası:", err.message);
+    console.error("Genel tarama hatası:", err.message);
+  } finally {
+    isSyncing = false;
   }
-  isSyncing = false;
 }
 // 4. API ENDPOINTLERİ
 
 // --- RATING & ETKİLEŞİM API'LERİ ---
-// Habere Tıklanma / Okunma Sayısı Ekle
 app.post('/api/news/:id/click', async (req, res) => {
   try {
     const news = await News.findByIdAndUpdate(
@@ -382,26 +395,21 @@ app.post('/api/news/:id/click', async (req, res) => {
   }
 });
 
-// Admin Paneli Rating & Analitik Raporu
 app.get('/api/analytics/ratings', authMiddleware, async (req, res) => {
   try {
-    // 1. En çok okunan ilk 15 haber
     const topNews = await News.find().sort({ views: -1, pubDate: -1 }).limit(15);
 
-    // 2. Kaynak bazlı rating (Hangi gazete/ajans toplam kaç okunma aldı?)
     const sourceRatings = await News.aggregate([
       { $group: { _id: "$source", totalViews: { $sum: "$views" }, newsCount: { $sum: 1 } } },
       { $sort: { totalViews: -1 } },
       { $limit: 10 }
     ]);
 
-    // 3. Kategori bazlı rating (Hangi kategori daha popüler?)
     const categoryRatings = await News.aggregate([
       { $group: { _id: "$category", totalViews: { $sum: "$views" }, newsCount: { $sum: 1 } } },
       { $sort: { totalViews: -1 } }
     ]);
 
-    // 4. Toplam istatistikler
     const totalViewsData = await News.aggregate([
       { $group: { _id: null, sumViews: { $sum: "$views" } } }
     ]);
@@ -423,7 +431,7 @@ app.get('/api/analytics/ratings', authMiddleware, async (req, res) => {
   }
 });
 
-// --- KATEGORİ API'LERİ ---
+// --- KATEGORİ YÖNETİMİ ---
 app.get('/api/categories', async (req, res) => {
   try {
     const categories = await Category.find().sort({ name: 1 });
@@ -462,7 +470,7 @@ app.delete('/api/categories/:id', authMiddleware, async (req, res) => {
   }
 });
 
-// --- GİRİŞ & KULLANICI API'LERİ ---
+// --- KULLANICI & GİRİŞ YÖNETİMİ ---
 app.post('/api/auth/login', async (req, res) => {
   try {
     const { username, password } = req.body;
@@ -589,11 +597,19 @@ app.delete('/api/requests/:id', authMiddleware, async (req, res) => {
     res.status(500).json({ success: false, message: err.message });
   }
 });
-// --- HABERLER API'Sİ ---
+// --- HABERLER API'Sİ (PASİF KAYNAKLARI ASLA GETİRMEZ) ---
 app.get('/api/news', async (req, res) => {
   try {
     const limit = parseInt(req.query.limit) || 120;
-    const query = {};
+    
+    // Yalnızca aktif olan kaynakların isimlerini listele
+    const activeSources = await Source.find({ isActive: true }).select('name');
+    const activeSourceNames = activeSources.map(s => s.name);
+
+    // Temel sorgu: Haber mutlaka aktif kaynaklardan birine ait olmalı
+    const query = {
+      source: { $in: activeSourceNames }
+    };
 
     if (req.query.category && req.query.category !== 'Tümü') {
       query.category = req.query.category;
@@ -601,7 +617,8 @@ app.get('/api/news', async (req, res) => {
 
     if (req.query.sources) {
       const srcList = req.query.sources.split(',').filter(Boolean);
-      if (srcList.length > 0) query.source = { $in: srcList };
+      const filtered = srcList.filter(s => activeSourceNames.includes(s));
+      if (filtered.length > 0) query.source = { $in: filtered };
     }
 
     if (req.query.search) {
@@ -611,7 +628,6 @@ app.get('/api/news', async (req, res) => {
       ];
     }
 
-    // Sıralama modu: varsayılan tarih, veya rating (popülerliğe göre)
     const sortField = req.query.sort === 'rating' ? { views: -1, pubDate: -1 } : { pubDate: -1, createdAt: -1 };
 
     const news = await News.find(query).sort(sortField).limit(limit).maxTimeMS(4000);
@@ -638,7 +654,6 @@ app.get('/api/sources', async (req, res) => {
   }
 });
 
-// YENİ KAYNAK EKLEME (POST) - DİL (LANG) DESTEKLİ
 app.post('/api/sources', authMiddleware, async (req, res) => {
   try {
     const { name, url, rss, type, category, selector, lang } = req.body;
@@ -661,7 +676,6 @@ app.post('/api/sources', authMiddleware, async (req, res) => {
   }
 });
 
-// KAYNAK DÜZENLEME (PUT) - DİL (LANG) DESTEKLİ
 app.put('/api/sources/:id', authMiddleware, async (req, res) => {
   try {
     const { name, url, rss, type, category, selector, lang, isActive } = req.body;
@@ -686,37 +700,47 @@ app.put('/api/sources/:id', authMiddleware, async (req, res) => {
       return res.status(404).json({ success: false, message: 'Kaynak bulunamadı' });
     }
 
-    // Bilgiler güncellendiği için arka planda yeni ayarlarla taramayı tetikle
-    fetchAllSources();
+    if (updatedSource.isActive === false) {
+      await News.deleteMany({ source: updatedSource.name });
+    }
 
-    res.json({ 
-      success: true, 
-      message: 'Kaynak başarıyla güncellendi.', 
-      data: updatedSource 
-    });
+    fetchAllSources();
+    res.json({ success: true, message: 'Kaynak başarıyla güncellendi.', data: updatedSource });
   } catch (err) {
     res.status(500).json({ success: false, error: err.message });
   }
 });
 
+// KAYNAK SİLİNDİĞİNDE ESKİ HABERLERİ VERİTABANINDAN DA SİL
 app.delete('/api/sources/:id', authMiddleware, async (req, res) => {
   try {
-    await Source.findByIdAndDelete(req.params.id);
-    res.json({ success: true, message: 'Kaynak silindi.' });
+    const src = await Source.findByIdAndDelete(req.params.id);
+    if (src) {
+      await News.deleteMany({ source: src.name });
+    }
+    res.json({ success: true, message: 'Kaynak ve tüm haberleri silindi.' });
   } catch (err) {
     res.status(500).json({ success: false, message: err.message });
   }
 });
 
+// KAYNAK PASİF YAPILDIĞINDA ESKİ HABERLERİ TEMİZLE
 app.patch('/api/sources/:id/toggle', authMiddleware, async (req, res) => {
   try {
     const src = await Source.findById(req.params.id);
     if (!src) return res.status(404).json({ success: false, message: 'Kaynak bulunamadı' });
+    
     src.isActive = !src.isActive;
     await src.save();
+
+    if (!src.isActive) {
+      await News.deleteMany({ source: src.name });
+      console.log(`[TEMİZLİK] Pasif edilen ${src.name} kaynağının haberleri veritabanından silindi.`);
+    }
+
     res.json({ success: true, data: src });
   } catch (err) {
-    res.status(500).json({ success: false, error: err.message });
+    res.status(500).json({ success: false, message: err.message });
   }
 });
 
@@ -747,13 +771,13 @@ app.post('/api/ads', authMiddleware, async (req, res) => {
 // --- SENKRONİZASYON & ZAMANLAYICI ---
 app.get('/api/sync', (req, res) => {
   fetchAllSources();
-  res.json({ success: true, message: "Tarama arka planda başlatıldı." });
+  res.json({ success: true, message: "Tarama arka planda paralel olarak başlatıldı." });
 });
 
-// 10 dakikada bir otomatik tara
-setInterval(fetchAllSources, 10 * 60 * 1000);
-// Sunucu açıldıktan 4 saniye sonra ilk taramayı yap
-setTimeout(fetchAllSources, 4000);
+// 5 dakikada bir otomatik tara
+setInterval(fetchAllSources, 5 * 60 * 1000);
+// Sunucu açıldıktan 3 saniye sonra ilk taramayı başlat
+setTimeout(fetchAllSources, 3000);
 
 app.listen(PORT, () => {
   console.log(`Haber Takip Web Sunucusu http://localhost:${PORT} portunda çalışıyor.`);
