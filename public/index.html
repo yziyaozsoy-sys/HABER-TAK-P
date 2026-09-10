@@ -15,26 +15,28 @@
       top: 85px;
     }
     @keyframes ticker-scroll {
-      0% { transform: translateX(100%); }
+      0% { transform: translateX(100vw); }
       100% { transform: translateX(-100%); }
     }
     .ticker-track {
       display: inline-flex;
       white-space: nowrap;
       will-change: transform;
-      animation: ticker-scroll 90s linear infinite;
+      animation-name: ticker-scroll;
+      animation-timing-function: linear;
+      animation-iteration-count: infinite;
     }
     .ticker-track.paused {
       animation-play-state: paused !important;
     }
     .ticker-track.speed-slow {
-      animation-duration: 150s !important;
+      animation-duration: 260s !important;
     }
     .ticker-track.speed-normal {
-      animation-duration: 90s !important;
+      animation-duration: 170s !important;
     }
     .ticker-track.speed-fast {
-      animation-duration: 45s !important;
+      animation-duration: 100s !important;
     }
     .ticker-container:hover .ticker-track {
       animation-play-state: paused;
@@ -205,8 +207,8 @@
 
   </div>
 
-  <!-- ASILI POP-UP CANLI KAYAN BANT (SABİT ALT BANT + HIZ SEÇİMİ + AYRI PENCERE AÇ) -->
-  <aside class="fixed bottom-3 left-3 right-3 md:left-6 md:right-6 h-11 bg-slate-950/90 border border-slate-700/80 z-50 flex items-center rounded-xl shadow-2xl backdrop-blur-md overflow-hidden">
+  <!-- ASILI POP-UP CANLI KAYAN BANT -->
+  <aside id="mainTickerBar" class="fixed bottom-3 left-3 right-3 md:left-6 md:right-6 h-11 bg-slate-950/90 border border-slate-700/80 z-50 flex items-center rounded-xl shadow-2xl backdrop-blur-md overflow-hidden transition-all duration-300">
     <!-- Başlık & Kategori Rozeti -->
     <div class="bg-rose-600 text-white font-bold text-xs uppercase px-3.5 h-full flex items-center gap-2 shrink-0 shadow-md">
       <span class="w-2 h-2 rounded-full bg-white animate-ping"></span>
@@ -220,23 +222,36 @@
       </div>
     </div>
 
-    <!-- Hız Kontrolleri, Durdur ve Ayrı Mini Pencere Butonu -->
+    <!-- Hız Kontrolleri, Ayrı Pencere ve Kapatma Butonu -->
     <div class="bg-slate-900/90 border-l border-slate-700/80 px-2.5 h-full flex items-center gap-1 text-[11px] shrink-0">
       <span class="text-slate-500 hidden sm:inline mr-1 text-[10px] font-medium">Hız:</span>
       <button data-speed="slow" class="speed-btn px-2 py-0.5 rounded text-slate-400 hover:text-white transition">Yavaş</button>
       <button data-speed="normal" class="speed-btn px-2 py-0.5 rounded bg-emerald-600/30 text-emerald-300 font-semibold border border-emerald-500/40 transition">Orta</button>
       <button data-speed="fast" class="speed-btn px-2 py-0.5 rounded text-slate-400 hover:text-white transition">Hızlı</button>
+      
       <button id="togglePlayBtn" title="Durdur / Başlat" class="ml-1 text-slate-400 hover:text-amber-400 transition px-1">
         <i class="fa-solid fa-pause text-xs" id="playIcon"></i>
       </button>
 
-      <!-- AYRI PENCERE (STANDALONE POP-UP) BUTONU -->
-      <button id="openStandaloneTickerBtn" title="Kayan Bandı Ayrı Mini Pencere Olarak Aç (Ekranın köşesinde tutun)" class="ml-1.5 bg-slate-800 hover:bg-emerald-600 text-emerald-400 hover:text-white px-2 py-1 rounded transition flex items-center gap-1 text-[11px] border border-slate-700 shadow-sm">
+      <!-- AYRI PENCERE BUTONU -->
+      <button id="openStandaloneTickerBtn" title="Kayan Bandı Ayrı Mini Pencere Olarak Aç" class="ml-1 bg-slate-800 hover:bg-emerald-600 text-emerald-400 hover:text-white px-2 py-1 rounded transition flex items-center gap-1 text-[11px] border border-slate-700 shadow-sm">
         <i class="fa-solid fa-up-right-from-square text-[10px]"></i>
         <span class="hidden lg:inline">Pencereyi Ayır</span>
       </button>
+
+      <!-- TICKER'I GİZLE / KAPAT BUTONU -->
+      <button id="closeTickerBtn" title="Kayan Bandı Kapat" class="ml-1 text-slate-400 hover:text-rose-400 transition p-1 text-sm">
+        <i class="fa-solid fa-xmark"></i>
+      </button>
     </div>
   </aside>
+
+  <!-- TICKER KAPALIYKEN SAĞ ALTTAN AÇMA BUTONU -->
+  <button id="reopenTickerBtn" title="Canlı Haber Bandını Aç" class="hidden fixed bottom-4 right-4 z-50 bg-slate-900/95 hover:bg-slate-800 text-emerald-400 border border-emerald-500/40 px-3 py-2 rounded-xl text-xs font-semibold shadow-2xl backdrop-blur-md flex items-center gap-2 transition transform hover:scale-105">
+    <span class="w-2 h-2 rounded-full bg-rose-500 animate-ping"></span>
+    <i class="fa-solid fa-bars-staggered"></i>
+    <span>Canlı Bandı Göster</span>
+  </button>
 
   <script>
     let allSourcesList = [];
@@ -247,10 +262,33 @@
     let searchTimeout;
     let isPaused = false;
 
+    // Ticker Açma / Kapatma (Gizleme) Mantığı
+    const mainTickerBar = document.getElementById('mainTickerBar');
+    const closeTickerBtn = document.getElementById('closeTickerBtn');
+    const reopenTickerBtn = document.getElementById('reopenTickerBtn');
+
+    const isTickerClosed = localStorage.getItem('haber_ticker_hidden') === 'true';
+    if (isTickerClosed) {
+      mainTickerBar.classList.add('hidden');
+      reopenTickerBtn.classList.remove('hidden');
+    }
+
+    closeTickerBtn.addEventListener('click', () => {
+      mainTickerBar.classList.add('hidden');
+      reopenTickerBtn.classList.remove('hidden');
+      localStorage.setItem('haber_ticker_hidden', 'true');
+    });
+
+    reopenTickerBtn.addEventListener('click', () => {
+      mainTickerBar.classList.remove('hidden');
+      reopenTickerBtn.classList.add('hidden');
+      localStorage.setItem('haber_ticker_hidden', 'false');
+    });
+
     // Bağımsız Mini Pencere (Pop-up Ticker) Açma
     document.getElementById('openStandaloneTickerBtn').addEventListener('click', () => {
-      const width = 1100;
-      const height = 75;
+      const width = 1150;
+      const height = 85;
       const left = (window.screen.width - width) / 2;
       const top = window.screen.height - height - 80;
       

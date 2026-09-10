@@ -14,26 +14,28 @@
       user-select: none;
     }
     @keyframes ticker-scroll {
-      0% { transform: translateX(100%); }
+      0% { transform: translateX(100vw); }
       100% { transform: translateX(-100%); }
     }
     .ticker-track {
       display: inline-flex;
       white-space: nowrap;
       will-change: transform;
-      animation: ticker-scroll 90s linear infinite;
+      animation-name: ticker-scroll;
+      animation-timing-function: linear;
+      animation-iteration-count: infinite;
     }
     .ticker-track.paused {
       animation-play-state: paused !important;
     }
     .ticker-track.speed-slow {
-      animation-duration: 150s !important;
+      animation-duration: 260s !important;
     }
     .ticker-track.speed-normal {
-      animation-duration: 90s !important;
+      animation-duration: 170s !important;
     }
     .ticker-track.speed-fast {
-      animation-duration: 45s !important;
+      animation-duration: 100s !important;
     }
     .ticker-container:hover .ticker-track {
       animation-play-state: paused;
@@ -42,11 +44,11 @@
 </head>
 <body class="bg-slate-950 text-slate-100 h-screen flex flex-col justify-center border-t-2 border-emerald-500">
 
-  <div class="h-full flex items-center bg-slate-950 px-2 justify-between">
+  <div class="h-full flex items-center bg-slate-950 px-2 justify-between gap-2">
     
     <!-- Kategori Rozeti ve Seçimi -->
     <div class="flex items-center gap-2 bg-slate-900 border border-slate-800 rounded-lg px-2.5 py-1 shrink-0">
-      <span class="w-2 h-2 rounded-full bg-rose-500 animate-ping"></span>
+      <span class="w-2.5 h-2.5 rounded-full bg-rose-500 animate-ping"></span>
       <select id="catSelect" class="bg-transparent text-emerald-400 font-bold text-xs uppercase focus:outline-none cursor-pointer">
         <option value="Tümü" class="bg-slate-900 text-slate-200">TÜMÜ</option>
         <option value="Gündem" class="bg-slate-900 text-slate-200">GÜNDEM</option>
@@ -60,23 +62,36 @@
 
     <!-- Kayan İçerik -->
     <div class="ticker-container flex-1 overflow-hidden relative h-full flex items-center px-4 cursor-pointer">
-      <div id="tickerTrack" class="ticker-track speed-normal flex items-center gap-10 text-xs text-slate-200">
-        <span class="text-slate-400 italic">Haber akışı bağlanıyor...</span>
+      <div id="tickerTrack" class="ticker-track speed-normal flex items-center gap-10 text-slate-200">
+        <span class="text-slate-400 italic text-sm">Haber akışı bağlanıyor...</span>
       </div>
     </div>
 
-    <!-- Kontroller -->
-    <div class="flex items-center gap-1 bg-slate-900 border border-slate-800 rounded-lg px-2 py-1 shrink-0 text-[11px]">
-      <button data-speed="slow" class="speed-btn px-1.5 py-0.5 rounded text-slate-400 hover:text-white transition">Yavaş</button>
-      <button data-speed="normal" class="speed-btn px-1.5 py-0.5 rounded bg-emerald-600/30 text-emerald-300 font-semibold border border-emerald-500/40 transition">Orta</button>
-      <button data-speed="fast" class="speed-btn px-1.5 py-0.5 rounded text-slate-400 hover:text-white transition">Hızlı</button>
+    <!-- Kontroller: Hız, Font Boyutu, Durdur -->
+    <div class="flex items-center gap-1.5 bg-slate-900 border border-slate-800 rounded-lg px-2 py-1 shrink-0 text-xs">
       
-      <button id="togglePlayBtn" title="Durdur / Başlat" class="ml-1 text-slate-400 hover:text-amber-400 transition px-1">
+      <!-- Font Boyutu Kontrolü (A- / A+) -->
+      <div class="flex items-center gap-1 bg-slate-950 px-1.5 py-0.5 rounded border border-slate-800 text-[11px]">
+        <button id="fontDecBtn" title="Yazıyı Küçült" class="text-slate-400 hover:text-white px-1 font-bold">A-</button>
+        <span id="fontSizeDisplay" class="text-slate-300 font-mono text-[10px] w-6 text-center">15px</span>
+        <button id="fontIncBtn" title="Yazıyı Büyüt" class="text-slate-400 hover:text-white px-1 font-bold">A+</button>
+      </div>
+
+      <span class="text-slate-700">|</span>
+
+      <!-- Hız Seçimleri -->
+      <div class="flex items-center gap-1 text-[11px]">
+        <button data-speed="slow" class="speed-btn px-1.5 py-0.5 rounded text-slate-400 hover:text-white transition">Yavaş</button>
+        <button data-speed="normal" class="speed-btn px-1.5 py-0.5 rounded bg-emerald-600/30 text-emerald-300 font-semibold border border-emerald-500/40 transition">Orta</button>
+        <button data-speed="fast" class="speed-btn px-1.5 py-0.5 rounded text-slate-400 hover:text-white transition">Hızlı</button>
+      </div>
+
+      <button id="togglePlayBtn" title="Durdur / Başlat" class="ml-0.5 text-slate-400 hover:text-amber-400 transition px-1">
         <i class="fa-solid fa-pause text-xs" id="playIcon"></i>
       </button>
 
-      <span class="text-slate-600 mx-1">|</span>
-      <span class="text-[10px] text-slate-500 hidden md:inline">Y. Ziya Özsoy</span>
+      <span class="text-slate-700 hidden sm:inline">|</span>
+      <span class="text-[10px] text-slate-500 hidden sm:inline whitespace-nowrap">Y. Ziya Özsoy</span>
     </div>
 
   </div>
@@ -86,9 +101,28 @@
     const catSelect = document.getElementById('catSelect');
     const togglePlayBtn = document.getElementById('togglePlayBtn');
     const playIcon = document.getElementById('playIcon');
+    const fontDecBtn = document.getElementById('fontDecBtn');
+    const fontIncBtn = document.getElementById('fontIncBtn');
+    const fontSizeDisplay = document.getElementById('fontSizeDisplay');
     let isPaused = false;
 
-    // URL parametresinden kategori al
+    // Font Boyutu Yönetimi (12px - 22px arası)
+    let currentFontSize = parseInt(localStorage.getItem('haber_popup_fontsize')) || 15;
+    applyFontSize(currentFontSize);
+
+    function applyFontSize(size) {
+      if (size < 12) size = 12;
+      if (size > 22) size = 22;
+      currentFontSize = size;
+      localStorage.setItem('haber_popup_fontsize', currentFontSize);
+      tickerTrack.style.fontSize = `${currentFontSize}px`;
+      fontSizeDisplay.textContent = `${currentFontSize}px`;
+    }
+
+    fontDecBtn.addEventListener('click', () => applyFontSize(currentFontSize - 1));
+    fontIncBtn.addEventListener('click', () => applyFontSize(currentFontSize + 1));
+
+    // Kategori
     const urlParams = new URLSearchParams(window.location.search);
     let selectedCategory = urlParams.get('category') || 'Tümü';
     catSelect.value = selectedCategory;
@@ -138,7 +172,7 @@
 
     async function loadNews() {
       try {
-        let url = `/api/news?limit=40`;
+        let url = `/api/news?limit=50`;
         if (selectedCategory && selectedCategory !== 'Tümü') {
           url += `&category=${encodeURIComponent(selectedCategory)}`;
         }
@@ -147,7 +181,7 @@
         const newsItems = data.data || [];
 
         if (newsItems.length === 0) {
-          tickerTrack.innerHTML = `<span class="text-slate-500">Bu kategoride son dakika haberi bulunamadı.</span>`;
+          tickerTrack.innerHTML = `<span class="text-slate-500 text-sm">Bu kategoride son dakika haberi bulunamadı.</span>`;
           return;
         }
 
@@ -155,23 +189,23 @@
           const timeStr = new Date(item.pubDate || item.createdAt).toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' });
           const fav = getFaviconUrl(item.link);
           return `
-            <a href="${item.link}" target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-2 hover:text-emerald-400 transition font-medium group">
+            <a href="${item.link}" target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-2.5 hover:text-emerald-400 transition font-medium group">
               <img src="${fav}" alt="" class="w-4 h-4 object-contain rounded bg-slate-900 border border-slate-700">
-              <span class="text-emerald-400 font-bold font-mono text-[11px]">[${timeStr}]</span>
-              <span class="text-slate-300 font-semibold text-[11px] bg-slate-800 px-1.5 py-0.5 rounded">${item.source}</span>
+              <span class="text-emerald-400 font-bold font-mono text-[0.85em]">[${timeStr}]</span>
+              <span class="text-slate-300 font-semibold text-[0.85em] bg-slate-800 px-2 py-0.5 rounded border border-slate-700/60">${item.source}</span>
               <span class="group-hover:underline text-slate-100">${item.title}</span>
               <span class="text-slate-600 font-bold ml-4">✦</span>
             </a>
           `;
         }).join('');
       } catch (e) {
-        tickerTrack.innerHTML = `<span class="text-rose-400">Veri bağlantısı kurulamadı.</span>`;
+        tickerTrack.innerHTML = `<span class="text-rose-400 text-sm">Veri bağlantısı kurulamadı.</span>`;
       }
     }
 
     setTickerSpeed(localStorage.getItem('haber_ticker_speed') || 'normal');
     loadNews();
-    setInterval(loadNews, 60000); // 1 dakikada bir otomatik tazele
+    setInterval(loadNews, 60000);
   </script>
 </body>
 </html>
