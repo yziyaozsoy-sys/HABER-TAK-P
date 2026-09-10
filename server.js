@@ -97,15 +97,26 @@ const authMiddleware = (req, res, next) => {
 };
 // 2. BAŞLANGIÇ VERİLERİ (SEED)
 const defaultCategories = ['Gündem', 'Spor', 'Ekonomi', 'Dünya', 'Teknoloji', 'Magazin', 'Sağlık', 'Eğitim'];
+// PANELİNİZLE BİREBİR AYNI OLAN 18 KAYNAK LİSTESİ
 const initialSources = [
-  { name: 'NTV Son Dakika', type: 'rss', url: 'https://www.ntv.com.tr/son-dakika.rss', category: 'Gündem', lang: 'tr' },
-  { name: 'Hürriyet Gündem', type: 'rss', url: 'https://www.hurriyet.com.tr/rss/gundem', category: 'Gündem', lang: 'tr' },
+  { name: 'BBC Türkçe', type: 'rss', url: 'https://feeds.bbci.co.uk/turkce/rss.xml', category: 'Gündem', lang: 'tr' },
+  { name: 'Cumhuriyet', type: 'rss', url: 'https://www.cumhuriyet.com.tr/rss/son_dakika.xml', category: 'Gündem', lang: 'tr' },
   { name: 'Ensonhaber', type: 'rss', url: 'https://www.ensonhaber.com/rss/ensonhaber.xml', category: 'Gündem', lang: 'tr' },
-  { name: 'BBC Türkçe', type: 'rss', url: 'https://feeds.bbci.co.uk/turkce/rss.xml', category: 'Dünya', lang: 'tr' },
-  { name: 'Milliyet Spor', type: 'rss', url: 'https://www.milliyet.com.tr/rss/rssnew/skorersondakikarss.xml', category: 'Spor', lang: 'tr' },
-  { name: 'Hürriyet Ekonomi', type: 'rss', url: 'https://www.hurriyet.com.tr/rss/ekonomi', category: 'Ekonomi', lang: 'tr' },
+  { name: 'Habertürk', type: 'rss', url: 'https://www.haberturk.com/rss/kategori/gundem.xml', category: 'Gündem', lang: 'tr' },
+  { name: 'Hürriyet', type: 'rss', url: 'https://www.hurriyet.com.tr/rss/gundem', category: 'Gündem', lang: 'tr' },
+  { name: 'Milliyet', type: 'rss', url: 'https://www.milliyet.com.tr/rss/rssnew/sondakikarss.xml', category: 'Gündem', lang: 'tr' },
+  { name: 'NTV', type: 'rss', url: 'https://www.ntv.com.tr/son-dakika.rss', category: 'Gündem', lang: 'tr' },
+  { name: 'Sabah', type: 'rss', url: 'https://www.sabah.com.tr/rss/gundem.xml', category: 'Gündem', lang: 'tr' },
   { name: 'Sözcü', type: 'rss', url: 'https://www.sozcu.com.tr/rss/tum-haberler.xml', category: 'Gündem', lang: 'tr' },
-  { name: 'Reuters World', type: 'rss', url: 'https://feeds.reuters.com/reuters/worldNews', category: 'Dünya', lang: 'en' }
+  { name: 'Ekonomi Gazetesi', type: 'rss', url: 'https://www.ekonomigazetesi.com/rss.xml', category: 'Ekonomi', lang: 'tr' },
+  { name: 'Ntv Ekonomi', type: 'rss', url: 'https://www.ntv.com.tr/ekonomi.rss', category: 'Ekonomi', lang: 'tr' },
+  { name: 'Patronlar Dünyası', type: 'rss', url: 'https://www.patronlardunyasi.com/rss', category: 'Ekonomi', lang: 'tr' },
+  { name: 'Sözcü Ekonomi', type: 'rss', url: 'https://www.sozcu.com.tr/feeds-rss-category-ekonomi', category: 'Ekonomi', lang: 'tr' },
+  { name: 'Sözcü Magazin', type: 'rss', url: 'https://www.sozcu.com.tr/feeds-rss-category-magazin', category: 'Magazin', lang: 'tr' },
+  { name: 'Ajansspor', type: 'rss', url: 'https://ajansspor.com/rss', category: 'Spor', lang: 'tr' },
+  { name: 'Aspor', type: 'rss', url: 'https://www.aspor.com.tr/rss/anasayfa.xml', category: 'Spor', lang: 'tr' },
+  { name: 'Sabah Spor', type: 'rss', url: 'https://www.sabah.com.tr/rss/spor.xml', category: 'Spor', lang: 'tr' },
+  { name: 'Herkese Bilim Teknoloji', type: 'rss', url: 'https://www.herkesebilimteknoloji.com/feed', category: 'Teknoloji', lang: 'tr' }
 ];
 
 if (MONGODB_URI) {
@@ -187,15 +198,15 @@ async function fetchRssFeed(sourceName, rawUrl, categoryName = 'Gündem', lang =
   if (!url) return;
 
   try {
-    const response = await axios.get(url, {
-      headers: { 
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
-        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
-        'Accept-Language': 'tr-TR,tr;q=0.9,en-US;q=0.8,en;q=0.7',
-        'Cache-Control': 'no-cache'
-      },
-      timeout: 10000
-    });
+   const response = await axios.get(url, {
+  headers: { 
+    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Safari/537.36',
+    'Accept': 'application/rss+xml, application/xml, text/xml, */*',
+    'Accept-Language': 'tr-TR,tr;q=0.9,en-US;q=0.8,en;q=0.7'
+  },
+  timeout: 10000
+});
+
 
     const parser = new xml2js.Parser({ explicitArray: false, trim: true });
     const result = await parser.parseStringPromise(response.data);
