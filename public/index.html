@@ -54,10 +54,22 @@
     </div>
   </header>
 
+  <!-- Kategori Sekmeleri (Tabs) -->
+  <nav class="bg-slate-850 bg-slate-800/80 border-b border-slate-700 px-6 py-2">
+    <div class="max-w-7xl mx-auto flex items-center gap-2 overflow-x-auto text-xs" id="categoryTabs">
+      <button data-cat="Tümü" class="cat-btn px-3 py-1 rounded-lg font-semibold bg-emerald-600 text-white transition">Tümü</button>
+      <button data-cat="Gündem" class="cat-btn px-3 py-1 rounded-lg font-medium text-slate-300 hover:bg-slate-700 transition">Gündem</button>
+      <button data-cat="Spor" class="cat-btn px-3 py-1 rounded-lg font-medium text-slate-300 hover:bg-slate-700 transition">Spor</button>
+      <button data-cat="Ekonomi" class="cat-btn px-3 py-1 rounded-lg font-medium text-slate-300 hover:bg-slate-700 transition">Ekonomi</button>
+      <button data-cat="Dünya" class="cat-btn px-3 py-1 rounded-lg font-medium text-slate-300 hover:bg-slate-700 transition">Dünya</button>
+      <button data-cat="Teknoloji" class="cat-btn px-3 py-1 rounded-lg font-medium text-slate-300 hover:bg-slate-700 transition">Teknoloji</button>
+      <button data-cat="Magazin" class="cat-btn px-3 py-1 rounded-lg font-medium text-slate-300 hover:bg-slate-700 transition">Magazin</button>
+    </div>
+  </nav>
+
   <!-- Filtreleme & Takip Kontrol Paneli -->
-  <div class="bg-slate-850 bg-slate-800/50 border-b border-slate-800 px-6 py-3">
+  <div class="bg-slate-900 border-b border-slate-800 px-6 py-2.5">
     <div class="max-w-7xl mx-auto flex flex-wrap items-center justify-between gap-4">
-      
       <!-- Kaynak Seçimi -->
       <div class="flex items-center gap-2 flex-wrap text-xs">
         <span class="text-slate-400 font-medium flex items-center gap-1"><i class="fa-solid fa-filter text-emerald-400"></i> Kaynaklar:</span>
@@ -69,7 +81,7 @@
       <!-- Kelime Takip & Alarm -->
       <div class="flex items-center gap-2 text-xs">
         <span class="text-amber-400 font-medium flex items-center gap-1"><i class="fa-solid fa-bell"></i> Alarm Kelimeleri:</span>
-        <input type="text" id="watchWordsInput" placeholder="örn: deprem, dolar, borsa (virgülle)" class="bg-slate-950 border border-slate-700 rounded-md px-2.5 py-1 text-xs text-slate-200 placeholder-slate-600 focus:outline-none focus:border-amber-500 w-52">
+        <input type="text" id="watchWordsInput" placeholder="örn: deprem, dolar, transfer" class="bg-slate-950 border border-slate-700 rounded-md px-2.5 py-1 text-xs text-slate-200 placeholder-slate-600 focus:outline-none focus:border-amber-500 w-52">
       </div>
     </div>
   </div>
@@ -120,6 +132,7 @@
     let currentNewsList = [];
     let selectedSources = new Set();
     let selectedNewsGuids = new Set();
+    let selectedCategory = 'Tümü';
     let searchTimeout;
 
     const watchInput = document.getElementById('watchWordsInput');
@@ -167,7 +180,6 @@
       } catch (e) {}
     }
 
-    // Linkten domain ayıklayıp Google favicon servisine yönlendiren yardımcı
     function getFaviconUrl(linkUrl) {
       try {
         const parsed = new URL(linkUrl);
@@ -176,6 +188,18 @@
         return 'https://placehold.co/32x32/1e293b/10b981?text=N';
       }
     }
+
+    // Kategori Butonları Olay Dinleyicileri
+    document.querySelectorAll('.cat-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.cat-btn').forEach(b => {
+          b.className = 'cat-btn px-3 py-1 rounded-lg font-medium text-slate-300 hover:bg-slate-700 transition';
+        });
+        btn.className = 'cat-btn px-3 py-1 rounded-lg font-semibold bg-emerald-600 text-white transition';
+        selectedCategory = btn.getAttribute('data-cat');
+        loadNews();
+      });
+    });
 
     function updateExportButtonState() {
       const count = selectedNewsGuids.size;
@@ -240,7 +264,7 @@
         grid.innerHTML = `
           <div class="col-span-full py-16 text-center text-slate-500">
             <i class="fa-regular fa-folder-open text-4xl mb-3 block text-slate-600"></i>
-            <p class="text-sm text-slate-400">Gösterilecek haber bulunamadı.</p>
+            <p class="text-sm text-slate-400">Bu kategoride veya filtrelere uygun haber bulunamadı.</p>
           </div>`;
         alarmBadge.classList.add('hidden');
         return;
@@ -266,9 +290,12 @@
                 <input type="checkbox" data-guid="${item.guid}" class="news-select-chk w-4 h-4 rounded text-emerald-500 bg-slate-900 border-slate-600 focus:ring-emerald-500 cursor-pointer" ${isChecked ? 'checked' : ''}>
                 <span class="text-[11px] font-medium ${isChecked ? 'text-emerald-400 font-bold' : 'text-slate-400'}">Seç</span>
               </label>
-              <span class="font-mono text-emerald-300 font-semibold text-[11px] flex items-center gap-1">
-                <i class="fa-regular fa-clock text-[10px]"></i> ${timeStr}
-              </span>
+              <div class="flex items-center gap-1.5">
+                <span class="text-[10px] bg-slate-700/60 text-sky-300 px-1.5 py-0.5 rounded">${item.category || 'Gündem'}</span>
+                <span class="font-mono text-emerald-300 font-semibold text-[11px] flex items-center gap-1">
+                  <i class="fa-regular fa-clock text-[10px]"></i> ${timeStr}
+                </span>
+              </div>
             </div>
 
             <!-- Kaynak Başlığı ve Orta Boy Logo -->
@@ -325,6 +352,9 @@
     async function loadNews() {
       try {
         let url = `/api/news?limit=120`;
+        if (selectedCategory && selectedCategory !== 'Tümü') {
+          url += `&category=${encodeURIComponent(selectedCategory)}`;
+        }
         const search = document.getElementById('searchInput').value.trim();
         if (search) url += `&search=${encodeURIComponent(search)}`;
         if (selectedSources.size > 0) url += `&sources=${Array.from(selectedSources).join(',')}`;
@@ -363,14 +393,15 @@
             .item { margin-bottom: 22px; padding-bottom: 16px; border-bottom: 1px solid #e2e8f0; }
             .title { font-size: 13pt; font-weight: bold; color: #0f172a; margin-top: 6px; margin-bottom: 6px; }
             .badge { font-size: 8.5pt; font-weight: bold; background: #e0f2fe; color: #0369a1; padding: 3px 8px; border-radius: 4px; }
+            .cat { font-size: 8.5pt; font-weight: bold; background: #f1f5f9; color: #475569; padding: 3px 8px; border-radius: 4px; margin-left: 6px; }
             .date { font-size: 8.5pt; color: #059669; font-weight: 600; margin-left: 10px; }
             .desc { font-size: 10pt; color: #334155; line-height: 1.5; margin: 8px 0; }
             .link { font-size: 9pt; color: #2563eb; text-decoration: underline; word-break: break-all; }
           </style>
         </head>
         <body>
-          <h1>Haber Takip - Seçilen Haberler Raporu</h1>
-          <div class="meta">Rapor Tarihi: ${new Date().toLocaleString('tr-TR')} | Aktarılan Haber Sayısı: <strong>${exportItems.length}</strong></div>
+          <h1>Haber Takip - Rapor</h1>
+          <div class="meta">Rapor Tarihi: ${new Date().toLocaleString('tr-TR')} | Kategori: <strong>${selectedCategory}</strong> | Aktarılan Haber: <strong>${exportItems.length}</strong></div>
       `;
 
       exportItems.forEach((n, idx) => {
@@ -380,6 +411,7 @@
           <div class="item">
             <div>
               <span class="badge">${n.source || 'Genel'}</span>
+              <span class="cat">${n.category || 'Gündem'}</span>
               <span class="date">${dateStr}</span>
             </div>
             <div class="title">${idx + 1}. ${n.title}</div>

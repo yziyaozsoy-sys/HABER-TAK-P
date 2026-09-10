@@ -9,7 +9,7 @@
 </head>
 <body class="bg-slate-900 text-slate-100 min-h-screen flex flex-col font-sans">
 
-  <!-- GİRİŞ EKRANI (LOGIN MODAL) -->
+  <!-- GİRİŞ EKRANI -->
   <div id="loginModal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
     <div class="bg-slate-800 border border-slate-700 w-full max-w-md rounded-2xl p-6 shadow-2xl">
       <div class="text-center mb-6">
@@ -52,7 +52,7 @@
           <h1 class="text-lg font-bold tracking-wide flex items-center gap-2">
             Yönetim Paneli <span id="userBadge" class="text-[11px] bg-slate-700 text-emerald-400 px-2 py-0.5 rounded-md font-normal"></span>
           </h1>
-          <p class="text-[11px] text-slate-400">Kaynaklar, personeller ve reklam alanları yönetimi</p>
+          <p class="text-[11px] text-slate-400">Kaynaklar, kategoriler, personeller ve reklam yönetimi</p>
         </div>
       </div>
       <div class="flex items-center gap-2">
@@ -69,13 +69,41 @@
   <main class="flex-1 max-w-6xl w-full mx-auto p-6 space-y-8">
     <div id="alertBox" class="hidden p-3.5 rounded-xl text-xs font-medium transition"></div>
 
-    <!-- 1. BÖLÜM: PERSONEL YÖNETİMİ (Sadece admin görebilir) -->
+    <!-- 1. BÖLÜM: ŞİFRE DEĞİŞTİRME KARTI -->
+    <section class="bg-slate-800/80 border border-slate-700 rounded-2xl p-6 shadow-lg">
+      <div class="mb-4 pb-3 border-b border-slate-700 flex justify-between items-center">
+        <div>
+          <h2 class="text-base font-bold text-slate-100 flex items-center gap-2">
+            <i class="fa-solid fa-key text-emerald-400"></i> Kendi Şifrenizi Değiştirin
+          </h2>
+          <p class="text-xs text-slate-400 mt-0.5">Hesabınızın güvenliği için şifrenizi buradan güncelleyebilirsiniz.</p>
+        </div>
+      </div>
+
+      <form id="changePasswordForm" class="grid grid-cols-1 md:grid-cols-12 gap-3 bg-slate-900/60 p-4 rounded-xl border border-slate-700/60 text-xs">
+        <div class="md:col-span-5">
+          <label class="block text-slate-400 mb-1">Mevcut Şifreniz</label>
+          <input type="password" id="currentPassword" required placeholder="••••••" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-1.5 text-slate-200 focus:outline-none focus:border-emerald-500">
+        </div>
+        <div class="md:col-span-5">
+          <label class="block text-slate-400 mb-1">Yeni Şifre (En az 5 karakter)</label>
+          <input type="password" id="newPassword" required placeholder="Yeni şifreniz" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-1.5 text-slate-200 focus:outline-none focus:border-emerald-500">
+        </div>
+        <div class="md:col-span-2 flex items-end">
+          <button type="submit" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white py-1.5 px-3 rounded-lg font-semibold transition flex items-center justify-center gap-1.5">
+            <i class="fa-solid fa-check"></i> Güncelle
+          </button>
+        </div>
+      </form>
+    </section>
+
+    <!-- 2. BÖLÜM: PERSONEL YÖNETİMİ (Sadece admin görebilir) -->
     <section id="personnelSection" class="bg-slate-800/80 border border-slate-700 rounded-2xl p-6 shadow-lg">
       <div class="mb-5 pb-4 border-b border-slate-700">
         <h2 class="text-base font-bold text-slate-100 flex items-center gap-2">
           <i class="fa-solid fa-users text-sky-400"></i> Personel & Editör Yönetimi
         </h2>
-        <p class="text-xs text-slate-400 mt-0.5">Sistemi yönetecek yeni personeller ekleyin veya çıkarın.</p>
+        <p class="text-xs text-slate-400 mt-0.5">Sistemi yönetecek yeni personeller ekleyin, şifrelerini güncelleyin veya silin.</p>
       </div>
 
       <form id="addStaffForm" class="grid grid-cols-1 md:grid-cols-12 gap-3 mb-6 bg-slate-900/60 p-4 rounded-xl border border-slate-700/60">
@@ -105,7 +133,7 @@
               <th class="py-2.5 px-3">Ad Soyad</th>
               <th class="py-2.5 px-3">Kullanıcı Adı</th>
               <th class="py-2.5 px-3">Rol</th>
-              <th class="py-2.5 px-3 text-right">İşlem</th>
+              <th class="py-2.5 px-3 text-right">İşlemler</th>
             </tr>
           </thead>
           <tbody id="staffTableBody" class="divide-y divide-slate-700/40">
@@ -115,14 +143,14 @@
       </div>
     </section>
 
-    <!-- 2. BÖLÜM: RSS KAYNAK YÖNETİMİ -->
+    <!-- 3. BÖLÜM: RSS KAYNAK & KATEGORİ YÖNETİMİ -->
     <section class="bg-slate-800/80 border border-slate-700 rounded-2xl p-6 shadow-lg">
       <div class="flex flex-wrap justify-between items-center mb-5 pb-4 border-b border-slate-700 gap-3">
         <div>
           <h2 class="text-base font-bold text-slate-100 flex items-center gap-2">
-            <i class="fa-solid fa-square-rss text-orange-400"></i> RSS Kaynak Yönetimi
+            <i class="fa-solid fa-square-rss text-orange-400"></i> RSS Kaynak ve Kategori Yönetimi
           </h2>
-          <p class="text-xs text-slate-400 mt-0.5">Sisteme yeni haber siteleri ekleyin veya mevcut olanları açıp kapatın.</p>
+          <p class="text-xs text-slate-400 mt-0.5">Kaynakları kategorilerine (Gündem, Spor, Ekonomi vb.) göre belirleyin.</p>
         </div>
         <button id="refreshSyncBtn" class="bg-emerald-600 hover:bg-emerald-500 text-white px-3 py-1.5 rounded-lg text-xs font-medium transition flex items-center gap-1.5">
           <i class="fa-solid fa-arrows-rotate"></i> Şimdi Tüm Kaynakları Tara
@@ -130,17 +158,28 @@
       </div>
 
       <form id="addSourceForm" class="grid grid-cols-1 md:grid-cols-12 gap-3 mb-6 bg-slate-900/60 p-4 rounded-xl border border-slate-700/60">
-        <div class="md:col-span-4">
-          <label class="block text-[11px] text-slate-400 mb-1">Kaynak / Gazete Adı</label>
-          <input type="text" id="srcName" required placeholder="örn: Sabah Gündem" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-1.5 text-xs text-slate-200 focus:outline-none focus:border-emerald-500">
+        <div class="md:col-span-3">
+          <label class="block text-[11px] text-slate-400 mb-1">Kaynak Adı</label>
+          <input type="text" id="srcName" required placeholder="örn: NTV Spor" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-1.5 text-xs text-slate-200 focus:outline-none focus:border-emerald-500">
         </div>
-        <div class="md:col-span-6">
-          <label class="block text-[11px] text-slate-400 mb-1">RSS XML Bağlantısı (URL)</label>
-          <input type="url" id="srcRss" required placeholder="https://www.sabah.com.tr/rss/gundem.xml" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-1.5 text-xs text-slate-200 focus:outline-none focus:border-emerald-500">
+        <div class="md:col-span-3">
+          <label class="block text-[11px] text-slate-400 mb-1">Kategori</label>
+          <select id="srcCategory" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-2.5 py-1.5 text-xs text-slate-200 focus:outline-none focus:border-emerald-500">
+            <option value="Gündem">Gündem</option>
+            <option value="Spor">Spor</option>
+            <option value="Ekonomi">Ekonomi</option>
+            <option value="Dünya">Dünya</option>
+            <option value="Teknoloji">Teknoloji</option>
+            <option value="Magazin">Magazin</option>
+          </select>
+        </div>
+        <div class="md:col-span-4">
+          <label class="block text-[11px] text-slate-400 mb-1">RSS XML Bağlantısı</label>
+          <input type="url" id="srcRss" required placeholder="https://..." class="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-1.5 text-xs text-slate-200 focus:outline-none focus:border-emerald-500">
         </div>
         <div class="md:col-span-2 flex items-end">
           <button type="submit" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white py-1.5 px-3 rounded-lg text-xs font-semibold transition flex items-center justify-center gap-1.5">
-            <i class="fa-solid fa-plus"></i> Kaynak Ekle
+            <i class="fa-solid fa-plus"></i> Ekle
           </button>
         </div>
       </form>
@@ -150,19 +189,20 @@
           <thead>
             <tr class="text-slate-400 border-b border-slate-700 bg-slate-900/40">
               <th class="py-2.5 px-3">Kaynak Adı</th>
+              <th class="py-2.5 px-3">Kategori</th>
               <th class="py-2.5 px-3">RSS Linki</th>
               <th class="py-2.5 px-3 text-center">Durum</th>
               <th class="py-2.5 px-3 text-right">İşlem</th>
             </tr>
           </thead>
           <tbody id="sourcesTableBody" class="divide-y divide-slate-700/40">
-            <tr><td colspan="4" class="text-center py-6 text-slate-500">Kaynaklar yükleniyor...</td></tr>
+            <tr><td colspan="5" class="text-center py-6 text-slate-500">Kaynaklar yükleniyor...</td></tr>
           </tbody>
         </table>
       </div>
     </section>
 
-    <!-- 3. BÖLÜM: REKLAM ALANLARI YÖNETİMİ -->
+    <!-- 4. BÖLÜM: REKLAM ALANLARI -->
     <section class="bg-slate-800/80 border border-slate-700 rounded-2xl p-6 shadow-lg">
       <div class="mb-5 pb-4 border-b border-slate-700">
         <h2 class="text-base font-bold text-slate-100 flex items-center gap-2">
@@ -200,8 +240,8 @@
                   <input type="url" id="leftImageUrl" placeholder="https://site.com/banner.jpg" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-2.5 py-1.5 text-slate-200 text-xs">
                 </div>
                 <div>
-                  <label class="block text-slate-400 mb-1">Yönlenecek Link (Hedef URL)</label>
-                  <input type="url" id="leftTargetUrl" placeholder="https://sponsor-site.com" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-2.5 py-1.5 text-slate-200 text-xs">
+                  <label class="block text-slate-400 mb-1">Hedef URL</label>
+                  <input type="url" id="leftTargetUrl" placeholder="https://sponsor.com" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-2.5 py-1.5 text-slate-200 text-xs">
                 </div>
               </div>
 
@@ -245,8 +285,8 @@
                   <input type="url" id="rightImageUrl" placeholder="https://site.com/banner.jpg" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-2.5 py-1.5 text-slate-200 text-xs">
                 </div>
                 <div>
-                  <label class="block text-slate-400 mb-1">Yönlenecek Link (Hedef URL)</label>
-                  <input type="url" id="rightTargetUrl" placeholder="https://sponsor-site.com" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-2.5 py-1.5 text-slate-200 text-xs">
+                  <label class="block text-slate-400 mb-1">Hedef URL</label>
+                  <input type="url" id="rightTargetUrl" placeholder="https://sponsor.com" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-2.5 py-1.5 text-slate-200 text-xs">
                 </div>
               </div>
 
@@ -287,7 +327,7 @@
       }
     }
 
-    // Giriş Yap
+    // Giriş
     document.getElementById('loginForm').addEventListener('submit', async (e) => {
       e.preventDefault();
       const username = document.getElementById('loginUsername').value.trim();
@@ -316,11 +356,8 @@
       }
     });
 
-    // Çıkış Yap
     document.getElementById('logoutBtn').addEventListener('click', () => {
-      localStorage.removeItem('haber_admin_token');
-      localStorage.removeItem('haber_admin_role');
-      localStorage.removeItem('haber_admin_name');
+      localStorage.clear();
       location.reload();
     });
 
@@ -338,16 +375,37 @@
       };
     }
 
-    // Personelleri Listele
+    // Kendi Şifresini Değiştirme
+    document.getElementById('changePasswordForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const currentPassword = document.getElementById('currentPassword').value.trim();
+      const newPassword = document.getElementById('newPassword').value.trim();
+
+      try {
+        const res = await fetch('/api/auth/change-password', {
+          method: 'POST',
+          headers: authHeaders(),
+          body: JSON.stringify({ currentPassword, newPassword })
+        });
+        const d = await res.json();
+        if (d.success) {
+          notify(d.message, 'success');
+          document.getElementById('currentPassword').value = '';
+          document.getElementById('newPassword').value = '';
+        } else {
+          notify(d.message, 'error');
+        }
+      } catch (err) {
+        notify('Hata: ' + err.message, 'error');
+      }
+    });
+
+    // Personel Listele
     async function fetchStaff() {
       try {
         const res = await fetch('/api/users', { headers: authHeaders() });
         const data = await res.json();
         const tbody = document.getElementById('staffTableBody');
-        if (!data.data || data.data.length === 0) {
-          tbody.innerHTML = '<tr><td colspan="4" class="text-center py-4 text-slate-500">Personel bulunmuyor.</td></tr>';
-          return;
-        }
         tbody.innerHTML = data.data.map(u => `
           <tr class="hover:bg-slate-800/40 transition">
             <td class="py-2.5 px-3 font-semibold text-slate-200">${u.fullname}</td>
@@ -357,17 +415,42 @@
                 ${u.role === 'admin' ? 'Yönetici' : 'Personel'}
               </span>
             </td>
-            <td class="py-2.5 px-3 text-right">
+            <td class="py-2.5 px-3 text-right flex items-center justify-end gap-2">
+              <button onclick="resetStaffPassword('${u._id}', '${u.fullname}')" class="text-amber-400 hover:text-amber-300 text-xs px-2 py-1 rounded transition flex items-center gap-1">
+                <i class="fa-solid fa-key text-[10px]"></i> Şifre Sıfırla
+              </button>
               ${u.username !== 'admin' ? `
-                <button onclick="deleteStaff('${u._id}')" class="text-rose-400 hover:text-rose-300 text-xs px-2 py-1 rounded transition">
-                  <i class="fa-solid fa-trash"></i> Sil
+                <button onclick="deleteStaff('${u._id}')" class="text-rose-400 hover:text-rose-300 text-xs px-2 py-1 rounded transition flex items-center gap-1">
+                  <i class="fa-solid fa-trash text-[10px]"></i> Sil
                 </button>
-              ` : '<span class="text-slate-600 text-[10px]">Korumalı</span>'}
+              ` : ''}
             </td>
           </tr>
         `).join('');
       } catch (e) {}
     }
+
+    // Personel Şifresi Sıfırla
+    window.resetStaffPassword = async (userId, fullname) => {
+      const newPass = prompt(`"${fullname}" için yeni bir şifre girin (en az 5 karakter):`);
+      if (!newPass) return;
+      if (newPass.length < 5) {
+        alert('Şifre en az 5 karakter olmalıdır!');
+        return;
+      }
+      try {
+        const res = await fetch(`/api/users/${userId}/password`, {
+          method: 'POST',
+          headers: authHeaders(),
+          body: JSON.stringify({ newPassword: newPass })
+        });
+        const d = await res.json();
+        if (d.success) notify(d.message, 'success');
+        else notify(d.message, 'error');
+      } catch (err) {
+        notify('Hata: ' + err.message, 'error');
+      }
+    };
 
     // Personel Ekle
     document.getElementById('addStaffForm').addEventListener('submit', async (e) => {
@@ -420,6 +503,9 @@
         tbody.innerHTML = data.data.map(s => `
           <tr class="hover:bg-slate-800/40 transition">
             <td class="py-2.5 px-3 font-semibold text-slate-200">${s.name}</td>
+            <td class="py-2.5 px-3">
+              <span class="text-[10px] bg-slate-700 text-sky-300 px-2 py-0.5 rounded font-medium">${s.category || 'Gündem'}</span>
+            </td>
             <td class="py-2.5 px-3 text-slate-400 font-mono text-[11px] truncate max-w-xs">${s.rss}</td>
             <td class="py-2.5 px-3 text-center">
               <button onclick="toggleSource('${s._id}')" class="px-2 py-0.5 rounded-full text-[10px] font-semibold transition ${s.isActive ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30' : 'bg-slate-700 text-slate-400'}">
@@ -441,15 +527,17 @@
       e.preventDefault();
       const name = document.getElementById('srcName').value.trim();
       const rss = document.getElementById('srcRss').value.trim();
+      const category = document.getElementById('srcCategory').value;
+
       try {
         const res = await fetch('/api/sources', {
           method: 'POST',
           headers: authHeaders(),
-          body: JSON.stringify({ name, rss })
+          body: JSON.stringify({ name, rss, category })
         });
         const resData = await res.json();
         if (resData.success) {
-          notify(`"${name}" başarıyla eklendi!`, 'success');
+          notify(`"${name}" (${category}) başarıyla eklendi!`, 'success');
           document.getElementById('srcName').value = '';
           document.getElementById('srcRss').value = '';
           fetchSources();
@@ -480,7 +568,7 @@
     document.getElementById('refreshSyncBtn').addEventListener('click', async () => {
       try {
         await fetch('/api/sync');
-        notify('Tüm kaynakların taraması arka planda başlatıldı.', 'success');
+        notify('Tüm kaynakların taraması başlatıldı.', 'success');
       } catch (e) {}
     });
 
@@ -531,13 +619,9 @@
           body: JSON.stringify({ position, type, isActive, imageUrl, targetUrl, code })
         });
         const d = await res.json();
-        if (d.success) {
-          notify(`${position === 'left' ? 'Sol' : 'Sağ'} reklam alanı güncellendi!`, 'success');
-        } else {
-          notify(d.message || 'Hata oluştu', 'error');
-        }
+        if (d.success) notify(`${position === 'left' ? 'Sol' : 'Sağ'} reklam güncellendi!`, 'success');
       } catch (e) {
-        notify('Kaydedilemedi: ' + e.message, 'error');
+        notify('Hata: ' + e.message, 'error');
       }
     }
 
