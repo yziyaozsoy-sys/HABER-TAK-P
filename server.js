@@ -184,14 +184,19 @@ async function translateToTurkish(text) {
 }
 
 // 3. TARAMA MOTORLARI (RSS & HTML)
-async function fetchRssFeed(sourceName, url, categoryName = 'Gündem', lang = 'tr') {
+async function fetchRssFeed(sourceName, rawUrl, categoryName = 'Gündem', lang = 'tr') {
+  const url = rawUrl ? rawUrl.trim() : '';
+  if (!url) return;
+
   try {
     const response = await axios.get(url, {
       headers: { 
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-        'Accept': 'application/rss+xml, application/xml, text/xml, */*'
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
+        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+        'Accept-Language': 'tr-TR,tr;q=0.9,en-US;q=0.8,en;q=0.7',
+        'Cache-Control': 'no-cache'
       },
-      timeout: 6000 // 6 saniyede yanıt vermeyen kaynak döngüyü tıkamaz
+      timeout: 7000
     });
 
     const parser = new xml2js.Parser({ explicitArray: false, trim: true });
@@ -200,6 +205,7 @@ async function fetchRssFeed(sourceName, url, categoryName = 'Gündem', lang = 't
     const items = channel.item || channel.entry || [];
     const itemList = (Array.isArray(items) ? items : [items]).slice(0, 25);
 
+    let count = 0;
     for (const item of itemList) {
       let rawTitle = extractText(item.title);
       if (!rawTitle) continue;
@@ -208,10 +214,14 @@ async function fetchRssFeed(sourceName, url, categoryName = 'Gündem', lang = 't
       let rawGuid = extractText(item.guid) || rawLink || rawTitle;
       let rawDesc = extractText(item.description || item.summary || '');
       
+      // Çoklu tarih formatı yakalama (pubDate, dc:date, published vb.)
+      let rawDateStr = item.pubDate || item['dc:date'] || item.published || item.updated;
       let parsedDate = new Date();
-      if (item.pubDate) {
-        const d = new Date(item.pubDate);
-        if (!isNaN(d.getTime())) parsedDate = d;
+      if (rawDateStr) {
+        const d = new Date(rawDateStr);
+        if (!isNaN(d.getTime())) {
+          parsedDate = d;
+        }
       }
 
       if (!rawGuid || !rawLink) continue;
@@ -233,39 +243,45 @@ async function fetchRssFeed(sourceName, url, categoryName = 'Gündem', lang = 't
         }
       }
 
+      // Upsert: Haber varsa bile başlık ve linki güncel tutar
       await News.updateOne(
         { guid: String(rawGuid) },
         {
-          $setOnInsert: {
-            guid: String(rawGuid),
+          $set: {
             title: finalTitle,
             link: String(rawLink),
             description: finalDesc,
-            pubDate: parsedDate,
             source: sourceName,
             category: categoryName,
             lang: lang || 'tr',
-            isTranslated: isTranslated,
+            isTranslated: isTranslated
+          },
+          $setOnInsert: {
+            guid: String(rawGuid),
+            pubDate: parsedDate,
             views: 0,
             createdAt: new Date()
           }
         },
         { upsert: true }
       ).catch(() => {});
+      count++;
     }
+    console.log(`[RSS Tamam] ${sourceName}: ${count} haber işlendi.`);
   } catch (error) {
     console.log(`[${sourceName} - RSS Atlandı]: ${error.message}`);
   }
 }
 
 async function scrapeHtmlSite(sourceName, siteUrl, categoryName = 'Gündem', customSelector = '', lang = 'tr') {
+  if (!siteUrl) return;
   try {
     const response = await axios.get(siteUrl, {
       headers: { 
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
         'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8'
       },
-      timeout: 6000
+      timeout: 7000
     });
 
     const $ = cheerio.load(response.data);
@@ -325,16 +341,18 @@ async function scrapeHtmlSite(sourceName, siteUrl, categoryName = 'Gündem', cus
       await News.updateOne(
         { guid: item.guid },
         {
-          $setOnInsert: {
-            guid: item.guid,
+          $set: {
             title: finalTitle,
             link: item.link,
             description: item.description,
-            pubDate: item.pubDate,
             source: item.source,
             category: item.category,
             lang: lang || 'tr',
-            isTranslated: isTranslated,
+            isTranslated: isTranslated
+          },
+          $setOnInsert: {
+            guid: item.guid,
+            pubDate: item.pubDate,
             views: 0,
             createdAt: new Date()
           }
@@ -357,13 +375,16 @@ async function fetchAllSources() {
   try {
     const sources = await Source.find({ isActive: true });
     
-    // Promise.allSettled sayesinde bir kaynak çökse bile diğerleri saniyeler içinde işlenir
+    // src.url || src.rss sayesinde hiçbir kaynak boş geçilmez
     const tasks = sources.map(async (src) => {
+      const targetUrl = src.url || src.rss;
+      if (!targetUrl) return;
+
       try {
         if (src.type === 'html') {
-          await scrapeHtmlSite(src.name, src.url, src.category || 'Gündem', src.selector || '', src.lang || 'tr');
+          await scrapeHtmlSite(src.name, targetUrl, src.category || 'Gündem', src.selector || '', src.lang || 'tr');
         } else {
-          await fetchRssFeed(src.name, src.url, src.category || 'Gündem', src.lang || 'tr');
+          await fetchRssFeed(src.name, targetUrl, src.category || 'Gündem', src.lang || 'tr');
         }
       } catch (err) {
         console.error(`[HATA] ${src.name} taranamadı:`, err.message);
@@ -378,6 +399,7 @@ async function fetchAllSources() {
     isSyncing = false;
   }
 }
+
 // 4. API ENDPOINTLERİ
 
 // --- RATING & ETKİLEŞİM API'LERİ ---
