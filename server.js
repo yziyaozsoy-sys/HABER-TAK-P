@@ -483,10 +483,10 @@ const handleSync = async (req, res) => {
 app.get('/api/sync', handleSync);
 app.post('/api/sync', handleSync);
 
-// HABERLER API
+// HABERLER API (FRONTEND İLE %100 UYUMLU FORMAT)
 app.get('/api/news', async (req, res) => {
   try {
-    const { category, source, search, sort, limit } = req.query;
+    const { category, source, sources, search, sort, limit } = req.query;
 
     const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
 
@@ -498,8 +498,10 @@ app.get('/api/news', async (req, res) => {
       filter.category = category;
     }
 
-    if (source && source !== 'Tümü') {
-      const srcList = source.split(',').map(s => s.trim()).filter(Boolean);
+    // Frontend hem 'source' hem 'sources' gönderebilir
+    const activeSrc = source || sources;
+    if (activeSrc && activeSrc !== 'Tümü') {
+      const srcList = activeSrc.split(',').map(s => s.trim()).filter(Boolean);
       if (srcList.length > 0) {
         filter.source = { $in: srcList };
       }
@@ -528,8 +530,8 @@ app.get('/api/news', async (req, res) => {
     if ((!news || news.length === 0) && (!search || !search.trim())) {
       let fallbackFilter = {};
       if (category && category !== 'Tümü') fallbackFilter.category = category;
-      if (source && source !== 'Tümü') {
-        const srcList = source.split(',').map(s => s.trim()).filter(Boolean);
+      if (activeSrc && activeSrc !== 'Tümü') {
+        const srcList = activeSrc.split(',').map(s => s.trim()).filter(Boolean);
         if (srcList.length > 0) fallbackFilter.source = { $in: srcList };
       }
       news = await News.find(fallbackFilter)
@@ -538,10 +540,14 @@ app.get('/api/news', async (req, res) => {
         .lean();
     }
 
-    res.json(news || []);
+    // KRİTİK NOKTA: Frontend 'data.success' ve 'data.data' bekliyor!
+    res.json({
+      success: true,
+      data: news || []
+    });
   } catch (err) {
     console.error('Haber getirme API hatası:', err.message);
-    res.status(500).json({ error: err.message });
+    res.status(500).json({ success: false, error: err.message, data: [] });
   }
 });
 
