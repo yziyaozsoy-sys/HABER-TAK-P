@@ -922,10 +922,12 @@
     // --- 6. KAYNAKLAR & DÜZENLEME (DİL DESTEKLİ) ---
     async function fetchSources() {
       try {
-        const res = await fetch('/api/sources');
+               const res = await fetch('/api/sources');
         const data = await res.json();
         const tbody = document.getElementById('sourcesTableBody');
-        sourcesList = data.data || [];
+        // Hem dizi gelse hem data.data gelse ikisinde de çalışır:
+        sourcesList = Array.isArray(data) ? data : (data.data || []);
+
 
         tbody.innerHTML = sourcesList.map(s => {
           const isEn = s.lang === 'en';

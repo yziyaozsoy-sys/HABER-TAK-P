@@ -449,19 +449,25 @@
       localStorage.setItem('haber_watch_words', watchInput.value.trim());
       renderNews();
     });
-    async function loadCategories() {
+       async function loadCategories() {
       try {
         const res = await fetch('/api/categories');
-        const data = await res.json();
+        const rawData = await res.json();
         const catTabsContainer = document.getElementById('categoryTabs');
+        if (!catTabsContainer) return;
         
         let cats = ['Tümü'];
-        if (data.success && data.data) {
-          allCategoriesList = data.data;
-          data.data.forEach(c => {
-            if (!cats.includes(c.name)) cats.push(c.name);
-          });
-        }
+        // Gelen veriyi her formata karşı esnek yakala:
+        const list = Array.isArray(rawData) ? rawData : (rawData.data || []);
+        allCategoriesList = list;
+
+        list.forEach(c => {
+          // c doğrudan string olabilir ("Gündem") ya da obje olabilir ({ name: "Gündem" })
+          const name = typeof c === 'string' ? c : (c.name || '');
+          if (name && !cats.includes(name)) {
+            cats.push(name);
+          }
+        });
 
         catTabsContainer.innerHTML = cats.map(cat => `
           <button data-cat="${cat}" class="cat-btn px-3 py-1 rounded-lg font-medium transition ${cat === selectedCategory ? 'bg-emerald-600 text-white font-semibold' : 'text-slate-300 hover:bg-slate-700'}">
@@ -477,12 +483,20 @@
             btn.className = 'cat-btn px-3 py-1 rounded-lg font-semibold bg-emerald-600 text-white transition';
             selectedCategory = btn.getAttribute('data-cat');
             
-            tickerCategoryTitle.textContent = selectedCategory.toUpperCase() + ' AKIŞI';
-            renderCategorySources();
-            loadNews();
+            if (typeof tickerCategoryTitle !== 'undefined' && tickerCategoryTitle) {
+              tickerCategoryTitle.textContent = selectedCategory.toUpperCase() + ' AKIŞI';
+            }
+            if (typeof renderCategorySources === 'function') {
+              renderCategorySources();
+            }
+            if (typeof loadNews === 'function') {
+              loadNews();
+            }
           });
         });
-      } catch (e) {}
+      } catch (e) {
+        console.error('Kategori yükleme hatası:', e);
+      }
     }
 
     function renderCategorySources() {
