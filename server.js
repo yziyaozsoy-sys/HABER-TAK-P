@@ -173,14 +173,18 @@ if (MONGODB_URI) {
         ).catch(() => {});
       }
 
-      // YERLİ KAYNAKLARI VERİTABANINA ZORUNLU EŞLEŞTİR
+      // ESKİ YABANCI ARTIK KAYNAKLARI SİL
+      await Source.deleteMany({ name: { $in: ['The New York Times', 'Zdf'] } }).catch(() => {});
+
+      // YERLİ KAYNAKLARI ZORUNLU EŞLEŞTİR
       for (const src of initialSources) {
         await Source.updateOne(
           { name: src.name },
-          { $setOnInsert: src },
+          { $set: src },
           { upsert: true }
         ).catch(() => {});
       }
+      console.log('18 Yerli kaynak MongoDB ile senkronize edildi.');
 
       for (const pos of ['left', 'right']) {
         const exist = await Ad.findOne({ position: pos });
@@ -196,7 +200,7 @@ if (MONGODB_URI) {
         }
       }
 
-      // TÜM KAYNAKLARI HEMEN TARA
+      // HEMEN TARAMAYI BAŞLAT
       syncAllSources();
       setInterval(syncAllSources, 5 * 60 * 1000);
     })
@@ -243,11 +247,17 @@ async function fetchRssFeed(sourceName, rawUrl, categoryName = 'Gündem', lang =
         'Accept': 'application/rss+xml, application/xml, text/xml, */*',
         'Accept-Language': 'tr-TR,tr;q=0.9,en-US;q=0.8,en;q=0.7'
       },
-      timeout: 10000
+      timeout: 8000
     });
 
+    // KRİTİK: XML içindeki geçersiz '&' karakterlerini temizle (Patronlar Dünyası vb. kilitlenmesin)
+    let rawXml = response.data;
+    if (typeof rawXml === 'string') {
+      rawXml = rawXml.replace(/&(?!(amp|lt|gt|quot|apos|#\d+|#x[a-fA-F0-9]+);)/g, '&amp;');
+    }
+
     const parser = new xml2js.Parser({ explicitArray: false, trim: true });
-    const result = await parser.parseStringPromise(response.data);
+    const result = await parser.parseStringPromise(rawXml);
     const channel = result.rss ? result.rss.channel : (result.feed || {});
     const items = channel.item || channel.entry || [];
     const itemList = (Array.isArray(items) ? items : [items]).slice(0, 30);
@@ -312,9 +322,7 @@ async function fetchRssFeed(sourceName, rawUrl, categoryName = 'Gündem', lang =
           { upsert: true }
         );
         count++;
-      } catch (dbErr) {
-        console.error(`[DB HATA - ${sourceName}]:`, dbErr.message);
-      }
+      } catch (dbErr) {}
     }
     console.log(`[RSS Tamam] ${sourceName}: ${count} haber işlendi.`);
   } catch (error) {
@@ -330,7 +338,7 @@ async function scrapeHtmlSite(sourceName, siteUrl, categoryName = 'Gündem', cus
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
         'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8'
       },
-      timeout: 10000
+      timeout: 8000
     });
 
     const $ = cheerio.load(response.data);
@@ -482,43 +490,42 @@ app.post('/api/ads/:position', authMiddleware, async (req, res) => {
   }
 });
 
-// MANUEL TARAMA (GET & POST)
-const handleSync = async (req, res) => {
-  syncAllSources();
+// MANUEL TARAMA (ZAMAN AŞIMI OLMAYACAK ŞEKİLDE ARKA PLANDA ÇALIŞIR)
+const handleSync = (req, res) => {
   res.json({ success: true, message: 'Tarama işlemi arka planda başlatıldı.' });
+  syncAllSources();
 };
 app.get('/api/sync', handleSync);
 app.post('/api/sync', handleSync);
 
-// VERİTABANI VE KAYNAK SIFIRLAMA (YERLİLERİ YENİDEN YÜKLEME ARACI)
-app.get('/api/reset-sources', async (req, res) => {
-  try {
-    await Source.deleteMany({});
-    await News.deleteMany({});
-    await Category.deleteMany({});
+// SIFIRLAMA ROTASI (502 VERMEZ - ANINDA YANIT DÖNER)
+app.get('/api/reset-sources', (req, res) => {
+  res.json({
+    success: true,
+    message: 'Sıfırlama başlatıldı. Eski kaynaklar temizlenip 18 yerli kaynak taranıyor.'
+  });
 
-    for (const c of defaultCategories) {
-      await Category.create({ name: c });
+  (async () => {
+    try {
+      await Source.deleteMany({});
+      await News.deleteMany({});
+      await Category.deleteMany({});
+
+      for (const c of defaultCategories) {
+        await Category.create({ name: c }).catch(() => {});
+      }
+      await Source.insertMany(initialSources);
+      syncAllSources();
+    } catch (e) {
+      console.error('Reset arka plan hatası:', e.message);
     }
-
-    await Source.insertMany(initialSources);
-
-    syncAllSources();
-
-    res.json({
-      success: true,
-      message: 'Tüm eski haberler temizlendi, 18 yerli kaynak ve kategoriler sıfırdan yüklendi, tarama başlatıldı!'
-    });
-  } catch (err) {
-    res.status(500).json({ success: false, error: err.message });
-  }
+  })();
 });
 
-// HABERLER API (FRONTEND İLE %100 UYUMLU FORMAT)
+// HABERLER API
 app.get('/api/news', async (req, res) => {
   try {
     const { category, source, sources, search, sort, limit } = req.query;
-
     const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
 
     let filter = {
@@ -651,7 +658,7 @@ app.get('/api/analytics', async (req, res) => {
   }
 });
 
-// KATEGORİLER (FRONTEND VE ADMİN İÇİN TAM ÇÖZÜM)
+// KATEGORİLER
 app.get('/api/categories', async (req, res) => {
   try {
     let cats = await Category.find().sort({ name: 1 });
@@ -692,7 +699,7 @@ app.delete('/api/categories/:name', authMiddleware, async (req, res) => {
   }
 });
 
-// KAYNAKLAR (ADMİN PANELİ VE SİTE İÇİN %100 UYUMLU)
+// KAYNAKLAR
 app.get('/api/sources', async (req, res) => {
   try {
     let sources = await Source.find().sort({ name: 1 });
