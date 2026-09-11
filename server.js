@@ -16,6 +16,15 @@ const JWT_SECRET = process.env.JWT_SECRET || 'haber-takip-gizli-anahtar-2026';
 
 app.use(cors());
 app.use(express.json());
+
+// TÜM API'LER İÇİN ÖNBELLEK (304) DEVRE DIŞI BIRAKILDI
+app.use((req, res, next) => {
+  res.set('Cache-Control', 'no-store, no-cache, must-revalidate, private');
+  res.set('Pragma', 'no-cache');
+  res.set('Expires', '0');
+  next();
+});
+
 app.use(express.static(path.join(__dirname, 'public')));
 
 // 1. VERİ MODELLERİ (SCHEMAS)
@@ -121,7 +130,6 @@ const initialSources = [
   { name: 'Herkese Bilim Teknoloji', type: 'rss', url: 'https://www.herkesebilimteknoloji.com/feed', category: 'Teknoloji', lang: 'tr' }
 ];
 
-// 24 Saat Temizlik Fonksiyonu
 async function cleanOldNews() {
   try {
     const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
@@ -141,7 +149,6 @@ if (MONGODB_URI) {
     .then(async () => {
       console.log('MongoDB Atlas bağlantısı başarılı.');
 
-      // 24 saatten eski haberleri temizle
       await cleanOldNews();
       setInterval(cleanOldNews, 60 * 60 * 1000);
 
@@ -183,7 +190,6 @@ if (MONGODB_URI) {
         }
       }
 
-      // Sunucu açılır açılmaz taramayı başlat
       syncAllSources();
       setInterval(syncAllSources, 5 * 60 * 1000);
     })
@@ -303,7 +309,6 @@ async function fetchRssFeed(sourceName, rawUrl, categoryName = 'Gündem', lang =
         console.error(`[DB HATA - ${sourceName}]:`, dbErr.message);
       }
     }
-    console.log(`[RSS Tamam] ${sourceName}: ${count} haber işlendi.`);
   } catch (error) {
     console.log(`[${sourceName} - RSS Hatası]: ${error.message}`);
   }
@@ -398,7 +403,6 @@ async function scrapeHtmlSite(sourceName, siteUrl, categoryName = 'Gündem', cus
         );
       } catch (err) {}
     }
-    console.log(`[HTML Tamam] ${sourceName}: ${scrapedList.length} haber işlendi.`);
   } catch (err) {
     console.log(`[${sourceName} - HTML Hatası]: ${err.message}`);
   }
@@ -435,13 +439,14 @@ app.get('/api/translate', async (req, res) => {
   }
 });
 
-// REKLAMLAR LİSTESİ (404 HATASINI ÖNLER)
+// REKLAMLAR - HEM DİZİ HEM OBJE DESTEĞİ
 app.get('/api/ads', async (req, res) => {
   try {
     const ads = await Ad.find();
-    res.json({ success: true, data: ads });
+    // Frontend doğrudan dizi bekliyorsa direkt döner
+    res.json(ads);
   } catch (err) {
-    res.status(500).json({ success: false, error: err.message });
+    res.status(500).json({ error: err.message });
   }
 });
 
@@ -470,7 +475,7 @@ app.post('/api/ads/:position', authMiddleware, async (req, res) => {
   }
 });
 
-// MANUEL TARAMA - HEM GET HEM POST DESTEKLER (404 HATASINI ÇÖZEN KISIM)
+// MANUEL TARAMA (GET & POST)
 const handleSync = async (req, res) => {
   syncAllSources();
   res.json({ success: true, message: 'Tarama işlemi arka planda başlatıldı.' });
@@ -478,10 +483,10 @@ const handleSync = async (req, res) => {
 app.get('/api/sync', handleSync);
 app.post('/api/sync', handleSync);
 
-// HABER LİSTELEME: SON 24 SAAT VE GÜVENLİ GERİ DÖNÜŞ (FALLBACK)
+// HABERLER API
 app.get('/api/news', async (req, res) => {
   try {
-    const { category, source, search, sort } = req.query;
+    const { category, source, search, sort, limit } = req.query;
 
     const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
 
@@ -512,13 +517,14 @@ app.get('/api/news', async (req, res) => {
       sortObj = { views: -1, pubDate: -1 };
     }
 
-    // 1. Önce son 24 saatin haberlerini ara
+    const fetchLimit = parseInt(limit) || 120;
+
     let news = await News.find(filter)
       .sort(sortObj)
-      .limit(1000)
+      .limit(fetchLimit)
       .lean();
 
-    // 2. Eğer son 24 saatte henüz haber yoksa (ve arama yapılmamışsa), sitenin boş kalmaması için en güncel haberleri getir
+    // 24 saat içinde haber yoksa sitenin boş kalmaması için fallback
     if ((!news || news.length === 0) && (!search || !search.trim())) {
       let fallbackFilter = {};
       if (category && category !== 'Tümü') fallbackFilter.category = category;
@@ -528,7 +534,7 @@ app.get('/api/news', async (req, res) => {
       }
       news = await News.find(fallbackFilter)
         .sort(sortObj)
-        .limit(120)
+        .limit(fetchLimit)
         .lean();
     }
 
@@ -555,7 +561,7 @@ app.post('/api/news/:id/click', async (req, res) => {
   }
 });
 
-// Canlı Rating & Analitik Raporu
+// Analitik
 app.get('/api/analytics', async (req, res) => {
   try {
     const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
@@ -610,7 +616,7 @@ app.get('/api/analytics', async (req, res) => {
   }
 });
 
-// Kategorileri Getir
+// Kategoriler
 app.get('/api/categories', async (req, res) => {
   try {
     const cats = await Category.find().sort({ name: 1 });
@@ -620,7 +626,6 @@ app.get('/api/categories', async (req, res) => {
   }
 });
 
-// Kategori Ekle
 app.post('/api/categories', authMiddleware, async (req, res) => {
   try {
     const { name } = req.body;
@@ -635,7 +640,6 @@ app.post('/api/categories', authMiddleware, async (req, res) => {
   }
 });
 
-// Kategori Sil
 app.delete('/api/categories/:name', authMiddleware, async (req, res) => {
   try {
     const { name } = req.params;
@@ -646,7 +650,7 @@ app.delete('/api/categories/:name', authMiddleware, async (req, res) => {
   }
 });
 
-// Kaynakları Getir
+// Kaynaklar
 app.get('/api/sources', async (req, res) => {
   try {
     const sources = await Source.find().sort({ name: 1 });
@@ -656,7 +660,6 @@ app.get('/api/sources', async (req, res) => {
   }
 });
 
-// Kaynak Ekle
 app.post('/api/sources', authMiddleware, async (req, res) => {
   try {
     const { name, type, url, selector, category, lang } = req.body;
@@ -686,7 +689,6 @@ app.post('/api/sources', authMiddleware, async (req, res) => {
   }
 });
 
-// Kaynak Güncelle
 app.put('/api/sources/:id', authMiddleware, async (req, res) => {
   try {
     const { id } = req.params;
@@ -702,7 +704,6 @@ app.put('/api/sources/:id', authMiddleware, async (req, res) => {
   }
 });
 
-// Kaynak Aç/Kapat
 app.patch('/api/sources/:id/toggle', authMiddleware, async (req, res) => {
   try {
     const { id } = req.params;
@@ -716,7 +717,6 @@ app.patch('/api/sources/:id/toggle', authMiddleware, async (req, res) => {
   }
 });
 
-// Kaynak Sil
 app.delete('/api/sources/:id', authMiddleware, async (req, res) => {
   try {
     const { id } = req.params;
