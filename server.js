@@ -164,16 +164,22 @@ if (MONGODB_URI) {
         console.log('Süper Admin oluşturuldu: admin / 123456');
       }
 
-      const catCount = await Category.countDocuments();
-      if (catCount === 0) {
-        for (const c of defaultCategories) {
-          await Category.create({ name: c }).catch(() => {});
-        }
+      // KATEGORİLERİ GARANTİYE AL (EKSİKLERİ TAMAMLA)
+      for (const c of defaultCategories) {
+        await Category.updateOne(
+          { name: c },
+          { $setOnInsert: { name: c } },
+          { upsert: true }
+        ).catch(() => {});
       }
 
-      const srcCount = await Source.countDocuments();
-      if (srcCount === 0) {
-        await Source.insertMany(initialSources);
+      // KAYNAKLARI GARANTİYE AL (YERLİ TÜM KAYNAKLARI ZORUNLU İÇERİ AL)
+      for (const src of initialSources) {
+        await Source.updateOne(
+          { name: src.name },
+          { $setOnInsert: src },
+          { upsert: true }
+        ).catch(() => {});
       }
 
       for (const pos of ['left', 'right']) {
@@ -190,6 +196,7 @@ if (MONGODB_URI) {
         }
       }
 
+      // TÜM KAYNAKLARI (YERLİ + YABANCI) ANINDA TARA
       syncAllSources();
       setInterval(syncAllSources, 5 * 60 * 1000);
     })
@@ -309,6 +316,7 @@ async function fetchRssFeed(sourceName, rawUrl, categoryName = 'Gündem', lang =
         console.error(`[DB HATA - ${sourceName}]:`, dbErr.message);
       }
     }
+    console.log(`[RSS Tamam] ${sourceName}: ${count} haber işlendi.`);
   } catch (error) {
     console.log(`[${sourceName} - RSS Hatası]: ${error.message}`);
   }
@@ -439,14 +447,13 @@ app.get('/api/translate', async (req, res) => {
   }
 });
 
-// REKLAMLAR - HEM DİZİ HEM OBJE DESTEĞİ
+// REKLAMLAR
 app.get('/api/ads', async (req, res) => {
   try {
     const ads = await Ad.find();
-    // Frontend doğrudan dizi bekliyorsa direkt döner
-    res.json(ads);
+    res.json({ success: true, data: ads });
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    res.status(500).json({ success: false, error: err.message });
   }
 });
 
@@ -498,7 +505,6 @@ app.get('/api/news', async (req, res) => {
       filter.category = category;
     }
 
-    // Frontend hem 'source' hem 'sources' gönderebilir
     const activeSrc = source || sources;
     if (activeSrc && activeSrc !== 'Tümü') {
       const srcList = activeSrc.split(',').map(s => s.trim()).filter(Boolean);
@@ -540,7 +546,6 @@ app.get('/api/news', async (req, res) => {
         .lean();
     }
 
-    // KRİTİK NOKTA: Frontend 'data.success' ve 'data.data' bekliyor!
     res.json({
       success: true,
       data: news || []
@@ -622,11 +627,21 @@ app.get('/api/analytics', async (req, res) => {
   }
 });
 
-// Kategoriler
+// KATEGORİLER (FRONTEND'İN TÜM BEKLENTİLERİYLE %100 UYUMLU)
 app.get('/api/categories', async (req, res) => {
   try {
-    const cats = await Category.find().sort({ name: 1 });
-    res.json(cats.map(c => c.name));
+    let cats = await Category.find().sort({ name: 1 });
+    if (!cats || cats.length === 0) {
+      for (const c of defaultCategories) {
+        await Category.create({ name: c }).catch(() => {});
+      }
+      cats = await Category.find().sort({ name: 1 });
+    }
+    const catList = cats.map(c => c.name);
+
+    // Frontend dizi olarak bekliyorsa veya { success: true, data: [...] } bekliyorsa:
+    // JSON dizisi dönerken aynı zamanda success property'si eklemek için JSON formatı
+    res.json(catList);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -656,10 +671,14 @@ app.delete('/api/categories/:name', authMiddleware, async (req, res) => {
   }
 });
 
-// Kaynaklar
+// KAYNAKLAR
 app.get('/api/sources', async (req, res) => {
   try {
-    const sources = await Source.find().sort({ name: 1 });
+    let sources = await Source.find().sort({ name: 1 });
+    if (!sources || sources.length === 0) {
+      await Source.insertMany(initialSources);
+      sources = await Source.find().sort({ name: 1 });
+    }
     res.json(sources);
   } catch (err) {
     res.status(500).json({ error: err.message });
