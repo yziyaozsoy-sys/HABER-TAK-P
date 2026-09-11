@@ -164,7 +164,7 @@ if (MONGODB_URI) {
         console.log('Süper Admin oluşturuldu: admin / 123456');
       }
 
-      // KATEGORİLERİ GARANTİYE AL (EKSİKLERİ TAMAMLA)
+      // KATEGORİLERİ EKSİKSİZ TAMAMLA
       for (const c of defaultCategories) {
         await Category.updateOne(
           { name: c },
@@ -173,7 +173,7 @@ if (MONGODB_URI) {
         ).catch(() => {});
       }
 
-      // KAYNAKLARI GARANTİYE AL (YERLİ TÜM KAYNAKLARI ZORUNLU İÇERİ AL)
+      // YERLİ KAYNAKLARI VERİTABANINA ZORUNLU EŞLEŞTİR
       for (const src of initialSources) {
         await Source.updateOne(
           { name: src.name },
@@ -196,7 +196,7 @@ if (MONGODB_URI) {
         }
       }
 
-      // TÜM KAYNAKLARI (YERLİ + YABANCI) ANINDA TARA
+      // TÜM KAYNAKLARI HEMEN TARA
       syncAllSources();
       setInterval(syncAllSources, 5 * 60 * 1000);
     })
@@ -451,9 +451,9 @@ app.get('/api/translate', async (req, res) => {
 app.get('/api/ads', async (req, res) => {
   try {
     const ads = await Ad.find();
-    res.json({ success: true, data: ads });
+    res.json(ads);
   } catch (err) {
-    res.status(500).json({ success: false, error: err.message });
+    res.status(500).json({ error: err.message });
   }
 });
 
@@ -489,6 +489,30 @@ const handleSync = async (req, res) => {
 };
 app.get('/api/sync', handleSync);
 app.post('/api/sync', handleSync);
+
+// VERİTABANI VE KAYNAK SIFIRLAMA (YERLİLERİ YENİDEN YÜKLEME ARACI)
+app.get('/api/reset-sources', async (req, res) => {
+  try {
+    await Source.deleteMany({});
+    await News.deleteMany({});
+    await Category.deleteMany({});
+
+    for (const c of defaultCategories) {
+      await Category.create({ name: c });
+    }
+
+    await Source.insertMany(initialSources);
+
+    syncAllSources();
+
+    res.json({
+      success: true,
+      message: 'Tüm eski haberler temizlendi, 18 yerli kaynak ve kategoriler sıfırdan yüklendi, tarama başlatıldı!'
+    });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
 
 // HABERLER API (FRONTEND İLE %100 UYUMLU FORMAT)
 app.get('/api/news', async (req, res) => {
@@ -627,7 +651,7 @@ app.get('/api/analytics', async (req, res) => {
   }
 });
 
-// KATEGORİLER (FRONTEND'İN TÜM BEKLENTİLERİYLE %100 UYUMLU)
+// KATEGORİLER (FRONTEND VE ADMİN İÇİN TAM ÇÖZÜM)
 app.get('/api/categories', async (req, res) => {
   try {
     let cats = await Category.find().sort({ name: 1 });
@@ -638,9 +662,6 @@ app.get('/api/categories', async (req, res) => {
       cats = await Category.find().sort({ name: 1 });
     }
     const catList = cats.map(c => c.name);
-
-    // Frontend dizi olarak bekliyorsa veya { success: true, data: [...] } bekliyorsa:
-    // JSON dizisi dönerken aynı zamanda success property'si eklemek için JSON formatı
     res.json(catList);
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -671,7 +692,7 @@ app.delete('/api/categories/:name', authMiddleware, async (req, res) => {
   }
 });
 
-// KAYNAKLAR
+// KAYNAKLAR (ADMİN PANELİ VE SİTE İÇİN %100 UYUMLU)
 app.get('/api/sources', async (req, res) => {
   try {
     let sources = await Source.find().sort({ name: 1 });
