@@ -121,7 +121,7 @@ const initialSources = [
   { name: 'Herkese Bilim Teknoloji', type: 'rss', url: 'https://www.herkesebilimteknoloji.com/feed', category: 'Teknoloji', lang: 'tr' }
 ];
 
-// 24 Saat Temizleme Fonksiyonu
+// 24 Saat Temizlik Fonksiyonu
 async function cleanOldNews() {
   try {
     const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
@@ -132,7 +132,7 @@ async function cleanOldNews() {
       console.log(`[TEMİZLİK] ${result.deletedCount} adet 24 saati geçmiş haber silindi.`);
     }
   } catch (err) {
-    console.error('[TEMİZLİK HATASI]:', err.message);
+    console.error('[TEMİZLİK UYARISI]:', err.message);
   }
 }
 
@@ -183,7 +183,7 @@ if (MONGODB_URI) {
         }
       }
 
-      // Kaynakları tara
+      // Sunucu açılır açılmaz taramayı başlat
       syncAllSources();
       setInterval(syncAllSources, 5 * 60 * 1000);
     })
@@ -218,7 +218,7 @@ async function translateToTurkish(text) {
   }
 }
 
-// 3. TARAMA MOTORLARI
+// 3. TARAMA MOTORLARI (RSS & HTML)
 async function fetchRssFeed(sourceName, rawUrl, categoryName = 'Gündem', lang = 'tr') {
   const url = rawUrl ? rawUrl.trim() : '';
   if (!url) return;
@@ -423,7 +423,7 @@ async function syncAllSources() {
 
 // 4. API ENDPOINT'LERİ
 
-// GÜVENLİ ÇEVİRİ MOTORU
+// ÇEVİRİ MOTORU
 app.get('/api/translate', async (req, res) => {
   try {
     const text = req.query.text;
@@ -435,7 +435,7 @@ app.get('/api/translate', async (req, res) => {
   }
 });
 
-// REKLAMLAR: index.html İÇİN TOPLU LİSTE (404 HATASINI ÇÖZEN KISIM)
+// REKLAMLAR LİSTESİ (404 HATASINI ÖNLER)
 app.get('/api/ads', async (req, res) => {
   try {
     const ads = await Ad.find();
@@ -445,7 +445,6 @@ app.get('/api/ads', async (req, res) => {
   }
 });
 
-// REKLAM: TEKİL GETİRME
 app.get('/api/ads/:position', async (req, res) => {
   try {
     const { position } = req.params;
@@ -456,7 +455,6 @@ app.get('/api/ads/:position', async (req, res) => {
   }
 });
 
-// REKLAM: GÜNCELLEME (Yetkili)
 app.post('/api/ads/:position', authMiddleware, async (req, res) => {
   try {
     const { position } = req.params;
@@ -472,12 +470,19 @@ app.post('/api/ads/:position', authMiddleware, async (req, res) => {
   }
 });
 
-// HABERLERİ GETİR (SON 24 SAAT KURALI VE GÜVENLİ SORGULAMA)
+// MANUEL TARAMA - HEM GET HEM POST DESTEKLER (404 HATASINI ÇÖZEN KISIM)
+const handleSync = async (req, res) => {
+  syncAllSources();
+  res.json({ success: true, message: 'Tarama işlemi arka planda başlatıldı.' });
+};
+app.get('/api/sync', handleSync);
+app.post('/api/sync', handleSync);
+
+// HABER LİSTELEME: SON 24 SAAT VE GÜVENLİ GERİ DÖNÜŞ (FALLBACK)
 app.get('/api/news', async (req, res) => {
   try {
     const { category, source, search, sort } = req.query;
 
-    // 24 saat önceki zaman damgası
     const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
 
     let filter = {
@@ -507,15 +512,29 @@ app.get('/api/news', async (req, res) => {
       sortObj = { views: -1, pubDate: -1 };
     }
 
-    // 120 limitini 1000'e çıkarıp 24 saatin tüm haberlerini çekiyoruz
-    const news = await News.find(filter)
+    // 1. Önce son 24 saatin haberlerini ara
+    let news = await News.find(filter)
       .sort(sortObj)
       .limit(1000)
       .lean();
 
-    res.json(news);
+    // 2. Eğer son 24 saatte henüz haber yoksa (ve arama yapılmamışsa), sitenin boş kalmaması için en güncel haberleri getir
+    if ((!news || news.length === 0) && (!search || !search.trim())) {
+      let fallbackFilter = {};
+      if (category && category !== 'Tümü') fallbackFilter.category = category;
+      if (source && source !== 'Tümü') {
+        const srcList = source.split(',').map(s => s.trim()).filter(Boolean);
+        if (srcList.length > 0) fallbackFilter.source = { $in: srcList };
+      }
+      news = await News.find(fallbackFilter)
+        .sort(sortObj)
+        .limit(120)
+        .lean();
+    }
+
+    res.json(news || []);
   } catch (err) {
-    console.error('Haber getirme hatası:', err.message);
+    console.error('Haber getirme API hatası:', err.message);
     res.status(500).json({ error: err.message });
   }
 });
@@ -601,7 +620,7 @@ app.get('/api/categories', async (req, res) => {
   }
 });
 
-// Kategori Ekle (Yetkili)
+// Kategori Ekle
 app.post('/api/categories', authMiddleware, async (req, res) => {
   try {
     const { name } = req.body;
@@ -616,7 +635,7 @@ app.post('/api/categories', authMiddleware, async (req, res) => {
   }
 });
 
-// Kategori Sil (Yetkili)
+// Kategori Sil
 app.delete('/api/categories/:name', authMiddleware, async (req, res) => {
   try {
     const { name } = req.params;
@@ -637,7 +656,7 @@ app.get('/api/sources', async (req, res) => {
   }
 });
 
-// Kaynak Ekle (Yetkili)
+// Kaynak Ekle
 app.post('/api/sources', authMiddleware, async (req, res) => {
   try {
     const { name, type, url, selector, category, lang } = req.body;
@@ -667,7 +686,7 @@ app.post('/api/sources', authMiddleware, async (req, res) => {
   }
 });
 
-// Kaynak Güncelle (Yetkili)
+// Kaynak Güncelle
 app.put('/api/sources/:id', authMiddleware, async (req, res) => {
   try {
     const { id } = req.params;
@@ -683,7 +702,7 @@ app.put('/api/sources/:id', authMiddleware, async (req, res) => {
   }
 });
 
-// Kaynak Durumunu Aç/Kapat (Yetkili)
+// Kaynak Aç/Kapat
 app.patch('/api/sources/:id/toggle', authMiddleware, async (req, res) => {
   try {
     const { id } = req.params;
@@ -697,7 +716,7 @@ app.patch('/api/sources/:id/toggle', authMiddleware, async (req, res) => {
   }
 });
 
-// Kaynak Sil (Yetkili)
+// Kaynak Sil
 app.delete('/api/sources/:id', authMiddleware, async (req, res) => {
   try {
     const { id } = req.params;
@@ -708,13 +727,7 @@ app.delete('/api/sources/:id', authMiddleware, async (req, res) => {
   }
 });
 
-// Manuel Tarama Tetikleme
-app.post('/api/sync', async (req, res) => {
-  syncAllSources();
-  res.json({ success: true, message: 'Tarama işlemi arka planda başlatıldı.' });
-});
-
-// Kullanıcı Talepleri
+// Talepler
 app.post('/api/requests', async (req, res) => {
   try {
     const { email, subject, message } = req.body;
@@ -747,7 +760,7 @@ app.delete('/api/requests/:id', authMiddleware, async (req, res) => {
   }
 });
 
-// Personel İşlemleri
+// Personel
 app.get('/api/users', authMiddleware, async (req, res) => {
   try {
     const users = await User.find().select('-password').sort({ createdAt: -1 });
