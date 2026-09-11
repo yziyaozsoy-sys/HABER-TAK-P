@@ -36,10 +36,14 @@ const newsSchema = new mongoose.Schema({
   lang: { type: String, default: 'tr' },
   isTranslated: { type: Boolean, default: false },
   views: { type: Number, default: 0, index: true },
-  createdAt: { type: Date, default: Date.now }
+  createdAt: { type: Date, default: Date.now, index: true }
 });
+
+// İndeksler & 24 SAAT TTL KURALI (86.400 Saniye sonra Mongo otomatik siler)
 newsSchema.index({ pubDate: -1 });
 newsSchema.index({ views: -1 });
+newsSchema.index({ createdAt: 1 }, { expireAfterSeconds: 86400 });
+
 const News = mongoose.model('News', newsSchema);
 
 const sourceSchema = new mongoose.Schema({
@@ -95,9 +99,9 @@ const authMiddleware = (req, res, next) => {
     return res.status(401).json({ success: false, message: 'Geçersiz veya süresi dolmuş oturum.' });
   }
 };
+
 // 2. BAŞLANGIÇ VERİLERİ (SEED)
 const defaultCategories = ['Gündem', 'Spor', 'Ekonomi', 'Dünya', 'Teknoloji', 'Magazin', 'Sağlık', 'Eğitim'];
-// PANELİNİZLE BİREBİR AYNI OLAN 18 KAYNAK LİSTESİ
 const initialSources = [
   { name: 'BBC Türkçe', type: 'rss', url: 'https://feeds.bbci.co.uk/turkce/rss.xml', category: 'Gündem', lang: 'tr' },
   { name: 'Cumhuriyet', type: 'rss', url: 'https://www.cumhuriyet.com.tr/rss/son_dakika.xml', category: 'Gündem', lang: 'tr' },
@@ -108,7 +112,7 @@ const initialSources = [
   { name: 'NTV', type: 'rss', url: 'https://www.ntv.com.tr/son-dakika.rss', category: 'Gündem', lang: 'tr' },
   { name: 'Sabah', type: 'rss', url: 'https://www.sabah.com.tr/rss/gundem.xml', category: 'Gündem', lang: 'tr' },
   { name: 'Sözcü', type: 'rss', url: 'https://www.sozcu.com.tr/rss/tum-haberler.xml', category: 'Gündem', lang: 'tr' },
-  { name: 'Ekonomi Gazetesi', type: 'rss', url: 'https://www.ekonomigazetesi.com/rss.xml', category: 'Ekonomi', lang: 'tr' },
+  { name: 'Ekonomi Gazetesi', type: 'rss', url: 'https://www.ekonomim.com/rss.xml', category: 'Ekonomi', lang: 'tr' },
   { name: 'Ntv Ekonomi', type: 'rss', url: 'https://www.ntv.com.tr/ekonomi.rss', category: 'Ekonomi', lang: 'tr' },
   { name: 'Patronlar Dünyası', type: 'rss', url: 'https://www.patronlardunyasi.com/rss', category: 'Ekonomi', lang: 'tr' },
   { name: 'Sözcü Ekonomi', type: 'rss', url: 'https://www.sozcu.com.tr/feeds-rss-category-ekonomi', category: 'Ekonomi', lang: 'tr' },
@@ -119,10 +123,37 @@ const initialSources = [
   { name: 'Herkese Bilim Teknoloji', type: 'rss', url: 'https://www.herkesebilimteknoloji.com/feed', category: 'Teknoloji', lang: 'tr' }
 ];
 
+// 24 Saatten Eski Haberleri Düzenli Temizleyen Arka Plan Görevi
+setInterval(async () => {
+  try {
+    const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
+    const result = await News.deleteMany({
+      $and: [
+        { pubDate: { $lt: twentyFourHoursAgo } },
+        { createdAt: { $lt: twentyFourHoursAgo } }
+      ]
+    });
+    if (result.deletedCount > 0) {
+      console.log(`[24 SAAT TEMİZLİĞİ] ${result.deletedCount} adet eski haber silindi.`);
+    }
+  } catch (err) {
+    console.error('[TEMİZLİK HATASI]:', err.message);
+  }
+}, 30 * 60 * 1000); // 30 dakikada bir kontrol eder
+
 if (MONGODB_URI) {
   mongoose.connect(MONGODB_URI, { serverSelectionTimeoutMS: 5000 })
     .then(async () => {
       console.log('MongoDB Atlas bağlantısı başarılı.');
+
+      // İlk çalıştırmada da 24 saatten eski haberleri temizle
+      const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
+      await News.deleteMany({
+        $and: [
+          { pubDate: { $lt: twentyFourHoursAgo } },
+          { createdAt: { $lt: twentyFourHoursAgo } }
+        ]
+      }).catch(() => {});
 
       const adminExist = await User.findOne({ username: 'admin' });
       if (!adminExist) {
@@ -130,7 +161,7 @@ if (MONGODB_URI) {
         await User.create({
           username: 'admin',
           password: hashedPassword,
-          fullname: 'Yusuf Yönetici',
+          fullname: 'Yusuf Yöneticisi',
           role: 'admin'
         });
         console.log('Süper Admin oluşturuldu: admin / 123456');
@@ -155,7 +186,7 @@ if (MONGODB_URI) {
             position: pos,
             type: 'custom',
             title: pos === 'left' ? 'Sol Reklam Alanı' : 'Sağ Reklam Alanı',
-            imageUrl: 'https://placehold.co/160x600/1e293b/38bdf8?text=Reklam+Alanı',
+            imageUrl: 'https://placehold.co/160x600/1e293b/38bdf8?text=Reklam+Alani',
             targetUrl: 'https://google.com',
             isActive: true
           });
@@ -192,21 +223,21 @@ async function translateToTurkish(text) {
     return clean;
   }
 }
-// 3. TARAMA MOTORLARI (RSS & HTML - GÜVENLİ & GÜNCEL)
+
+// 3. TARAMA MOTORLARI (RSS & HTML)
 async function fetchRssFeed(sourceName, rawUrl, categoryName = 'Gündem', lang = 'tr') {
   const url = rawUrl ? rawUrl.trim() : '';
   if (!url) return;
 
   try {
-   const response = await axios.get(url, {
-  headers: { 
-    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Safari/537.36',
-    'Accept': 'application/rss+xml, application/xml, text/xml, */*',
-    'Accept-Language': 'tr-TR,tr;q=0.9,en-US;q=0.8,en;q=0.7'
-  },
-  timeout: 10000
-});
-
+    const response = await axios.get(url, {
+      headers: { 
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Safari/537.36',
+        'Accept': 'application/rss+xml, application/xml, text/xml, */*',
+        'Accept-Language': 'tr-TR,tr;q=0.9,en-US;q=0.8,en;q=0.7'
+      },
+      timeout: 10000
+    });
 
     const parser = new xml2js.Parser({ explicitArray: false, trim: true });
     const result = await parser.parseStringPromise(response.data);
@@ -219,7 +250,7 @@ async function fetchRssFeed(sourceName, rawUrl, categoryName = 'Gündem', lang =
       let rawTitle = extractText(item.title);
       if (!rawTitle) continue;
 
-      let rawLink = typeof item.link === 'string' ? item.link : (item.link?.$?.href || extractText(item.link));
+      let rawLink = typeof item.link === 'string' ? item.link : (item.link?.$.href || extractText(item.link));
       let rawGuid = extractText(item.guid) || rawLink || rawTitle;
       let rawDesc = extractText(item.description || item.summary || '');
       
@@ -356,11 +387,11 @@ async function scrapeHtmlSite(sourceName, siteUrl, categoryName = 'Gündem', cus
             $set: {
               title: finalTitle,
               link: item.link,
-              description: item.description,
+              description: '',
               pubDate: item.pubDate,
               source: item.source,
               category: item.category,
-              lang: lang || 'tr',
+              lang: item.lang,
               isTranslated: isTranslated
             },
             $setOnInsert: {
@@ -371,152 +402,440 @@ async function scrapeHtmlSite(sourceName, siteUrl, categoryName = 'Gündem', cus
           },
           { upsert: true }
         );
-      } catch (dbErr) {
-        console.error(`[DB HTML HATA - ${sourceName}]:`, dbErr.message);
-      }
+      } catch (err) {}
     }
     console.log(`[HTML Tamam] ${sourceName}: ${scrapedList.length} haber işlendi.`);
-  } catch (error) {
-    console.log(`[${sourceName} - HTML Hatası]: ${error.message}`);
-  }
-}
-
-let isSyncing = false;
-async function fetchAllSources() {
-  if (isSyncing) return;
-  isSyncing = true;
-  console.log("--> [TARAMA BAŞLADI] Aktif kaynaklar taranıyor...");
-
-  try {
-    const sources = await Source.find({ isActive: true });
-    
-    const tasks = sources.map(async (src) => {
-      const targetUrl = src.url || src.rss;
-      if (!targetUrl) return;
-
-      try {
-        if (src.type === 'html') {
-          await scrapeHtmlSite(src.name, targetUrl, src.category || 'Gündem', src.selector || '', src.lang || 'tr');
-        } else {
-          await fetchRssFeed(src.name, targetUrl, src.category || 'Gündem', src.lang || 'tr');
-        }
-      } catch (err) {
-        console.error(`[HATA] ${src.name} taranamadı:`, err.message);
-      }
-    });
-
-    await Promise.allSettled(tasks);
-    console.log("<-- [TARAMA BİTTİ] Tüm aktif kaynaklar güncellendi.");
   } catch (err) {
-    console.error("Genel tarama hatası:", err.message);
-  } finally {
-    isSyncing = false;
+    console.log(`[${sourceName} - HTML Hatası]: ${err.message}`);
   }
 }
-// 4. API ENDPOINTLERİ
 
-// --- RATING & ETKİLEŞİM API'LERİ ---
+async function syncAllSources() {
+  console.log('--- Kaynak Taraması Başlatıldı ---');
+  try {
+    const activeSources = await Source.find({ isActive: true });
+    for (const src of activeSources) {
+      if (src.type === 'rss') {
+        await fetchRssFeed(src.name, src.url, src.category, src.lang);
+      } else if (src.type === 'html') {
+        await scrapeHtmlSite(src.name, src.url, src.category, src.selector, src.lang);
+      }
+    }
+    console.log('--- Kaynak Taraması Tamamlandı ---');
+  } catch (err) {
+    console.error('Tarama döngüsü hatası:', err.message);
+  }
+}
+
+// 4. API ENDPOINT'LERİ
+
+// GÜVENLİ ÇEVİRİ MOTORU (CORS ENGELSİZ)
+app.get('/api/translate', async (req, res) => {
+  try {
+    const text = req.query.text;
+    if (!text) return res.json({ translatedText: '' });
+    const translated = await translateToTurkish(text);
+    res.json({ translatedText: translated });
+  } catch (err) {
+    res.status(500).json({ error: 'Çeviri başarısız' });
+  }
+});
+
+// HABER LİSTELEME: SADECE SON 24 SAAT VE LİMİTSİZ (TÜM 24 SAAT)
+app.get('/api/news', async (req, res) => {
+  try {
+    const { category, source, search, sort } = req.query;
+
+    // 1. Son 24 saatin zaman eşiği
+    const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
+
+    let filter = {
+      $or: [
+        { pubDate: { $gte: twentyFourHoursAgo } },
+        { createdAt: { $gte: twentyFourHoursAgo } }
+      ]
+    };
+
+    if (category && category !== 'Tümü') {
+      filter.category = category;
+    }
+
+    if (source && source !== 'Tümü') {
+      const srcList = source.split(',').map(s => s.trim()).filter(Boolean);
+      if (srcList.length > 0) {
+        filter.source = { $in: srcList };
+      }
+    }
+
+    if (search && search.trim()) {
+      filter.$or = [
+        { title: { $regex: search.trim(), $options: 'i' } },
+        { description: { $regex: search.trim(), $options: 'i' } }
+      ];
+    }
+
+    let sortObj = { pubDate: -1, createdAt: -1 };
+    if (sort === 'rating') {
+      sortObj = { views: -1, pubDate: -1 };
+    }
+
+    // 2. Limiti 120'den kaldırıp son 24 saatin tüm haberlerini (maksimum 1500) getiriyoruz
+    const news = await News.find(filter)
+      .sort(sortObj)
+      .limit(1500)
+      .lean();
+
+    res.json(news);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// Okunma / Tıklanma Sayacı Arttırma
 app.post('/api/news/:id/click', async (req, res) => {
   try {
-    const news = await News.findByIdAndUpdate(
-      req.params.id,
+    const { id } = req.params;
+    const updated = await News.findByIdAndUpdate(
+      id,
       { $inc: { views: 1 } },
       { new: true }
     );
-    if (!news) return res.status(404).json({ success: false, message: 'Haber bulunamadı' });
-    res.json({ success: true, views: news.views });
+    if (!updated) return res.status(404).json({ success: false, message: 'Haber bulunamadı' });
+    res.json({ success: true, views: updated.views });
   } catch (err) {
-    res.status(500).json({ success: false, message: err.message });
+    res.status(500).json({ success: false, error: err.message });
   }
 });
 
-app.get('/api/analytics/ratings', authMiddleware, async (req, res) => {
+// Canlı Rating & Analitik Raporu
+app.get('/api/analytics', async (req, res) => {
   try {
-    const topNews = await News.find().sort({ views: -1, pubDate: -1 }).limit(15).lean();
+    const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
+    const filter24h = {
+      $or: [
+        { pubDate: { $gte: twentyFourHoursAgo } },
+        { createdAt: { $gte: twentyFourHoursAgo } }
+      ]
+    };
 
-    const sourceRatings = await News.aggregate([
-      { $group: { _id: "$source", totalViews: { $sum: "$views" }, newsCount: { $sum: 1 } } },
-      { $sort: { totalViews: -1 } },
-      { $limit: 10 }
+    const totalNews = await News.countDocuments(filter24h);
+
+    const viewsAgg = await News.aggregate([
+      { $match: filter24h },
+      { $group: { _id: null, totalViews: { $sum: '$views' } } }
+    ]);
+    const totalViews = viewsAgg.length > 0 ? viewsAgg[0].totalViews : 0;
+
+    const topNews = await News.find(filter24h)
+      .sort({ views: -1, pubDate: -1 })
+      .limit(10)
+      .select('title source category views pubDate link');
+
+    const sourceStats = await News.aggregate([
+      { $match: filter24h },
+      {
+        $group: {
+          _id: '$source',
+          totalViews: { $sum: '$views' },
+          newsCount: { $sum: 1 }
+        }
+      },
+      { $sort: { totalViews: -1, newsCount: -1 } }
     ]);
 
-    const categoryRatings = await News.aggregate([
-      { $group: { _id: "$category", totalViews: { $sum: "$views" }, newsCount: { $sum: 1 } } },
+    const categoryStats = await News.aggregate([
+      { $match: filter24h },
+      {
+        $group: {
+          _id: '$category',
+          totalViews: { $sum: '$views' },
+          newsCount: { $sum: 1 }
+        }
+      },
       { $sort: { totalViews: -1 } }
     ]);
 
-    const totalViewsData = await News.aggregate([
-      { $group: { _id: null, sumViews: { $sum: "$views" } } }
-    ]);
-    const totalViews = totalViewsData[0]?.sumViews || 0;
-    const totalNewsCount = await News.countDocuments();
-
     res.json({
-      success: true,
-      data: {
-        totalViews,
-        totalNewsCount,
-        topNews,
-        sourceRatings,
-        categoryRatings
-      }
+      totalNews,
+      totalViews,
+      topNews,
+      sourceStats,
+      categoryStats
     });
   } catch (err) {
-    res.status(500).json({ success: false, message: err.message });
+    res.status(500).json({ error: err.message });
   }
 });
 
-// --- KATEGORİ YÖNETİMİ ---
+// Reklam Bilgisini Getir
+app.get('/api/ads/:position', async (req, res) => {
+  try {
+    const { position } = req.params;
+    const ad = await Ad.findOne({ position });
+    res.json(ad || { isActive: false });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// Reklam Güncelle (Yetkili)
+app.post('/api/ads/:position', authMiddleware, async (req, res) => {
+  try {
+    const { position } = req.params;
+    const { type, code, imageUrl, targetUrl, title, isActive } = req.body;
+    const updated = await Ad.findOneAndUpdate(
+      { position },
+      { type, code, imageUrl, targetUrl, title, isActive, updatedAt: new Date() },
+      { upsert: true, new: true }
+    );
+    res.json({ success: true, ad: updated });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+// Kategorileri Getir
 app.get('/api/categories', async (req, res) => {
   try {
-    const categories = await Category.find().sort({ name: 1 }).lean();
-    res.json({ success: true, data: categories });
+    const cats = await Category.find().sort({ name: 1 });
+    res.json(cats.map(c => c.name));
   } catch (err) {
-    res.status(500).json({ success: false, message: err.message });
+    res.status(500).json({ error: err.message });
   }
 });
 
+// Kategori Ekle (Yetkili)
 app.post('/api/categories', authMiddleware, async (req, res) => {
   try {
     const { name } = req.body;
-    if (!name || !name.trim()) return res.status(400).json({ success: false, message: 'Kategori adı giriniz.' });
-    const cleanName = name.trim();
-    const exist = await Category.findOne({ name: { $regex: new RegExp(`^${cleanName}$`, 'i') } });
-    if (exist) return res.status(400).json({ success: false, message: 'Bu kategori zaten mevcut.' });
-
-    const newCat = await Category.create({ name: cleanName });
-    res.json({ success: true, data: newCat, message: `"${cleanName}" kategorisi başarıyla eklendi.` });
+    if (!name || !name.trim()) return res.status(400).json({ success: false, message: 'Kategori adı boş olamaz' });
+    const trimmed = name.trim();
+    const exist = await Category.findOne({ name: trimmed });
+    if (exist) return res.status(400).json({ success: false, message: 'Bu kategori zaten var' });
+    await Category.create({ name: trimmed });
+    res.json({ success: true, message: 'Kategori eklendi' });
   } catch (err) {
-    res.status(500).json({ success: false, message: err.message });
+    res.status(500).json({ success: false, error: err.message });
   }
 });
 
-app.delete('/api/categories/:id', authMiddleware, async (req, res) => {
+// Kategori Sil (Yetkili)
+app.delete('/api/categories/:name', authMiddleware, async (req, res) => {
   try {
-    const cat = await Category.findById(req.params.id);
-    if (!cat) return res.status(404).json({ success: false, message: 'Kategori bulunamadı.' });
-    if (['Gündem', 'Spor', 'Ekonomi'].includes(cat.name)) {
-      return res.status(400).json({ success: false, message: 'Temel sistem kategorileri silinemez.' });
-    }
-    await Category.findByIdAndDelete(req.params.id);
-    res.json({ success: true, message: `"${cat.name}" kategorisi silindi.` });
+    const { name } = req.params;
+    await Category.findOneAndDelete({ name });
+    res.json({ success: true, message: 'Kategori silindi' });
   } catch (err) {
-    res.status(500).json({ success: false, message: err.message });
+    res.status(500).json({ success: false, error: err.message });
   }
 });
 
-// --- KULLANICI & GİRİŞ YÖNETİMİ ---
-app.post('/api/auth/login', async (req, res) => {
+// Kaynakları Getir
+app.get('/api/sources', async (req, res) => {
+  try {
+    const sources = await Source.find().sort({ name: 1 });
+    res.json(sources);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// Kaynak Ekle (Yetkili)
+app.post('/api/sources', authMiddleware, async (req, res) => {
+  try {
+    const { name, type, url, selector, category, lang } = req.body;
+    if (!name || !url) return res.status(400).json({ success: false, message: 'Ad ve URL zorunludur' });
+    const exist = await Source.findOne({ name: name.trim() });
+    if (exist) return res.status(400).json({ success: false, message: 'Bu kaynak zaten var' });
+
+    const newSrc = await Source.create({
+      name: name.trim(),
+      type: type || 'rss',
+      url: url.trim(),
+      selector: selector || '',
+      category: category || 'Gündem',
+      lang: lang || 'tr',
+      isActive: true
+    });
+
+    if (newSrc.type === 'rss') {
+      fetchRssFeed(newSrc.name, newSrc.url, newSrc.category, newSrc.lang);
+    } else {
+      scrapeHtmlSite(newSrc.name, newSrc.url, newSrc.category, newSrc.selector, newSrc.lang);
+    }
+
+    res.json({ success: true, message: 'Kaynak eklendi', source: newSrc });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+// Kaynak Güncelle (Yetkili)
+app.put('/api/sources/:id', authMiddleware, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { name, type, url, selector, category, lang } = req.body;
+    const updated = await Source.findByIdAndUpdate(
+      id,
+      { name: name?.trim(), type, url: url?.trim(), selector, category, lang },
+      { new: true }
+    );
+    res.json({ success: true, message: 'Kaynak güncellendi', source: updated });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+// Kaynak Durumunu Aç/Kapat (Yetkili)
+app.patch('/api/sources/:id/toggle', authMiddleware, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const src = await Source.findById(id);
+    if (!src) return res.status(404).json({ success: false, message: 'Kaynak bulunamadı' });
+    src.isActive = !src.isActive;
+    await src.save();
+    res.json({ success: true, isActive: src.isActive });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+// Kaynak Sil (Yetkili)
+app.delete('/api/sources/:id', authMiddleware, async (req, res) => {
+  try {
+    const { id } = req.params;
+    await Source.findByIdAndDelete(id);
+    res.json({ success: true, message: 'Kaynak silindi' });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+// Manuel Kaynak Senkronizasyonu Tetikleme
+app.post('/api/sync', async (req, res) => {
+  syncAllSources();
+  res.json({ success: true, message: 'Tarama işlemi arka planda başlatıldı.' });
+});
+
+// Kullanıcı Talep & İstek Formu
+app.post('/api/requests', async (req, res) => {
+  try {
+    const { email, subject, message } = req.body;
+    if (!email || !message) {
+      return res.status(400).json({ success: false, message: 'E-posta ve mesaj alanları zorunludur.' });
+    }
+    await Request.create({ email, subject, message });
+    res.json({ success: true, message: 'Talebiniz başarıyla iletildi. Teşekkür ederiz!' });
+  } catch (err) {
+    res.status(500).json({ success: false, message: 'Hata: ' + err.message });
+  }
+});
+
+// Kullanıcı Taleplerini Listele (Yetkili)
+app.get('/api/requests', authMiddleware, async (req, res) => {
+  try {
+    const requests = await Request.find().sort({ createdAt: -1 });
+    res.json(requests);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// Talep Sil (Yetkili)
+app.delete('/api/requests/:id', authMiddleware, async (req, res) => {
+  try {
+    const { id } = req.params;
+    await Request.findByIdAndDelete(id);
+    res.json({ success: true, message: 'Talep silindi.' });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+// Personel Listesi (Yetkili)
+app.get('/api/users', authMiddleware, async (req, res) => {
+  try {
+    const users = await User.find().select('-password').sort({ createdAt: -1 });
+    res.json(users);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// Personel Ekle (Yetkili)
+app.post('/api/users', authMiddleware, async (req, res) => {
+  try {
+    const { username, password, fullname, role } = req.body;
+    if (!username || !password || !fullname) {
+      return res.status(400).json({ success: false, message: 'Tüm alanları doldurunuz.' });
+    }
+    const exist = await User.findOne({ username: username.trim() });
+    if (exist) return res.status(400).json({ success: false, message: 'Bu kullanıcı adı zaten alınmış.' });
+
+    const hashedPassword = await bcrypt.hash(password, 10);
+    await User.create({
+      username: username.trim(),
+      password: hashedPassword,
+      fullname: fullname.trim(),
+      role: role || 'staff'
+    });
+    res.json({ success: true, message: 'Personel oluşturuldu.' });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+// Personel Sil (Yetkili)
+app.delete('/api/users/:id', authMiddleware, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const user = await User.findById(id);
+    if (!user) return res.status(404).json({ success: false, message: 'Kullanıcı bulunamadı.' });
+    if (user.username === 'admin') {
+      return res.status(400).json({ success: false, message: 'Ana süper yönetici silinemez!' });
+    }
+    await User.findByIdAndDelete(id);
+    res.json({ success: true, message: 'Kullanıcı silindi.' });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+// Şifre Değiştir (Giriş Yapan Kendi Şifresini Değiştirir)
+app.post('/api/change-password', authMiddleware, async (req, res) => {
+  try {
+    const { currentPassword, newPassword } = req.body;
+    if (!currentPassword || !newPassword || newPassword.length < 5) {
+      return res.status(400).json({ success: false, message: 'Yeni şifre en az 5 karakter olmalıdır.' });
+    }
+    const user = await User.findById(req.user.id);
+    if (!user) return res.status(404).json({ success: false, message: 'Kullanıcı bulunamadı.' });
+
+    const isMatch = await bcrypt.compare(currentPassword, user.password);
+    if (!isMatch) return res.status(400).json({ success: false, message: 'Mevcut şifreniz hatalı.' });
+
+    user.password = await bcrypt.hash(newPassword, 10);
+    await user.save();
+    res.json({ success: true, message: 'Şifreniz başarıyla güncellendi.' });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+// Giriş Yap (Login)
+app.post('/api/login', async (req, res) => {
   try {
     const { username, password } = req.body;
-    const user = await User.findOne({ username });
-    if (!user) return res.status(401).json({ success: false, message: 'Kullanıcı adı veya şifre hatalı!' });
+    if (!username || !password) return res.status(400).json({ success: false, message: 'Giriş bilgileri eksik.' });
 
-    const match = await bcrypt.compare(password, user.password);
-    if (!match) return res.status(401).json({ success: false, message: 'Kullanıcı adı veya şifre hatalı!' });
+    const user = await User.findOne({ username: username.trim() });
+    if (!user) return res.status(401).json({ success: false, message: 'Kullanıcı adı veya şifre hatalı.' });
+
+    const isMatch = await bcrypt.compare(password, user.password);
+    if (!isMatch) return res.status(401).json({ success: false, message: 'Kullanıcı adı veya şifre hatalı.' });
 
     const token = jwt.sign(
-      { id: user._id, username: user.username, fullname: user.fullname, role: user.role },
+      { id: user._id, username: user.username, role: user.role, fullname: user.fullname },
       JWT_SECRET,
       { expiresIn: '7d' }
     );
@@ -527,339 +846,14 @@ app.post('/api/auth/login', async (req, res) => {
       user: { id: user._id, username: user.username, fullname: user.fullname, role: user.role }
     });
   } catch (err) {
-    res.status(500).json({ success: false, message: err.message });
-  }
-});
-
-app.post('/api/auth/change-password', authMiddleware, async (req, res) => {
-  try {
-    const { currentPassword, newPassword } = req.body;
-    if (!currentPassword || !newPassword) return res.status(400).json({ success: false, message: 'Mevcut ve yeni şifre gereklidir.' });
-    if (newPassword.length < 5) return res.status(400).json({ success: false, message: 'Yeni şifre en az 5 karakter olmalıdır.' });
-
-    const user = await User.findById(req.user.id);
-    const match = await bcrypt.compare(currentPassword, user.password);
-    if (!match) return res.status(400).json({ success: false, message: 'Mevcut şifrenizi hatalı girdiniz!' });
-
-    user.password = await bcrypt.hash(newPassword, 10);
-    await user.save();
-    res.json({ success: true, message: 'Şifreniz başarıyla güncellendi!' });
-  } catch (err) {
-    res.status(500).json({ success: false, message: err.message });
-  }
-});
-
-app.post('/api/users/:id/password', authMiddleware, async (req, res) => {
-  try {
-    if (req.user.role !== 'admin') return res.status(403).json({ success: false, message: 'Bu işlem için admin yetkisi gerekir.' });
-    const { newPassword } = req.body;
-    if (!newPassword || newPassword.length < 5) return res.status(400).json({ success: false, message: 'Yeni şifre en az 5 karakter olmalıdır.' });
-
-    const user = await User.findById(req.params.id);
-    if (!user) return res.status(404).json({ success: false, message: 'Kullanıcı bulunamadı.' });
-
-    user.password = await bcrypt.hash(newPassword, 10);
-    await user.save();
-    res.json({ success: true, message: `${user.fullname} adlı personelin şifresi güncellendi.` });
-  } catch (err) {
-    res.status(500).json({ success: false, message: err.message });
-  }
-});
-
-app.get('/api/users', authMiddleware, async (req, res) => {
-  try {
-    const users = await User.find().select('-password').sort({ createdAt: -1 }).lean();
-    res.json({ success: true, data: users });
-  } catch (err) {
-    res.status(500).json({ success: false, message: err.message });
-  }
-});
-
-app.post('/api/users', authMiddleware, async (req, res) => {
-  try {
-    if (req.user.role !== 'admin') return res.status(403).json({ success: false, message: 'Personel ekleme yetkiniz yok.' });
-    const { username, password, fullname, role } = req.body;
-    if (!username || !password || !fullname) return res.status(400).json({ success: false, message: 'Tüm alanları doldurunuz.' });
-    const exist = await User.findOne({ username });
-    if (exist) return res.status(400).json({ success: false, message: 'Bu kullanıcı adı zaten kullanılıyor.' });
-
-    const hashedPassword = await bcrypt.hash(password, 10);
-    const newUser = await User.create({ username, password: hashedPassword, fullname, role: role || 'staff' });
-    res.json({ success: true, data: { username: newUser.username, fullname: newUser.fullname, role: newUser.role } });
-  } catch (err) {
-    res.status(500).json({ success: false, message: err.message });
-  }
-});
-
-app.delete('/api/users/:id', authMiddleware, async (req, res) => {
-  try {
-    if (req.user.role !== 'admin') return res.status(403).json({ success: false, message: 'Personel silme yetkiniz yok.' });
-    const user = await User.findById(req.params.id);
-    if (user.username === 'admin') return res.status(400).json({ success: false, message: 'Ana süper yönetici silinemez!' });
-    await User.findByIdAndDelete(req.params.id);
-    res.json({ success: true, message: 'Personel hesabı silindi.' });
-  } catch (err) {
-    res.status(500).json({ success: false, message: err.message });
-  }
-});
-
-// --- KULLANICI TALEPLERİ ---
-app.post('/api/requests', async (req, res) => {
-  try {
-    const { email, subject, message } = req.body;
-    if (!email || !message) return res.status(400).json({ success: false, message: 'E-posta ve mesaj alanları zorunludur.' });
-    await Request.create({ email, subject: subject || 'Genel Talep', message });
-    res.json({ success: true, message: 'Talebiniz başarıyla yönetime iletildi. Teşekkür ederiz!' });
-  } catch (err) {
-    res.status(500).json({ success: false, message: err.message });
-  }
-});
-
-app.get('/api/requests', authMiddleware, async (req, res) => {
-  try {
-    const requests = await Request.find().sort({ createdAt: -1 }).lean();
-    res.json({ success: true, data: requests });
-  } catch (err) {
-    res.status(500).json({ success: false, message: err.message });
-  }
-});
-
-app.delete('/api/requests/:id', authMiddleware, async (req, res) => {
-  try {
-    await Request.findByIdAndDelete(req.params.id);
-    res.json({ success: true, message: 'Talep silindi.' });
-  } catch (err) {
-    res.status(500).json({ success: false, message: err.message });
-  }
-});
-
-// --- HABERLER API'Sİ (KAYNAK KİLİTSİZ & TAM ZAMANLI) ---
-app.get('/api/news', async (req, res) => {
-  try {
-    const limit = parseInt(req.query.limit) || 120;
-    const query = {};
-
-    if (req.query.category && req.query.category !== 'Tümü') {
-      query.category = req.query.category;
-    }
-
-    if (req.query.sources) {
-      const srcList = req.query.sources.split(',').map(s => s.trim()).filter(Boolean);
-      if (srcList.length > 0) {
-        query.source = { $in: srcList };
-      }
-    }
-
-    if (req.query.search) {
-      query.$or = [
-        { title: { $regex: req.query.search, $options: 'i' } },
-        { description: { $regex: req.query.search, $options: 'i' } }
-      ];
-    }
-
-    const sortField = req.query.sort === 'rating' ? { views: -1, pubDate: -1 } : { pubDate: -1 };
-
-    const news = await News.find(query)
-      .sort(sortField)
-      .limit(limit)
-      .lean();
-
-    res.json({ success: true, count: news.length, data: news });
-  } catch (err) {
-    console.error("Haber getirme hatası:", err);
-    res.status(500).json({ success: false, error: err.message, data: [] });
-  }
-});
-
-// --- KAYNAK YÖNETİMİ ---
-app.get('/api/sources', async (req, res) => {
-  try {
-    const sources = await Source.find().sort({ category: 1, name: 1 }).lean();
-    const mapped = sources.map(s => {
-      if (!s.url && s.rss) s.url = s.rss;
-      if (!s.type) s.type = 'rss';
-      if (!s.lang) s.lang = 'tr';
-      return s;
-    });
-    res.json({ success: true, data: mapped });
-  } catch (err) {
     res.status(500).json({ success: false, error: err.message });
   }
 });
 
-app.post('/api/sources', authMiddleware, async (req, res) => {
-  try {
-    const { name, url, rss, type, category, selector, lang } = req.body;
-    const targetUrl = url || rss;
-    if (!name || !targetUrl) return res.status(400).json({ success: false, message: 'İsim ve URL/RSS zorunludur.' });
-
-    const newSource = await Source.create({ 
-      name: name.trim(), 
-      type: type || 'rss',
-      url: targetUrl.trim(), 
-      selector: selector ? selector.trim() : '',
-      category: category || 'Gündem',
-      lang: lang === 'en' ? 'en' : 'tr'
-    });
-
-    fetchAllSources();
-    res.json({ success: true, data: newSource });
-  } catch (err) {
-    res.status(500).json({ success: false, error: err.message });
-  }
-});
-
-app.put('/api/sources/:id', authMiddleware, async (req, res) => {
-  try {
-    const { name, url, rss, type, category, selector, lang, isActive } = req.body;
-    const targetUrl = url || rss;
-
-    const updateFields = {};
-    if (name) updateFields.name = name.trim();
-    if (targetUrl) updateFields.url = targetUrl.trim();
-    if (type) updateFields.type = type;
-    if (category) updateFields.category = category;
-    if (typeof selector !== 'undefined') updateFields.selector = selector.trim();
-    if (lang) updateFields.lang = (lang === 'en' ? 'en' : 'tr');
-    if (typeof isActive !== 'undefined') updateFields.isActive = isActive;
-
-    const updatedSource = await Source.findByIdAndUpdate(
-      req.params.id,
-      updateFields,
-      { new: true, runValidators: true }
-    );
-
-    if (!updatedSource) {
-      return res.status(404).json({ success: false, message: 'Kaynak bulunamadı' });
-    }
-
-    if (updatedSource.isActive === false) {
-      await News.deleteMany({ source: updatedSource.name });
-    }
-
-    fetchAllSources();
-    res.json({ success: true, message: 'Kaynak başarıyla güncellendi.', data: updatedSource });
-  } catch (err) {
-    res.status(500).json({ success: false, error: err.message });
-  }
-});
-
-app.delete('/api/sources/:id', authMiddleware, async (req, res) => {
-  try {
-    const src = await Source.findByIdAndDelete(req.params.id);
-    if (src) {
-      await News.deleteMany({ source: src.name });
-    }
-    res.json({ success: true, message: 'Kaynak ve tüm haberleri silindi.' });
-  } catch (err) {
-    res.status(500).json({ success: false, message: err.message });
-  }
-});
-
-app.patch('/api/sources/:id/toggle', authMiddleware, async (req, res) => {
-  try {
-    const src = await Source.findById(req.params.id);
-    if (!src) return res.status(404).json({ success: false, message: 'Kaynak bulunamadı' });
-    
-    src.isActive = !src.isActive;
-    await src.save();
-
-    if (!src.isActive) {
-      await News.deleteMany({ source: src.name });
-    }
-
-    res.json({ success: true, data: src });
-  } catch (err) {
-    res.status(500).json({ success: false, message: err.message });
-  }
-});
-
-// --- REKLAMLAR ---
-app.get('/api/ads', async (req, res) => {
-  try {
-    const ads = await Ad.find().lean();
-    res.json({ success: true, data: ads });
-  } catch (err) {
-    res.status(500).json({ success: false, error: err.message });
-  }
-});
-
-app.post('/api/ads', authMiddleware, async (req, res) => {
-  try {
-    const { position, type, code, imageUrl, targetUrl, title, isActive } = req.body;
-    const ad = await Ad.findOneAndUpdate(
-      { position },
-      { type, code, imageUrl, targetUrl, title, isActive, updatedAt: new Date() },
-      { upsert: true, new: true }
-    );
-    res.json({ success: true, data: ad });
-  } catch (err) {
-    res.status(500).json({ success: false, error: err.message });
-  }
-});
-
-// --- SENKRONİZASYON & ZAMANLAYICI ---
-app.get('/api/sync', async (req, res) => {
-  try {
-    console.log("--> Manuel tarama tetiklendi, siteler taranıyor...");
-    await fetchAllSources();
-    
-    const latestNews = await News.find().sort({ pubDate: -1 }).limit(3).lean();
-    const totalCount = await News.countDocuments();
-    
-    res.json({
-      success: true,
-      message: "Tüm kaynaklar başarıyla tarandı!",
-      toplam_haber_sayisi: totalCount,
-      son_haber_saati: latestNews[0] ? latestNews[0].pubDate : "Haber yok",
-      son_haber_basligi: latestNews[0] ? latestNews[0].title : "Haber yok"
-    });
-  } catch (err) {
-    console.error("Tarama hatası:", err);
-    res.status(500).json({ success: false, error: err.message });
-  }
-});
-
-isSyncing = false;
-async function fetchAllSources() {
-  if (isSyncing) {
-    console.log("Tarama zaten devam ediyor, atlandı.");
-    return;
-  }
-  isSyncing = true;
-  console.log("--> [TARAMA BAŞLADI] Kaynaklar sırayla taranıyor...");
-
-  try {
-    const sources = await Source.find({ isActive: true }).lean();
-    
-    // Hepsine aynı anda saldırıp sunucuyu kilitlemek yerine SIRAYLA tara!
-    for (const src of sources) {
-      const targetUrl = src.url || src.rss;
-      if (!targetUrl) continue;
-
-      try {
-        if (src.type === 'html') {
-          await scrapeHtmlSite(src.name, targetUrl, src.category || 'Gündem', src.selector || '', src.lang || 'tr');
-        } else {
-          await fetchRssFeed(src.name, targetUrl, src.category || 'Gündem', src.lang || 'tr');
-        }
-      } catch (err) {
-        console.error(`[HATA] ${src.name}:`, err.message);
-      }
-      // Her kaynak arasında sunucuya ve Mongo'ya 500ms nefes aldır
-      await new Promise(r => setTimeout(r, 500));
-    }
-    console.log("<-- [TARAMA BİTTİ] Tüm aktif kaynaklar güncellendi.");
-  } catch (err) {
-    console.error("Genel tarama hatası:", err.message);
-  } finally {
-    isSyncing = false;
-  }
-}
-
-// 3 dakika yerine 15 dakikada bir hafif tarama
-setInterval(fetchAllSources, 15 * 60 * 1000);
+// Otomatik Başlangıç Taraması ve Periyodik Güncelleme
+syncAllSources();
+setInterval(syncAllSources, 5 * 60 * 1000); // 5 dakikada bir otomatik tazeler
 
 app.listen(PORT, () => {
-  console.log(`Haber Takip Web Sunucusu http://localhost:${PORT} portunda çalışıyor.`);
+  console.log(`Haber Takip Portalı http://localhost:${PORT} adresinde yayında!`);
 });
