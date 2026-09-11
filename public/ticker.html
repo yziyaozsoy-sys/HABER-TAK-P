@@ -4,9 +4,15 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Canlı Haber Bandı - Y. Ziya Özsoy</title>
+
   <link rel="icon" type="image/svg+xml" href="/favicon.svg?v=6">
   <script src="https://cdn.tailwindcss.com"></script>
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+  <link
+    rel="stylesheet"
+    href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
+  >
+
   <style>
     body {
       margin: 0;
@@ -14,10 +20,17 @@
       overflow: hidden;
       user-select: none;
     }
+
     @keyframes ticker-scroll {
-      0% { transform: translateX(100vw); }
-      100% { transform: translateX(-100%); }
+      0% {
+        transform: translateX(100vw);
+      }
+
+      100% {
+        transform: translateX(-100%);
+      }
     }
+
     .ticker-track {
       display: inline-flex;
       white-space: nowrap;
@@ -26,31 +39,58 @@
       animation-timing-function: linear;
       animation-iteration-count: infinite;
     }
+
     .ticker-track.paused {
       animation-play-state: paused !important;
     }
+
     .ticker-track.speed-slow {
       animation-duration: 260s !important;
     }
+
     .ticker-track.speed-normal {
       animation-duration: 170s !important;
     }
+
     .ticker-track.speed-fast {
       animation-duration: 100s !important;
     }
+
     .ticker-container:hover .ticker-track {
       animation-play-state: paused;
     }
+
+    /*
+     * Çeviri butonunun tıklama alanını haber bağlantısından
+     * kesin olarak ayırır.
+     */
+    .ticker-translate-btn {
+      position: relative;
+      z-index: 30;
+      pointer-events: auto;
+      touch-action: manipulation;
+    }
+
+    .ticker-news-link {
+      position: relative;
+      z-index: 10;
+    }
   </style>
 </head>
+
 <body class="bg-slate-950 text-slate-100 h-screen flex flex-col justify-center border-t-2 border-emerald-500">
 
   <div class="h-full flex items-center bg-slate-950 px-2 justify-between gap-2">
-    
-    <!-- Kategori Rozeti ve Seçimi -->
+
+    <!-- Kategori seçimi -->
     <div class="flex items-center gap-2 bg-slate-900 border border-slate-800 rounded-lg px-2.5 py-1 shrink-0">
       <span class="w-2.5 h-2.5 rounded-full bg-rose-500 animate-ping"></span>
-      <select id="catSelect" class="bg-transparent text-emerald-400 font-bold text-xs uppercase focus:outline-none cursor-pointer">
+
+      <select
+        id="catSelect"
+        class="bg-transparent text-emerald-400 font-bold text-xs uppercase focus:outline-none cursor-pointer"
+        aria-label="Haber kategorisi"
+      >
         <option value="Tümü" class="bg-slate-900 text-slate-200">TÜMÜ</option>
         <option value="Gündem" class="bg-slate-900 text-slate-200">GÜNDEM</option>
         <option value="Spor" class="bg-slate-900 text-slate-200">SPOR</option>
@@ -61,40 +101,83 @@
       </select>
     </div>
 
-    <!-- Kayan İçerik -->
-    <div class="ticker-container flex-1 overflow-hidden relative h-full flex items-center px-4 cursor-pointer">
-      <div id="tickerTrack" class="ticker-track speed-normal flex items-center gap-10 text-slate-200">
-        <span class="text-slate-400 italic text-sm">Haber akışı bağlanıyor...</span>
+    <!-- Kayan haber içeriği -->
+    <div class="ticker-container flex-1 overflow-hidden relative h-full flex items-center px-4">
+      <div
+        id="tickerTrack"
+        class="ticker-track speed-normal flex items-center gap-10 text-slate-200"
+        aria-live="polite"
+      >
+        <span class="text-slate-400 italic text-sm">
+          Haber akışı bağlanıyor...
+        </span>
       </div>
     </div>
 
-    <!-- Kontroller: Hız, Font Boyutu, Durdur -->
+    <!-- Kontroller -->
     <div class="flex items-center gap-1.5 bg-slate-900 border border-slate-800 rounded-lg px-2 py-1 shrink-0 text-xs">
-      
-      <!-- Font Boyutu Kontrolü (A- / A+) -->
-      <div class="flex items-center gap-1 bg-slate-950 px-1.5 py-0.5 rounded border border-slate-800 text-[11px]">
-        <button id="fontDecBtn" title="Yazıyı Küçült" class="text-slate-400 hover:text-white px-1 font-bold">A-</button>
-        <span id="fontSizeDisplay" class="text-slate-300 font-mono text-[10px] w-6 text-center">15px</span>
-        <button id="fontIncBtn" title="Yazıyı Büyüt" class="text-slate-400 hover:text-white px-1 font-bold">A+</button>
-      </div>
+
+      <span class="text-slate-500 text-[10px] hidden sm:inline">Hız:</span>
+
+      <button
+        type="button"
+        data-speed="slow"
+        class="speed-btn px-1.5 py-0.5 rounded text-slate-400 hover:text-white transition text-[11px]"
+      >
+        Yavaş
+      </button>
+
+      <button
+        type="button"
+        data-speed="normal"
+        class="speed-btn px-1.5 py-0.5 rounded bg-emerald-600/30 text-emerald-300 font-semibold border border-emerald-500/40 transition text-[11px]"
+      >
+        Orta
+      </button>
+
+      <button
+        type="button"
+        data-speed="fast"
+        class="speed-btn px-1.5 py-0.5 rounded text-slate-400 hover:text-white transition text-[11px]"
+      >
+        Hızlı
+      </button>
 
       <span class="text-slate-700">|</span>
 
-      <!-- Hız Seçimleri -->
-      <div class="flex items-center gap-1 text-[11px]">
-        <button data-speed="slow" class="speed-btn px-1.5 py-0.5 rounded text-slate-400 hover:text-white transition">Yavaş</button>
-        <button data-speed="normal" class="speed-btn px-1.5 py-0.5 rounded bg-emerald-600/30 text-emerald-300 font-semibold border border-emerald-500/40 transition">Orta</button>
-        <button data-speed="fast" class="speed-btn px-1.5 py-0.5 rounded text-slate-400 hover:text-white transition">Hızlı</button>
-      </div>
+      <button
+        id="fontSizeBtn"
+        type="button"
+        title="Yazı boyutunu değiştir"
+        aria-label="Yazı boyutunu değiştir"
+        class="text-slate-400 hover:text-emerald-400 px-1 font-bold text-xs"
+      >
+        A<span class="text-[9px]">A</span>
+      </button>
 
-      <button id="togglePlayBtn" title="Durdur / Başlat" class="ml-0.5 text-slate-400 hover:text-amber-400 transition px-1">
+      <span class="text-slate-700">|</span>
+
+      <button
+        id="togglePlayBtn"
+        type="button"
+        title="Durdur veya başlat"
+        aria-label="Haber bandını durdur veya başlat"
+        class="text-slate-400 hover:text-amber-400 px-1"
+      >
         <i class="fa-solid fa-pause text-xs" id="playIcon"></i>
       </button>
 
-      <span class="text-slate-700 hidden sm:inline">|</span>
-      <span class="text-[10px] text-slate-500 hidden sm:inline whitespace-nowrap">Y. Ziya Özsoy</span>
-    </div>
+      <button
+        id="manualRefreshBtn"
+        type="button"
+        title="Haberleri şimdi yenile"
+        aria-label="Haberleri şimdi yenile"
+        class="text-slate-400 hover:text-emerald-400 px-1"
+      >
+        <i class="fa-solid fa-arrows-rotate text-xs" id="refreshIcon"></i>
+      </button>
 
+    </div>
   </div>
 
   <script>
@@ -102,138 +185,588 @@
     const catSelect = document.getElementById('catSelect');
     const togglePlayBtn = document.getElementById('togglePlayBtn');
     const playIcon = document.getElementById('playIcon');
-    const fontDecBtn = document.getElementById('fontDecBtn');
-    const fontIncBtn = document.getElementById('fontIncBtn');
-    const fontSizeDisplay = document.getElementById('fontSizeDisplay');
+    const fontSizeBtn = document.getElementById('fontSizeBtn');
+    const manualRefreshBtn = document.getElementById('manualRefreshBtn');
+    const refreshIcon = document.getElementById('refreshIcon');
+
+    let allSourcesList = [];
+    let currentNewsItems = [];
     let isPaused = false;
 
-    // Font Boyutu Yönetimi (12px - 22px arası)
-    let currentFontSize = parseInt(localStorage.getItem('haber_popup_fontsize')) || 15;
-    applyFontSize(currentFontSize);
+    const fontSizes = [
+      'text-xs',
+      'text-sm',
+      'text-base',
+      'text-lg'
+    ];
 
-    function applyFontSize(size) {
-      if (size < 12) size = 12;
-      if (size > 22) size = 22;
-      currentFontSize = size;
-      localStorage.setItem('haber_popup_fontsize', currentFontSize);
-      tickerTrack.style.fontSize = `${currentFontSize}px`;
-      fontSizeDisplay.textContent = `${currentFontSize}px`;
+    let currentFontIdx = 1;
+
+    /*
+     * Anahtar: haber kimliği veya haber bağlantısı
+     * Değer: Türkçe başlık
+     *
+     * Otomatik yenilemede çevirinin kaybolmasını önler.
+     */
+    const translationCache = new Map();
+
+    /*
+     * Hangi haberlerin şu anda Türkçe gösterildiğini saklar.
+     */
+    const translatedViewState = new Set();
+
+    function escapeHtml(value = '') {
+      return String(value)
+        .replaceAll('&', '&amp;')
+        .replaceAll('<', '&lt;')
+        .replaceAll('>', '&gt;')
+        .replaceAll('"', '&quot;')
+        .replaceAll("'", '&#039;');
     }
 
-    fontDecBtn.addEventListener('click', () => applyFontSize(currentFontSize - 1));
-    fontIncBtn.addEventListener('click', () => applyFontSize(currentFontSize + 1));
-
-    // Kategori
-    const urlParams = new URLSearchParams(window.location.search);
-    let selectedCategory = urlParams.get('category') || 'Tümü';
-    catSelect.value = selectedCategory;
-
-    // Dinamik Kategorileri Getir (Varsa Güncelle)
-    async function loadDynamicCategories() {
+    function getSafeUrl(value) {
       try {
-        const res = await fetch('/api/categories');
-        const data = await res.json();
-        if (data.success && data.data && data.data.length > 0) {
-          let cats = ['Tümü'];
-          data.data.forEach(c => {
-            if (!cats.includes(c.name)) cats.push(c.name);
-          });
-          catSelect.innerHTML = cats.map(c => `
-            <option value="${c}" class="bg-slate-900 text-slate-200" ${c === selectedCategory ? 'selected' : ''}>${c.toUpperCase()}</option>
-          `).join('');
+        const parsedUrl = new URL(value, window.location.origin);
+
+        if (!['http:', 'https:'].includes(parsedUrl.protocol)) {
+          return '#';
         }
-      } catch (e) {}
+
+        return parsedUrl.href;
+      } catch (error) {
+        return '#';
+      }
     }
 
-    catSelect.addEventListener('change', () => {
-      selectedCategory = catSelect.value;
-      loadNews();
-    });
+    function getNewsKey(item) {
+      return String(item?._id || item?.link || item?.title || '');
+    }
 
     function getFaviconUrl(linkUrl) {
       try {
         const parsed = new URL(linkUrl);
-        return `https://www.google.com/s2/favicons?domain=${parsed.hostname}&sz=64`;
-      } catch (e) {
+
+        if (!['http:', 'https:'].includes(parsed.protocol)) {
+          throw new Error('Geçersiz bağlantı');
+        }
+
+        return `https://www.google.com/s2/favicons?domain=${encodeURIComponent(parsed.hostname)}&sz=64`;
+      } catch (error) {
         return 'https://placehold.co/32x32/1e293b/10b981?text=N';
       }
     }
 
-    function setTickerSpeed(speed) {
-      localStorage.setItem('haber_ticker_speed', speed);
-      tickerTrack.classList.remove('speed-slow', 'speed-normal', 'speed-fast');
-      tickerTrack.classList.add(`speed-${speed}`);
+    function formatNewsTime(dateValue) {
+      const parsedDate = new Date(dateValue);
 
-      document.querySelectorAll('.speed-btn').forEach(b => {
-        if (b.getAttribute('data-speed') === speed) {
-          b.className = 'speed-btn px-1.5 py-0.5 rounded bg-emerald-600/30 text-emerald-300 font-semibold border border-emerald-500/40 transition';
+      if (Number.isNaN(parsedDate.getTime())) {
+        return '--:--';
+      }
+
+      return parsedDate.toLocaleTimeString('tr-TR', {
+        hour: '2-digit',
+        minute: '2-digit'
+      });
+    }
+
+    // URL'den kategori parametresi alır.
+    const urlParams = new URLSearchParams(window.location.search);
+    const urlCat = urlParams.get('category');
+
+    if (urlCat) {
+      const categoryExists = Array.from(catSelect.options)
+        .some(option => option.value === urlCat);
+
+      if (categoryExists) {
+        catSelect.value = urlCat;
+      }
+    }
+
+    // Hız ayarı
+    const savedSpeed =
+      localStorage.getItem('haber_ticker_speed') || 'normal';
+
+    setTickerSpeed(savedSpeed);
+
+    document.querySelectorAll('.speed-btn').forEach(button => {
+      button.addEventListener('click', () => {
+        setTickerSpeed(button.dataset.speed);
+      });
+    });
+
+    function setTickerSpeed(speed) {
+      const allowedSpeeds = ['slow', 'normal', 'fast'];
+      const safeSpeed = allowedSpeeds.includes(speed)
+        ? speed
+        : 'normal';
+
+      localStorage.setItem('haber_ticker_speed', safeSpeed);
+
+      tickerTrack.classList.remove(
+        'speed-slow',
+        'speed-normal',
+        'speed-fast'
+      );
+
+      tickerTrack.classList.add(`speed-${safeSpeed}`);
+
+      document.querySelectorAll('.speed-btn').forEach(button => {
+        if (button.dataset.speed === safeSpeed) {
+          button.className =
+            'speed-btn px-1.5 py-0.5 rounded bg-emerald-600/30 text-emerald-300 font-semibold border border-emerald-500/40 transition text-[11px]';
         } else {
-          b.className = 'speed-btn px-1.5 py-0.5 rounded text-slate-400 hover:text-white transition';
+          button.className =
+            'speed-btn px-1.5 py-0.5 rounded text-slate-400 hover:text-white transition text-[11px]';
         }
       });
     }
 
-    document.querySelectorAll('.speed-btn').forEach(btn => {
-      btn.addEventListener('click', () => setTickerSpeed(btn.getAttribute('data-speed')));
-    });
-
+    // Durdur / başlat
     togglePlayBtn.addEventListener('click', () => {
       isPaused = !isPaused;
-      if (isPaused) {
-        tickerTrack.classList.add('paused');
-        playIcon.className = 'fa-solid fa-play text-xs';
-      } else {
-        tickerTrack.classList.remove('paused');
-        playIcon.className = 'fa-solid fa-pause text-xs';
-      }
+
+      tickerTrack.classList.toggle('paused', isPaused);
+
+      playIcon.className = isPaused
+        ? 'fa-solid fa-play text-xs'
+        : 'fa-solid fa-pause text-xs';
+
+      togglePlayBtn.title = isPaused
+        ? 'Haber bandını başlat'
+        : 'Haber bandını durdur';
     });
 
-    async function loadNews() {
+    // Yazı boyutu
+    fontSizeBtn.addEventListener('click', () => {
+      currentFontIdx = (currentFontIdx + 1) % fontSizes.length;
+      updateFontSize();
+    });
+
+    function updateFontSize() {
+      fontSizes.forEach(className => {
+        tickerTrack.classList.remove(className);
+      });
+
+      tickerTrack.classList.add(fontSizes[currentFontIdx]);
+    }
+
+    updateFontSize();
+
+    async function trackNewsClick(newsId) {
+      if (!newsId) {
+        return;
+      }
+
       try {
-        let url = `/api/news?limit=60`;
-        if (selectedCategory && selectedCategory !== 'Tümü') {
-          url += `&category=${encodeURIComponent(selectedCategory)}`;
-        }
-        const res = await fetch(url);
-        const data = await res.json();
-        const newsItems = data.data || [];
-
-        if (newsItems.length === 0) {
-          tickerTrack.innerHTML = `<span class="text-slate-500 text-sm">Bu kategoride son dakika haberi bulunamadı.</span>`;
-          return;
-        }
-
-        tickerTrack.innerHTML = newsItems.map(item => {
-          const timeStr = new Date(item.pubDate || item.createdAt).toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' });
-          const fav = getFaviconUrl(item.link);
-          
-          // Çeviri Rozeti (Yabancı kaynak Türkçe'ye çevrildiyse göster)
-          const translateBadge = item.isTranslated 
-            ? `<span class="inline-flex items-center gap-1 bg-sky-950/80 text-sky-400 border border-sky-600/50 text-[0.75em] px-1.5 py-0.2 rounded font-bold" title="Haber otomatik olarak Türkçeye çevrildi">
-                 <i class="fa-solid fa-language text-[11px]"></i> TR
-               </span>`
-            : '';
-
-          return `
-            <a href="${item.link}" target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-2 hover:text-emerald-400 transition font-medium group">
-              <img src="${fav}" alt="" class="w-4 h-4 object-contain rounded bg-slate-900 border border-slate-700">
-              <span class="text-emerald-400 font-bold font-mono text-[0.85em]">[${timeStr}]</span>
-              <span class="text-slate-300 font-semibold text-[0.85em] bg-slate-800 px-2 py-0.5 rounded border border-slate-700/60">${item.source}</span>
-              ${translateBadge}
-              <span class="group-hover:underline text-slate-100">${item.title}</span>
-              <span class="text-slate-600 font-bold ml-4">✦</span>
-            </a>
-          `;
-        }).join('');
-      } catch (e) {
-        tickerTrack.innerHTML = `<span class="text-rose-400 text-sm">Veri bağlantısı kurulamadı.</span>`;
+        await fetch(
+          `/api/news/${encodeURIComponent(newsId)}/click`,
+          {
+            method: 'POST',
+            keepalive: true
+          }
+        );
+      } catch (error) {
+        console.warn('Tıklama kaydedilemedi:', error);
       }
     }
 
-    loadDynamicCategories();
-    setTickerSpeed(localStorage.getItem('haber_ticker_speed') || 'normal');
-    loadNews();
-    setInterval(loadNews, 60000);
+    function setTranslateButtonState(button, state) {
+      if (!button) {
+        return;
+      }
+
+      if (state === 'loading') {
+        button.disabled = true;
+        button.title = 'Başlık Türkçeye çevriliyor';
+        button.innerHTML =
+          '<i class="fa-solid fa-spinner fa-spin"></i> Çevriliyor';
+
+        button.className =
+          'ticker-translate-btn inline-flex items-center gap-1 bg-sky-950 text-sky-300 border border-sky-600/50 text-[10px] px-1.5 py-0.5 rounded font-bold transition cursor-wait opacity-80';
+
+        return;
+      }
+
+      if (state === 'translated') {
+        button.disabled = false;
+        button.title = 'Orijinal başlığı göster';
+        button.innerHTML =
+          '<i class="fa-solid fa-check"></i> Çevrildi';
+
+        button.className =
+          'ticker-translate-btn inline-flex items-center gap-1 bg-emerald-900 text-emerald-200 border border-emerald-500 text-[10px] px-1.5 py-0.5 rounded font-bold transition cursor-pointer';
+
+        return;
+      }
+
+      if (state === 'error') {
+        button.disabled = false;
+        button.title = 'Çeviri başarısız oldu. Tekrar denemek için tıklayın.';
+        button.innerHTML =
+          '<i class="fa-solid fa-triangle-exclamation"></i> Tekrar dene';
+
+        button.className =
+          'ticker-translate-btn inline-flex items-center gap-1 bg-rose-950 hover:bg-rose-900 text-rose-300 border border-rose-600/60 text-[10px] px-1.5 py-0.5 rounded font-bold transition cursor-pointer';
+
+        return;
+      }
+
+      button.disabled = false;
+      button.title = 'Başlığı Türkçeye çevir';
+      button.innerHTML =
+        '<i class="fa-solid fa-language"></i> Türkçeye çevir';
+
+      button.className =
+        'ticker-translate-btn inline-flex items-center gap-1 bg-sky-950 hover:bg-sky-700 text-sky-400 hover:text-white border border-sky-600/50 text-[10px] px-1.5 py-0.5 rounded font-bold transition cursor-pointer';
+    }
+
+    async function requestTurkishTranslation(originalTitle) {
+      const endpoint =
+        'https://translate.googleapis.com/translate_a/single' +
+        '?client=gtx' +
+        '&sl=auto' +
+        '&tl=tr' +
+        '&dt=t' +
+        `&q=${encodeURIComponent(originalTitle)}`;
+
+      const response = await fetch(endpoint);
+
+      if (!response.ok) {
+        throw new Error(`Çeviri servisi hata kodu: ${response.status}`);
+      }
+
+      const data = await response.json();
+
+      if (!Array.isArray(data?.[0])) {
+        throw new Error('Çeviri servisinden geçersiz yanıt geldi.');
+      }
+
+      const translatedTitle = data[0]
+        .map(part => part?.[0] || '')
+        .join('')
+        .trim();
+
+      if (!translatedTitle) {
+        throw new Error('Çeviri metni boş geldi.');
+      }
+
+      return translatedTitle;
+    }
+
+    async function handleTranslation(button) {
+      const newsIndex = Number(button.dataset.newsIndex);
+      const item = currentNewsItems[newsIndex];
+
+      if (!item) {
+        setTranslateButtonState(button, 'error');
+        return;
+      }
+
+      const newsKey = getNewsKey(item);
+      const headlineElement = document.getElementById(
+        `ticker-headline-${newsIndex}`
+      );
+
+      if (!headlineElement) {
+        setTranslateButtonState(button, 'error');
+        return;
+      }
+
+      // Çeviri görünüyorsa orijinale döner.
+      if (translatedViewState.has(newsKey)) {
+        translatedViewState.delete(newsKey);
+
+        headlineElement.textContent = item.title || '';
+        headlineElement.classList.remove('text-emerald-300');
+        headlineElement.classList.add('text-slate-100');
+
+        setTranslateButtonState(button, 'default');
+        return;
+      }
+
+      // Daha önce çevrilmişse servise tekrar istek göndermez.
+      if (translationCache.has(newsKey)) {
+        headlineElement.textContent =
+          translationCache.get(newsKey);
+
+        headlineElement.classList.remove('text-slate-100');
+        headlineElement.classList.add('text-emerald-300');
+
+        translatedViewState.add(newsKey);
+        setTranslateButtonState(button, 'translated');
+        return;
+      }
+
+      setTranslateButtonState(button, 'loading');
+
+      try {
+        const translatedTitle =
+          await requestTurkishTranslation(item.title || '');
+
+        translationCache.set(newsKey, translatedTitle);
+        translatedViewState.add(newsKey);
+
+        headlineElement.textContent = translatedTitle;
+        headlineElement.classList.remove('text-slate-100');
+        headlineElement.classList.add('text-emerald-300');
+
+        setTranslateButtonState(button, 'translated');
+      } catch (error) {
+        console.error('Ticker çeviri hatası:', error);
+        setTranslateButtonState(button, 'error');
+      }
+    }
+
+    /*
+     * Çeviri butonunun tıklamasının haber bağlantısına
+     * veya başka bir üst öğeye ulaşmasını daha ilk aşamada engeller.
+     */
+    tickerTrack.addEventListener('pointerdown', event => {
+      if (event.target.closest('.ticker-translate-btn')) {
+        event.stopPropagation();
+      }
+    }, true);
+
+    tickerTrack.addEventListener('click', event => {
+      const translateButton =
+        event.target.closest('.ticker-translate-btn');
+
+      if (translateButton) {
+        event.preventDefault();
+        event.stopPropagation();
+        event.stopImmediatePropagation();
+
+        handleTranslation(translateButton);
+        return;
+      }
+
+      const newsLink = event.target.closest('.ticker-news-link');
+
+      if (newsLink) {
+        const newsId = newsLink.dataset.newsId;
+
+        if (newsId) {
+          trackNewsClick(newsId);
+        }
+      }
+    });
+
+    async function loadSources() {
+      try {
+        const response = await fetch('/api/sources');
+
+        if (!response.ok) {
+          throw new Error(`Kaynak API hata kodu: ${response.status}`);
+        }
+
+        const data = await response.json();
+
+        if (data.success && Array.isArray(data.data)) {
+          allSourcesList = data.data;
+        }
+      } catch (error) {
+        console.warn('Kaynak listesi yüklenemedi:', error);
+        allSourcesList = [];
+      }
+    }
+
+    function renderTickerNews(newsItems) {
+      currentNewsItems = newsItems;
+
+      tickerTrack.innerHTML = newsItems.map((item, index) => {
+        const safeLink = getSafeUrl(item.link);
+        const safeTitle = escapeHtml(item.title || 'Başlıksız haber');
+        const safeSource = escapeHtml(item.source || 'Bilinmeyen kaynak');
+        const safeNewsId = escapeHtml(item._id || '');
+        const timeString = formatNewsTime(
+          item.pubDate || item.createdAt
+        );
+
+        const faviconUrl = escapeHtml(
+          getFaviconUrl(item.link)
+        );
+
+        const sourceObject = allSourcesList.find(source => {
+          return source.name === item.source;
+        });
+
+        const isForeign =
+          item.lang === 'en' ||
+          sourceObject?.lang === 'en';
+
+        const newsKey = getNewsKey(item);
+        const isShowingTranslation =
+          translatedViewState.has(newsKey) &&
+          translationCache.has(newsKey);
+
+        const visibleTitle = isShowingTranslation
+          ? escapeHtml(translationCache.get(newsKey))
+          : safeTitle;
+
+        const headlineColor = isShowingTranslation
+          ? 'text-emerald-300'
+          : 'text-slate-100';
+
+        const translationButton = isForeign
+          ? `
+            <button
+              type="button"
+              data-news-index="${index}"
+              title="${isShowingTranslation
+                ? 'Orijinal başlığı göster'
+                : 'Başlığı Türkçeye çevir'}"
+              class="ticker-translate-btn inline-flex items-center gap-1 ${
+                isShowingTranslation
+                  ? 'bg-emerald-900 text-emerald-200 border-emerald-500'
+                  : 'bg-sky-950 hover:bg-sky-700 text-sky-400 hover:text-white border-sky-600/50'
+              } border text-[10px] px-1.5 py-0.5 rounded font-bold transition cursor-pointer"
+            >
+              ${
+                isShowingTranslation
+                  ? '<i class="fa-solid fa-check"></i> Çevrildi'
+                  : '<i class="fa-solid fa-language"></i> Türkçeye çevir'
+              }
+            </button>
+          `
+          : '';
+
+        return `
+          <div class="inline-flex items-center gap-2 font-medium">
+
+            <a
+              href="${escapeHtml(safeLink)}"
+              target="_blank"
+              rel="noopener noreferrer"
+              data-news-id="${safeNewsId}"
+              class="ticker-news-link inline-flex items-center gap-1.5 hover:text-emerald-400 transition group"
+              title="Orijinal habere git"
+            >
+              <img
+                src="${faviconUrl}"
+                alt=""
+                loading="lazy"
+                class="w-4 h-4 object-contain rounded bg-slate-900 border border-slate-700"
+              >
+
+              <span class="text-emerald-400 font-bold font-mono text-[11px]">
+                [${escapeHtml(timeString)}]
+              </span>
+
+              <span class="text-slate-300 font-semibold text-[11px] bg-slate-800/80 px-1.5 py-0.5 rounded border border-slate-700/60">
+                ${safeSource}
+              </span>
+            </a>
+
+            ${translationButton}
+
+            <a
+              href="${escapeHtml(safeLink)}"
+              target="_blank"
+              rel="noopener noreferrer"
+              data-news-id="${safeNewsId}"
+              class="ticker-news-link hover:text-emerald-400 transition"
+              title="Orijinal habere git"
+            >
+              <span
+                id="ticker-headline-${index}"
+                class="${headlineColor} hover:underline"
+              >
+                ${visibleTitle}
+              </span>
+            </a>
+
+            <span class="text-slate-600 font-bold ml-4">✦</span>
+          </div>
+        `;
+      }).join('');
+
+      if (isPaused) {
+        tickerTrack.classList.add('paused');
+      }
+
+      updateFontSize();
+    }
+
+    async function fetchTickerNews() {
+      try {
+        const selectedCategory = catSelect.value;
+        let apiUrl = '/api/news?limit=30';
+
+        if (
+          selectedCategory &&
+          selectedCategory !== 'Tümü'
+        ) {
+          apiUrl +=
+            `&category=${encodeURIComponent(selectedCategory)}`;
+        }
+
+        const response = await fetch(apiUrl, {
+          cache: 'no-store'
+        });
+
+        if (!response.ok) {
+          throw new Error(
+            `Haber API hata kodu: ${response.status}`
+          );
+        }
+
+        const data = await response.json();
+
+        if (
+          !data.success ||
+          !Array.isArray(data.data) ||
+          data.data.length === 0
+        ) {
+          currentNewsItems = [];
+
+          tickerTrack.innerHTML = `
+            <span class="text-slate-500 italic">
+              Bu kategoriye ait güncel haber bulunamadı.
+            </span>
+          `;
+
+          return;
+        }
+
+        renderTickerNews(data.data);
+      } catch (error) {
+        currentNewsItems = [];
+
+        tickerTrack.innerHTML = `
+          <span class="text-rose-400 text-xs">
+            Bağlantı hatası: ${escapeHtml(error.message)}
+          </span>
+        `;
+      }
+    }
+
+    catSelect.addEventListener('change', () => {
+      fetchTickerNews();
+    });
+
+    manualRefreshBtn.addEventListener('click', async () => {
+      refreshIcon.classList.add('fa-spin');
+
+      try {
+        await fetchTickerNews();
+      } finally {
+        window.setTimeout(() => {
+          refreshIcon.classList.remove('fa-spin');
+        }, 600);
+      }
+    });
+
+    async function initializeTicker() {
+      await loadSources();
+      await fetchTickerNews();
+    }
+
+    initializeTicker();
+
+    // Haberleri 45 saniyede bir yeniler.
+    window.setInterval(() => {
+      fetchTickerNews();
+    }, 45000);
   </script>
 </body>
 </html>
