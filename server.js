@@ -121,7 +121,7 @@ const initialSources = [
   { name: 'Herkese Bilim Teknoloji', type: 'rss', url: 'https://www.herkesebilimteknoloji.com/feed', category: 'Teknoloji', lang: 'tr' }
 ];
 
-// 24 Saat Temizlik Fonksiyonu (Sadece DB Bağlandıktan Sonra Güvenle Çalışır)
+// 24 Saat Temizleme Fonksiyonu
 async function cleanOldNews() {
   try {
     const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
@@ -129,10 +129,10 @@ async function cleanOldNews() {
       pubDate: { $lt: twentyFourHoursAgo }
     });
     if (result && result.deletedCount > 0) {
-      console.log(`[24 SAAT TEMİZLİĞİ] ${result.deletedCount} adet 24 saati geçmiş haber silindi.`);
+      console.log(`[TEMİZLİK] ${result.deletedCount} adet 24 saati geçmiş haber silindi.`);
     }
   } catch (err) {
-    console.error('[TEMİZLİK UYARISI]:', err.message);
+    console.error('[TEMİZLİK HATASI]:', err.message);
   }
 }
 
@@ -141,10 +141,8 @@ if (MONGODB_URI) {
     .then(async () => {
       console.log('MongoDB Atlas bağlantısı başarılı.');
 
-      // 1. Bağlantı kurulduktan sonra ilk temizliği yap
+      // 24 saatten eski haberleri temizle
       await cleanOldNews();
-
-      // 2. Her 1 saatte bir temizlik yap
       setInterval(cleanOldNews, 60 * 60 * 1000);
 
       const adminExist = await User.findOne({ username: 'admin' });
@@ -185,7 +183,7 @@ if (MONGODB_URI) {
         }
       }
 
-      // Bağlantı hazır olunca taramayı tetikle
+      // Kaynakları tara
       syncAllSources();
       setInterval(syncAllSources, 5 * 60 * 1000);
     })
@@ -220,7 +218,7 @@ async function translateToTurkish(text) {
   }
 }
 
-// 3. TARAMA MOTORLARI (RSS & HTML)
+// 3. TARAMA MOTORLARI
 async function fetchRssFeed(sourceName, rawUrl, categoryName = 'Gündem', lang = 'tr') {
   const url = rawUrl ? rawUrl.trim() : '';
   if (!url) return;
@@ -437,12 +435,49 @@ app.get('/api/translate', async (req, res) => {
   }
 });
 
-// HABER LİSTELEME: SON 24 SAAT (GÜVENLİ SORGULAMA)
+// REKLAMLAR: index.html İÇİN TOPLU LİSTE (404 HATASINI ÇÖZEN KISIM)
+app.get('/api/ads', async (req, res) => {
+  try {
+    const ads = await Ad.find();
+    res.json({ success: true, data: ads });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+// REKLAM: TEKİL GETİRME
+app.get('/api/ads/:position', async (req, res) => {
+  try {
+    const { position } = req.params;
+    const ad = await Ad.findOne({ position });
+    res.json(ad || { isActive: false });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// REKLAM: GÜNCELLEME (Yetkili)
+app.post('/api/ads/:position', authMiddleware, async (req, res) => {
+  try {
+    const { position } = req.params;
+    const { type, code, imageUrl, targetUrl, title, isActive } = req.body;
+    const updated = await Ad.findOneAndUpdate(
+      { position },
+      { type, code, imageUrl, targetUrl, title, isActive, updatedAt: new Date() },
+      { upsert: true, new: true }
+    );
+    res.json({ success: true, ad: updated });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+// HABERLERİ GETİR (SON 24 SAAT KURALI VE GÜVENLİ SORGULAMA)
 app.get('/api/news', async (req, res) => {
   try {
     const { category, source, search, sort } = req.query;
 
-    // 24 saat kuralı: 24 saat önceki zaman
+    // 24 saat önceki zaman damgası
     const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
 
     let filter = {
@@ -472,7 +507,7 @@ app.get('/api/news', async (req, res) => {
       sortObj = { views: -1, pubDate: -1 };
     }
 
-    // 120 limitini 1000'e yükselterek tüm 24 saat haberlerini getiriyoruz
+    // 120 limitini 1000'e çıkarıp 24 saatin tüm haberlerini çekiyoruz
     const news = await News.find(filter)
       .sort(sortObj)
       .limit(1000)
@@ -480,7 +515,7 @@ app.get('/api/news', async (req, res) => {
 
     res.json(news);
   } catch (err) {
-    console.error('Haber getirme API hatası:', err.message);
+    console.error('Haber getirme hatası:', err.message);
     res.status(500).json({ error: err.message });
   }
 });
@@ -553,33 +588,6 @@ app.get('/api/analytics', async (req, res) => {
     });
   } catch (err) {
     res.status(500).json({ error: err.message });
-  }
-});
-
-// Reklam Bilgisini Getir
-app.get('/api/ads/:position', async (req, res) => {
-  try {
-    const { position } = req.params;
-    const ad = await Ad.findOne({ position });
-    res.json(ad || { isActive: false });
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
-
-// Reklam Güncelle (Yetkili)
-app.post('/api/ads/:position', authMiddleware, async (req, res) => {
-  try {
-    const { position } = req.params;
-    const { type, code, imageUrl, targetUrl, title, isActive } = req.body;
-    const updated = await Ad.findOneAndUpdate(
-      { position },
-      { type, code, imageUrl, targetUrl, title, isActive, updatedAt: new Date() },
-      { upsert: true, new: true }
-    );
-    res.json({ success: true, ad: updated });
-  } catch (err) {
-    res.status(500).json({ success: false, error: err.message });
   }
 });
 
@@ -700,13 +708,13 @@ app.delete('/api/sources/:id', authMiddleware, async (req, res) => {
   }
 });
 
-// Manuel Kaynak Senkronizasyonu Tetikleme
+// Manuel Tarama Tetikleme
 app.post('/api/sync', async (req, res) => {
   syncAllSources();
   res.json({ success: true, message: 'Tarama işlemi arka planda başlatıldı.' });
 });
 
-// Kullanıcı Talep & İstek Formu
+// Kullanıcı Talepleri
 app.post('/api/requests', async (req, res) => {
   try {
     const { email, subject, message } = req.body;
@@ -720,7 +728,6 @@ app.post('/api/requests', async (req, res) => {
   }
 });
 
-// Kullanıcı Taleplerini Listele (Yetkili)
 app.get('/api/requests', authMiddleware, async (req, res) => {
   try {
     const requests = await Request.find().sort({ createdAt: -1 });
@@ -730,7 +737,6 @@ app.get('/api/requests', authMiddleware, async (req, res) => {
   }
 });
 
-// Talep Sil (Yetkili)
 app.delete('/api/requests/:id', authMiddleware, async (req, res) => {
   try {
     const { id } = req.params;
@@ -741,7 +747,7 @@ app.delete('/api/requests/:id', authMiddleware, async (req, res) => {
   }
 });
 
-// Personel Listesi (Yetkili)
+// Personel İşlemleri
 app.get('/api/users', authMiddleware, async (req, res) => {
   try {
     const users = await User.find().select('-password').sort({ createdAt: -1 });
@@ -751,7 +757,6 @@ app.get('/api/users', authMiddleware, async (req, res) => {
   }
 });
 
-// Personel Ekle (Yetkili)
 app.post('/api/users', authMiddleware, async (req, res) => {
   try {
     const { username, password, fullname, role } = req.body;
@@ -774,7 +779,6 @@ app.post('/api/users', authMiddleware, async (req, res) => {
   }
 });
 
-// Personel Sil (Yetkili)
 app.delete('/api/users/:id', authMiddleware, async (req, res) => {
   try {
     const { id } = req.params;
@@ -790,7 +794,7 @@ app.delete('/api/users/:id', authMiddleware, async (req, res) => {
   }
 });
 
-// Şifre Değiştir (Giriş Yapan Kendi Şifresini Değiştirir)
+// Şifre Değiştir
 app.post('/api/change-password', authMiddleware, async (req, res) => {
   try {
     const { currentPassword, newPassword } = req.body;
@@ -811,7 +815,7 @@ app.post('/api/change-password', authMiddleware, async (req, res) => {
   }
 });
 
-// Giriş Yap (Login)
+// Giriş Yap
 app.post('/api/login', async (req, res) => {
   try {
     const { username, password } = req.body;
