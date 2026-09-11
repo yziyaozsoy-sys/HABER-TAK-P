@@ -36,13 +36,11 @@ const newsSchema = new mongoose.Schema({
   lang: { type: String, default: 'tr' },
   isTranslated: { type: Boolean, default: false },
   views: { type: Number, default: 0, index: true },
-  createdAt: { type: Date, default: Date.now, index: true }
+  createdAt: { type: Date, default: Date.now }
 });
 
-// İndeksler & 24 SAAT TTL KURALI (86.400 Saniye sonra Mongo otomatik siler)
 newsSchema.index({ pubDate: -1 });
 newsSchema.index({ views: -1 });
-newsSchema.index({ createdAt: 1 }, { expireAfterSeconds: 86400 });
 
 const News = mongoose.model('News', newsSchema);
 
@@ -123,37 +121,31 @@ const initialSources = [
   { name: 'Herkese Bilim Teknoloji', type: 'rss', url: 'https://www.herkesebilimteknoloji.com/feed', category: 'Teknoloji', lang: 'tr' }
 ];
 
-// 24 Saatten Eski Haberleri Düzenli Temizleyen Arka Plan Görevi
-setInterval(async () => {
+// 24 Saat Temizlik Fonksiyonu (Sadece DB Bağlandıktan Sonra Güvenle Çalışır)
+async function cleanOldNews() {
   try {
     const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
     const result = await News.deleteMany({
-      $and: [
-        { pubDate: { $lt: twentyFourHoursAgo } },
-        { createdAt: { $lt: twentyFourHoursAgo } }
-      ]
+      pubDate: { $lt: twentyFourHoursAgo }
     });
-    if (result.deletedCount > 0) {
-      console.log(`[24 SAAT TEMİZLİĞİ] ${result.deletedCount} adet eski haber silindi.`);
+    if (result && result.deletedCount > 0) {
+      console.log(`[24 SAAT TEMİZLİĞİ] ${result.deletedCount} adet 24 saati geçmiş haber silindi.`);
     }
   } catch (err) {
-    console.error('[TEMİZLİK HATASI]:', err.message);
+    console.error('[TEMİZLİK UYARISI]:', err.message);
   }
-}, 30 * 60 * 1000); // 30 dakikada bir kontrol eder
+}
 
 if (MONGODB_URI) {
   mongoose.connect(MONGODB_URI, { serverSelectionTimeoutMS: 5000 })
     .then(async () => {
       console.log('MongoDB Atlas bağlantısı başarılı.');
 
-      // İlk çalıştırmada da 24 saatten eski haberleri temizle
-      const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
-      await News.deleteMany({
-        $and: [
-          { pubDate: { $lt: twentyFourHoursAgo } },
-          { createdAt: { $lt: twentyFourHoursAgo } }
-        ]
-      }).catch(() => {});
+      // 1. Bağlantı kurulduktan sonra ilk temizliği yap
+      await cleanOldNews();
+
+      // 2. Her 1 saatte bir temizlik yap
+      setInterval(cleanOldNews, 60 * 60 * 1000);
 
       const adminExist = await User.findOne({ username: 'admin' });
       if (!adminExist) {
@@ -192,6 +184,10 @@ if (MONGODB_URI) {
           });
         }
       }
+
+      // Bağlantı hazır olunca taramayı tetikle
+      syncAllSources();
+      setInterval(syncAllSources, 5 * 60 * 1000);
     })
     .catch(err => console.error('MongoDB bağlantı hatası:', err.message));
 }
@@ -429,7 +425,7 @@ async function syncAllSources() {
 
 // 4. API ENDPOINT'LERİ
 
-// GÜVENLİ ÇEVİRİ MOTORU (CORS ENGELSİZ)
+// GÜVENLİ ÇEVİRİ MOTORU
 app.get('/api/translate', async (req, res) => {
   try {
     const text = req.query.text;
@@ -441,19 +437,16 @@ app.get('/api/translate', async (req, res) => {
   }
 });
 
-// HABER LİSTELEME: SADECE SON 24 SAAT VE LİMİTSİZ (TÜM 24 SAAT)
+// HABER LİSTELEME: SON 24 SAAT (GÜVENLİ SORGULAMA)
 app.get('/api/news', async (req, res) => {
   try {
     const { category, source, search, sort } = req.query;
 
-    // 1. Son 24 saatin zaman eşiği
+    // 24 saat kuralı: 24 saat önceki zaman
     const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
 
     let filter = {
-      $or: [
-        { pubDate: { $gte: twentyFourHoursAgo } },
-        { createdAt: { $gte: twentyFourHoursAgo } }
-      ]
+      pubDate: { $gte: twentyFourHoursAgo }
     };
 
     if (category && category !== 'Tümü') {
@@ -474,24 +467,25 @@ app.get('/api/news', async (req, res) => {
       ];
     }
 
-    let sortObj = { pubDate: -1, createdAt: -1 };
+    let sortObj = { pubDate: -1 };
     if (sort === 'rating') {
       sortObj = { views: -1, pubDate: -1 };
     }
 
-    // 2. Limiti 120'den kaldırıp son 24 saatin tüm haberlerini (maksimum 1500) getiriyoruz
+    // 120 limitini 1000'e yükselterek tüm 24 saat haberlerini getiriyoruz
     const news = await News.find(filter)
       .sort(sortObj)
-      .limit(1500)
+      .limit(1000)
       .lean();
 
     res.json(news);
   } catch (err) {
+    console.error('Haber getirme API hatası:', err.message);
     res.status(500).json({ error: err.message });
   }
 });
 
-// Okunma / Tıklanma Sayacı Arttırma
+// Okunma / Tıklanma Sayacı
 app.post('/api/news/:id/click', async (req, res) => {
   try {
     const { id } = req.params;
@@ -511,12 +505,7 @@ app.post('/api/news/:id/click', async (req, res) => {
 app.get('/api/analytics', async (req, res) => {
   try {
     const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
-    const filter24h = {
-      $or: [
-        { pubDate: { $gte: twentyFourHoursAgo } },
-        { createdAt: { $gte: twentyFourHoursAgo } }
-      ]
-    };
+    const filter24h = { pubDate: { $gte: twentyFourHoursAgo } };
 
     const totalNews = await News.countDocuments(filter24h);
 
@@ -849,10 +838,6 @@ app.post('/api/login', async (req, res) => {
     res.status(500).json({ success: false, error: err.message });
   }
 });
-
-// Otomatik Başlangıç Taraması ve Periyodik Güncelleme
-syncAllSources();
-setInterval(syncAllSources, 5 * 60 * 1000); // 5 dakikada bir otomatik tazeler
 
 app.listen(PORT, () => {
   console.log(`Haber Takip Portalı http://localhost:${PORT} adresinde yayında!`);
