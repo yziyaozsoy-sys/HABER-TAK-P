@@ -777,17 +777,11 @@ let activeAdsByPosition = {};
       try {
         const res = await fetch('/api/sources');
         const data = await res.json();
-        const sourceList = Array.isArray(data)
-          ? data
-          : (Array.isArray(data?.data) ? data.data : []);
-
-        if (!res.ok) {
-          throw new Error(data?.message || data?.error || 'Kaynaklar yüklenemedi.');
+        if (data.success && data.data) {
+          allSourcesList = data.data;
+          restoreSourcePreferences();
+          renderCategorySources();
         }
-
-        allSourcesList = sourceList;
-        restoreSourcePreferences();
-        renderCategorySources();
       } catch (e) {}
     }
 

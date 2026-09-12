@@ -1,0 +1,624 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="HaberTakip.pro Kişisel Verilerin İşlenmesine İlişkin Aydınlatma Metni">
+  <meta name="robots" content="index, follow">
+  <title>KVKK Aydınlatma Metni | HaberTakip.pro</title>
+
+  <style>
+    :root {
+      --primary: #b91c1c;
+      --primary-dark: #7f1d1d;
+      --background: #f3f4f6;
+      --surface: #ffffff;
+      --text: #1f2937;
+      --muted: #6b7280;
+      --border: #e5e7eb;
+      --notice-bg: #fff7ed;
+      --notice-border: #fdba74;
+      --notice-text: #9a3412;
+      --error-bg: #fef2f2;
+      --error-border: #fecaca;
+      --error-text: #991b1b;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html {
+      scroll-behavior: smooth;
+    }
+
+    body {
+      margin: 0;
+      background: var(--background);
+      color: var(--text);
+      font-family: Arial, Helvetica, sans-serif;
+      line-height: 1.7;
+    }
+
+    a {
+      color: var(--primary);
+    }
+
+    .site-header {
+      position: sticky;
+      top: 0;
+      z-index: 20;
+      background: rgba(255, 255, 255, 0.97);
+      border-bottom: 1px solid var(--border);
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+    }
+
+    .header-inner {
+      width: min(1100px, calc(100% - 32px));
+      min-height: 68px;
+      margin: 0 auto;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 20px;
+    }
+
+    .brand {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      color: var(--text);
+      font-size: 20px;
+      font-weight: 800;
+      text-decoration: none;
+    }
+
+    .brand-mark {
+      display: grid;
+      width: 38px;
+      height: 38px;
+      place-items: center;
+      border-radius: 10px;
+      background: var(--primary);
+      color: #ffffff;
+      font-size: 15px;
+    }
+
+    .home-link {
+      display: inline-flex;
+      align-items: center;
+      min-height: 40px;
+      padding: 8px 15px;
+      border: 1px solid var(--border);
+      border-radius: 9px;
+      background: #ffffff;
+      color: var(--text);
+      font-size: 14px;
+      font-weight: 700;
+      text-decoration: none;
+      transition: 0.2s ease;
+    }
+
+    .home-link:hover {
+      border-color: var(--primary);
+      color: var(--primary);
+    }
+
+    .page-shell {
+      width: min(1000px, calc(100% - 32px));
+      margin: 32px auto;
+    }
+
+    .legal-card {
+      overflow: hidden;
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      background: var(--surface);
+      box-shadow: 0 12px 32px rgba(15, 23, 42, 0.07);
+    }
+
+    .legal-hero {
+      padding: 34px 42px 28px;
+      border-bottom: 1px solid var(--border);
+      background: linear-gradient(135deg, #ffffff 0%, #fef2f2 100%);
+    }
+
+    .eyebrow {
+      margin: 0 0 8px;
+      color: var(--primary);
+      font-size: 13px;
+      font-weight: 800;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    #pageTitle {
+      margin: 0;
+      color: #111827;
+      font-size: clamp(27px, 4vw, 39px);
+      line-height: 1.2;
+    }
+
+    .updated-date {
+      margin: 14px 0 0;
+      color: var(--muted);
+      font-size: 14px;
+    }
+
+    .legal-content {
+      padding: 38px 42px 48px;
+    }
+
+    .legal-content h1 {
+      margin: 0 0 24px;
+      color: #111827;
+      font-size: 30px;
+      line-height: 1.25;
+    }
+
+    .legal-content h2 {
+      margin: 36px 0 13px;
+      padding-bottom: 8px;
+      border-bottom: 1px solid var(--border);
+      color: #111827;
+      font-size: 23px;
+      line-height: 1.3;
+    }
+
+    .legal-content h3 {
+      margin: 26px 0 10px;
+      color: #1f2937;
+      font-size: 18px;
+    }
+
+    .legal-content p {
+      margin: 0 0 16px;
+    }
+
+    .legal-content ul,
+    .legal-content ol {
+      margin: 8px 0 20px;
+      padding-left: 25px;
+    }
+
+    .legal-content li {
+      margin-bottom: 7px;
+    }
+
+    .legal-content strong {
+      color: #111827;
+    }
+
+    .legal-content code {
+      padding: 2px 6px;
+      border-radius: 5px;
+      background: #f3f4f6;
+      color: #991b1b;
+      font-family: Consolas, monospace;
+      font-size: 0.92em;
+    }
+
+    .legal-content hr {
+      margin: 30px 0;
+      border: 0;
+      border-top: 1px solid var(--border);
+    }
+
+    .loading-box,
+    .message-box {
+      padding: 24px;
+      border-radius: 12px;
+      text-align: center;
+    }
+
+    .loading-box {
+      border: 1px solid var(--border);
+      background: #f9fafb;
+      color: var(--muted);
+    }
+
+    .loading-indicator {
+      width: 34px;
+      height: 34px;
+      margin: 0 auto 13px;
+      border: 4px solid #e5e7eb;
+      border-top-color: var(--primary);
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+
+    .message-box {
+      border: 1px solid var(--notice-border);
+      background: var(--notice-bg);
+      color: var(--notice-text);
+    }
+
+    .message-box.error {
+      border-color: var(--error-border);
+      background: var(--error-bg);
+      color: var(--error-text);
+    }
+
+    .message-box h2 {
+      margin-top: 0;
+      border: 0;
+      color: inherit;
+    }
+
+    .back-button {
+      display: inline-flex;
+      min-height: 42px;
+      margin-top: 12px;
+      padding: 9px 18px;
+      align-items: center;
+      justify-content: center;
+      border-radius: 9px;
+      background: var(--primary);
+      color: #ffffff;
+      font-weight: 700;
+      text-decoration: none;
+    }
+
+    .back-button:hover {
+      background: var(--primary-dark);
+    }
+
+    .site-footer {
+      width: min(1000px, calc(100% - 32px));
+      margin: 0 auto;
+      padding: 0 0 34px;
+      color: var(--muted);
+      font-size: 13px;
+      text-align: center;
+    }
+
+    .site-footer a {
+      font-weight: 700;
+      text-decoration: none;
+    }
+
+    @keyframes spin {
+      to {
+        transform: rotate(360deg);
+      }
+    }
+
+    @media (max-width: 640px) {
+      .header-inner {
+        width: min(100% - 22px, 1100px);
+        min-height: 60px;
+      }
+
+      .brand {
+        font-size: 17px;
+      }
+
+      .brand-mark {
+        width: 34px;
+        height: 34px;
+        border-radius: 8px;
+        font-size: 13px;
+      }
+
+      .home-link {
+        min-height: 36px;
+        padding: 7px 10px;
+        font-size: 12px;
+      }
+
+      .page-shell {
+        width: min(100% - 20px, 1000px);
+        margin: 18px auto;
+      }
+
+      .legal-card {
+        border-radius: 12px;
+      }
+
+      .legal-hero {
+        padding: 25px 20px 21px;
+      }
+
+      .legal-content {
+        padding: 25px 20px 34px;
+        font-size: 15px;
+      }
+
+      .legal-content h1 {
+        font-size: 25px;
+      }
+
+      .legal-content h2 {
+        margin-top: 29px;
+        font-size: 20px;
+      }
+
+      .legal-content h3 {
+        font-size: 17px;
+      }
+    }
+
+    @media print {
+      .site-header,
+      .site-footer {
+        display: none;
+      }
+
+      body,
+      .legal-card {
+        background: #ffffff;
+      }
+
+      .page-shell {
+        width: 100%;
+        margin: 0;
+      }
+
+      .legal-card {
+        border: 0;
+        box-shadow: none;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <header class="site-header">
+    <div class="header-inner">
+      <a class="brand" href="/" aria-label="HaberTakip.pro ana sayfası">
+        <span class="brand-mark">HT</span>
+        <span>HaberTakip.pro</span>
+      </a>
+
+      <a class="home-link" href="/">← Haberlere dön</a>
+    </div>
+  </header>
+
+  <main class="page-shell">
+    <article class="legal-card">
+      <div class="legal-hero">
+        <p class="eyebrow">Yasal Bilgilendirme</p>
+        <h1 id="pageTitle">KVKK Aydınlatma Metni</h1>
+        <p id="updatedDate" class="updated-date" hidden></p>
+      </div>
+
+      <section id="legalContent" class="legal-content" aria-live="polite">
+        <div class="loading-box">
+          <div class="loading-indicator" aria-hidden="true"></div>
+          <strong>Metin yükleniyor…</strong>
+        </div>
+      </section>
+    </article>
+  </main>
+
+  <footer class="site-footer">
+    <p>
+      © <span id="currentYear"></span> HaberTakip.pro ·
+      <a href="/">Ana sayfa</a>
+    </p>
+  </footer>
+
+  <script>
+    const pageTitle = document.getElementById('pageTitle');
+    const updatedDate = document.getElementById('updatedDate');
+    const legalContent = document.getElementById('legalContent');
+
+    document.getElementById('currentYear').textContent =
+      new Date().getFullYear();
+
+    function formatDate(dateValue) {
+      if (!dateValue) return '';
+
+      const date = new Date(dateValue);
+
+      if (Number.isNaN(date.getTime())) {
+        return '';
+      }
+
+      return new Intl.DateTimeFormat('tr-TR', {
+        day: '2-digit',
+        month: 'long',
+        year: 'numeric'
+      }).format(date);
+    }
+
+    function appendInlineContent(element, value) {
+      const text = String(value || '');
+      const pattern = /(\*\*[^*]+\*\*|`[^`]+`|https?:\/\/[^\s]+)/g;
+      let lastIndex = 0;
+      let match;
+
+      while ((match = pattern.exec(text)) !== null) {
+        if (match.index > lastIndex) {
+          element.appendChild(
+            document.createTextNode(text.slice(lastIndex, match.index))
+          );
+        }
+
+        const token = match[0];
+
+        if (token.startsWith('**') && token.endsWith('**')) {
+          const strong = document.createElement('strong');
+          strong.textContent = token.slice(2, -2);
+          element.appendChild(strong);
+        } else if (token.startsWith('`') && token.endsWith('`')) {
+          const code = document.createElement('code');
+          code.textContent = token.slice(1, -1);
+          element.appendChild(code);
+        } else {
+          const link = document.createElement('a');
+          link.href = token;
+          link.textContent = token;
+          link.target = '_blank';
+          link.rel = 'noopener noreferrer';
+          element.appendChild(link);
+        }
+
+        lastIndex = pattern.lastIndex;
+      }
+
+      if (lastIndex < text.length) {
+        element.appendChild(
+          document.createTextNode(text.slice(lastIndex))
+        );
+      }
+    }
+
+    function renderMarkdown(markdown) {
+      const container = document.createDocumentFragment();
+      const lines = String(markdown || '').replace(/\r/g, '').split('\n');
+
+      let activeList = null;
+      let activeListType = null;
+
+      function closeList() {
+        if (activeList) {
+          container.appendChild(activeList);
+          activeList = null;
+          activeListType = null;
+        }
+      }
+
+      lines.forEach((rawLine) => {
+        const line = rawLine.trim();
+
+        if (!line) {
+          closeList();
+          return;
+        }
+
+        if (line === '---') {
+          closeList();
+          container.appendChild(document.createElement('hr'));
+          return;
+        }
+
+        const headingMatch = line.match(/^(#{1,3})\s+(.+)$/);
+
+        if (headingMatch) {
+          closeList();
+
+          const level = headingMatch[1].length;
+          const heading = document.createElement(`h${level}`);
+          appendInlineContent(heading, headingMatch[2]);
+          container.appendChild(heading);
+          return;
+        }
+
+        const unorderedMatch = line.match(/^[-*]\s+(.+)$/);
+        const orderedMatch = line.match(/^\d+\.\s+(.+)$/);
+
+        if (unorderedMatch || orderedMatch) {
+          const requiredType = unorderedMatch ? 'ul' : 'ol';
+
+          if (!activeList || activeListType !== requiredType) {
+            closeList();
+            activeList = document.createElement(requiredType);
+            activeListType = requiredType;
+          }
+
+          const item = document.createElement('li');
+          appendInlineContent(
+            item,
+            unorderedMatch ? unorderedMatch[1] : orderedMatch[1]
+          );
+          activeList.appendChild(item);
+          return;
+        }
+
+        closeList();
+
+        const paragraph = document.createElement('p');
+        appendInlineContent(paragraph, line);
+        container.appendChild(paragraph);
+      });
+
+      closeList();
+      legalContent.replaceChildren(container);
+    }
+
+    function showMessage(title, message, type = 'notice') {
+      const box = document.createElement('div');
+      box.className =
+        type === 'error' ? 'message-box error' : 'message-box';
+
+      const heading = document.createElement('h2');
+      heading.textContent = title;
+
+      const paragraph = document.createElement('p');
+      paragraph.textContent = message;
+
+      const homeButton = document.createElement('a');
+      homeButton.className = 'back-button';
+      homeButton.href = '/';
+      homeButton.textContent = 'Ana sayfaya dön';
+
+      box.append(heading, paragraph, homeButton);
+      legalContent.replaceChildren(box);
+    }
+
+    async function loadLegalPage() {
+      try {
+        const response = await fetch('/api/legal/kvkk', {
+          method: 'GET',
+          headers: {
+            Accept: 'application/json'
+          },
+          cache: 'no-store'
+        });
+
+        let result = null;
+
+        try {
+          result = await response.json();
+        } catch {
+          throw new Error('Sunucudan geçersiz yanıt alındı.');
+        }
+
+        if (response.status === 404) {
+          showMessage(
+            'Metin henüz yayımlanmadı',
+            'KVKK Aydınlatma Metni hazırlanıyor veya geçici olarak yayından kaldırılmış olabilir.'
+          );
+          return;
+        }
+
+        if (!response.ok || !result?.success || !result?.data) {
+          throw new Error(
+            result?.message || 'KVKK metni alınamadı.'
+          );
+        }
+
+        const page = result.data;
+
+        pageTitle.textContent =
+          page.title || 'KVKK Aydınlatma Metni';
+
+        document.title =
+          `${pageTitle.textContent} | HaberTakip.pro`;
+
+        const dateText = formatDate(
+          page.updatedAt || page.publishedAt
+        );
+
+        if (dateText) {
+          updatedDate.textContent = `Son güncelleme: ${dateText}`;
+          updatedDate.hidden = false;
+        }
+
+        renderMarkdown(page.content);
+      } catch (error) {
+        console.error('[KVKK SAYFASI]', error);
+
+        showMessage(
+          'Metin yüklenemedi',
+          'KVKK Aydınlatma Metni şu anda görüntülenemiyor. Lütfen daha sonra yeniden deneyin.',
+          'error'
+        );
+      }
+    }
+
+    loadLegalPage();
+  </script>
+</body>
+</html>

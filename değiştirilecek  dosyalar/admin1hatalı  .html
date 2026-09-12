@@ -497,61 +497,6 @@
         class="hidden grid grid-cols-1 lg:grid-cols-2 gap-5"
       ></div>
    </section>
-    <!-- 8. BÖLÜM: KVKK AYDINLATMA METNİ YÖNETİMİ (Admin Only) -->
-    <section id="legalSection" class="hidden bg-slate-800/80 border border-slate-700 rounded-2xl p-6 shadow-lg">
-      <div class="flex flex-wrap justify-between items-center gap-3 mb-5 pb-4 border-b border-slate-700">
-        <div>
-          <h2 class="text-base font-bold text-slate-100 flex items-center gap-2">
-            <i class="fa-solid fa-scale-balanced text-cyan-400"></i> KVKK Aydınlatma Metni Yönetimi
-          </h2>
-          <p class="text-xs text-slate-400 mt-0.5">KVKK metnini taslak olarak kaydedin, yayımlayın veya yayından kaldırın.</p>
-        </div>
-        <div class="flex items-center gap-2">
-          <span id="kvkkStatusBadge" class="text-[10px] px-2.5 py-1 rounded border bg-slate-700 text-slate-300 border-slate-600">Yükleniyor</span>
-          <button id="refreshKvkkBtn" type="button" class="bg-slate-700 hover:bg-slate-600 text-slate-200 px-3 py-1.5 rounded-lg text-xs transition">
-            <i class="fa-solid fa-arrows-rotate"></i> Yenile
-          </button>
-        </div>
-      </div>
-
-      <form id="kvkkForm" class="space-y-4">
-        <div>
-          <label for="kvkkTitle" class="block text-xs text-slate-400 mb-1">Metin Başlığı</label>
-          <input id="kvkkTitle" type="text" maxlength="200" required value="KVKK Aydınlatma Metni" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-200 focus:outline-none focus:border-cyan-500">
-        </div>
-
-        <div>
-          <div class="flex justify-between items-center mb-1">
-            <label for="kvkkContent" class="block text-xs text-slate-400">Metin İçeriği</label>
-            <span id="kvkkCharCount" class="text-[10px] text-slate-500 font-mono">0 / 100000</span>
-          </div>
-          <textarea id="kvkkContent" rows="20" maxlength="100000" required placeholder="KVKK Aydınlatma Metnini buraya yazın..." class="w-full bg-slate-950 border border-slate-700 rounded-xl p-4 text-xs leading-6 text-slate-200 focus:outline-none focus:border-cyan-500 font-sans"></textarea>
-          <p class="text-[10px] text-amber-300 mt-2">
-            <i class="fa-solid fa-triangle-exclamation mr-1"></i>
-            Köşeli parantez içindeki e-posta ve tebligat adresi alanları tamamlanmadan metin yayımlanamaz.
-          </p>
-        </div>
-
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-3 bg-slate-900/60 border border-slate-700/60 rounded-xl p-3 text-[11px]">
-          <div><span class="text-slate-500">Son güncelleme:</span> <span id="kvkkUpdatedAt" class="text-slate-300">Henüz yok</span></div>
-          <div><span class="text-slate-500">Güncelleyen:</span> <span id="kvkkUpdatedBy" class="text-slate-300">-</span></div>
-          <div><span class="text-slate-500">Yayın tarihi:</span> <span id="kvkkPublishedAt" class="text-slate-300">Henüz yok</span></div>
-        </div>
-
-        <div class="flex flex-wrap justify-end gap-2 pt-3 border-t border-slate-700">
-          <button id="unpublishKvkkBtn" type="button" class="hidden bg-rose-500/20 hover:bg-rose-600 text-rose-300 hover:text-white border border-rose-500/30 px-4 py-2 rounded-lg text-xs font-semibold transition">
-            <i class="fa-solid fa-eye-slash"></i> Yayından Kaldır
-          </button>
-          <button id="saveKvkkDraftBtn" type="button" class="bg-slate-700 hover:bg-slate-600 text-slate-200 px-4 py-2 rounded-lg text-xs font-semibold transition">
-            <i class="fa-solid fa-floppy-disk"></i> Taslak Kaydet
-          </button>
-          <button id="publishKvkkBtn" type="button" class="bg-cyan-600 hover:bg-cyan-500 text-white px-4 py-2 rounded-lg text-xs font-semibold transition">
-            <i class="fa-solid fa-globe"></i> Kaydet ve Yayımla
-          </button>
-        </div>
-      </form>
-    </section>
-
   </main>
 
   <script>
@@ -578,9 +523,6 @@
 
       if (userRole !== 'admin') {
         document.getElementById('personnelSection')?.classList.add('hidden');
-        document.getElementById('legalSection')?.classList.add('hidden');
-      } else {
-        document.getElementById('legalSection')?.classList.remove('hidden');
       }
 
       fetchRatings();
@@ -591,7 +533,6 @@
 
       if (userRole === 'admin') {
         fetchStaff();
-        loadKvkk();
       }
     }
 
@@ -707,94 +648,45 @@
     // --- 2. KATEGORİ YÖNETİMİ ---
     async function fetchCategories() {
       try {
-        const res = await fetch('/api/categories', { cache: 'no-store' });
-        const response = await res.json();
-
-        if (!res.ok) {
-          throw new Error(response.message || response.error || 'Kategoriler alınamadı.');
+        const res = await fetch('/api/categories');
+        const data = await res.json();
+        if (data.success && data.data) {
+          categoriesList = data.data;
+          renderCategories();
+          populateCategorySelect();
         }
-
-        const rawCategories = Array.isArray(response)
-          ? response
-          : Array.isArray(response.data)
-            ? response.data
-            : Array.isArray(response.categories)
-              ? response.categories
-              : [];
-
-        categoriesList = rawCategories.map(category => {
-          if (typeof category === 'string') {
-            const name = category.trim();
-            return name ? { _id: name, name } : null;
-          }
-          if (category && typeof category.name === 'string') {
-            const name = category.name.trim();
-            return name ? { ...category, _id: category._id || name, name } : null;
-          }
-          return null;
-        }).filter(Boolean);
-
-        renderCategories();
-        populateCategorySelect();
-      } catch (error) {
-        console.error('Kategori yükleme hatası:', error);
-        categoriesList = [];
-        renderCategories();
-        populateCategorySelect();
-        notify('Kategoriler yüklenemedi: ' + error.message, 'error');
-      }
+      } catch (e) {}
     }
 
     function renderCategories() {
       const container = document.getElementById('categoryChipsContainer');
-      if (!container) return;
-
       if (categoriesList.length === 0) {
         container.innerHTML = '<span class="text-xs text-slate-500">Henüz kategori bulunmuyor.</span>';
         return;
       }
-
-      container.innerHTML = categoriesList.map(category => {
-        const name = category.name;
-        const isSystemCategory = ['Gündem', 'Spor', 'Ekonomi'].includes(name);
-        return `
-          <div class="inline-flex items-center gap-1.5 bg-slate-800 border border-slate-700 px-3 py-1 rounded-lg text-xs font-medium shadow-sm">
-            <span class="text-purple-300 font-semibold">${escapeHtml(name)}</span>
-            ${!isSystemCategory ? `
-              <button type="button" data-category-name="${escapeHtml(name)}" class="delete-category-btn text-slate-500 hover:text-rose-400 transition ml-1" title="Kategoriyi Sil">
-                <i class="fa-solid fa-xmark text-[10px]"></i>
-              </button>
-            ` : '<span class="text-[10px] text-slate-500 ml-1 font-mono">(sistem)</span>'}
-          </div>`;
-      }).join('');
-
-      container.querySelectorAll('.delete-category-btn').forEach(button => {
-        button.addEventListener('click', () => deleteCategory(button.dataset.categoryName));
-      });
+      container.innerHTML = categoriesList.map(c => `
+        <div class="inline-flex items-center gap-1.5 bg-slate-800 border border-slate-700 px-3 py-1 rounded-lg text-xs font-medium shadow-sm">
+          <span class="text-purple-300 font-semibold">${c.name}</span>
+          ${!['Gündem', 'Spor', 'Ekonomi'].includes(c.name) ? `
+            <button onclick="deleteCategory('${c._id}', '${c.name}')" title="Kategoriyi Sil" class="text-slate-500 hover:text-rose-400 transition ml-1">
+              <i class="fa-solid fa-xmark text-[10px]"></i>
+            </button>
+          ` : '<span class="text-[10px] text-slate-500 ml-1 font-mono">(sistem)</span>'}
+        </div>
+      `).join('');
     }
 
     function populateCategorySelect() {
-      const options = categoriesList.length
-        ? categoriesList.map(category => `<option value="${escapeHtml(category.name)}">${escapeHtml(category.name)}</option>`).join('')
-        : '<option value="" disabled selected>Kategori bulunamadı</option>';
-
-      const sourceCategory = document.getElementById('srcCategory');
-      const editCategory = document.getElementById('editSrcCategory');
-
-      [sourceCategory, editCategory].forEach(select => {
-        if (!select) return;
-        const previousValue = select.value;
-        select.innerHTML = options;
-        if (previousValue && categoriesList.some(category => category.name === previousValue)) {
-          select.value = previousValue;
-        }
-      });
+      const options = categoriesList.map(c => `<option value="${c.name}">${c.name}</option>`).join('');
+      document.getElementById('srcCategory').innerHTML = options;
+      const editCat = document.getElementById('editSrcCategory');
+      if (editCat) editCat.innerHTML = options;
     }
 
-    document.getElementById('addCategoryForm').addEventListener('submit', async event => {
-      event.preventDefault();
-      const categoryInput = document.getElementById('catNameInput');
-      const name = categoryInput.value.trim();
+    document.getElementById('addCategoryForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const catInput = document.getElementById('catNameInput');
+      const name = catInput.value.trim();
       if (!name) return;
 
       try {
@@ -804,34 +696,45 @@
           body: JSON.stringify({ name })
         });
         const data = await res.json();
-        if (!res.ok || data.success === false) {
-          throw new Error(data.message || data.error || 'Kategori eklenemedi.');
+        if (data.success) {
+          notify(data.message, 'success');
+          catInput.value = '';
+          fetchCategories();
+        } else {
+          notify(data.message, 'error');
         }
-        notify(data.message || `"${name}" kategorisi eklendi.`, 'success');
-        categoryInput.value = '';
-        await fetchCategories();
-      } catch (error) {
-        notify('Kategori ekleme hatası: ' + error.message, 'error');
+      } catch (err) {
+        notify('Hata: ' + err.message, 'error');
       }
     });
 
-    window.deleteCategory = async name => {
+    window.deleteCategory = async (id, name) => {
       if (!confirm(`"${name}" kategorisini silmek istediğinize emin misiniz?`)) return;
       try {
-        const res = await fetch(`/api/categories/${encodeURIComponent(name)}`, {
-          method: 'DELETE',
-          headers: authHeaders()
-        });
+        const res = await fetch(`/api/categories/${id}`, { method: 'DELETE', headers: authHeaders() });
         const data = await res.json();
-        if (!res.ok || data.success === false) {
-          throw new Error(data.message || data.error || 'Kategori silinemedi.');
+        if (data.success) {
+          notify(data.message, 'success');
+          fetchCategories();
+        } else {
+          notify(data.message, 'error');
         }
-        notify(data.message || `"${name}" kategorisi silindi.`, 'success');
-        await fetchCategories();
-      } catch (error) {
-        notify('Kategori silme hatası: ' + error.message, 'error');
+      } catch (err) {
+        notify('Hata: ' + err.message, 'error');
       }
     };
+
+    const srcTypeSelect = document.getElementById('srcType');
+    const htmlSelectorDiv = document.getElementById('htmlSelectorDiv');
+    srcTypeSelect.addEventListener('change', () => {
+      htmlSelectorDiv.classList.toggle('hidden', srcTypeSelect.value !== 'html');
+    });
+
+    const editSrcTypeSelect = document.getElementById('editSrcType');
+    const editHtmlSelectorDiv = document.getElementById('editHtmlSelectorDiv');
+    editSrcTypeSelect.addEventListener('change', () => {
+      editHtmlSelectorDiv.classList.toggle('hidden', editSrcTypeSelect.value !== 'html');
+    });
 
     // --- 3. KULLANICI TALEPLERİ ---
     async function fetchRequests() {
@@ -1634,117 +1537,6 @@
       .getElementById('refreshAdsBtn')
       ?.addEventListener('click', loadAds);
 
-
-    // --- 8. KVKK AYDINLATMA METNİ YÖNETİMİ ---
-    let kvkkIsPublished = false;
-
-    function setKvkkStatus(isPublished) {
-      kvkkIsPublished = isPublished === true;
-      const badge = document.getElementById('kvkkStatusBadge');
-      const unpublishButton = document.getElementById('unpublishKvkkBtn');
-      if (badge) {
-        badge.className = kvkkIsPublished
-          ? 'text-[10px] px-2.5 py-1 rounded border bg-emerald-500/20 text-emerald-300 border-emerald-500/30'
-          : 'text-[10px] px-2.5 py-1 rounded border bg-amber-500/20 text-amber-300 border-amber-500/30';
-        badge.innerHTML = kvkkIsPublished
-          ? '<i class="fa-solid fa-circle-check mr-1"></i>Yayında'
-          : '<i class="fa-solid fa-pen-ruler mr-1"></i>Taslak';
-      }
-      unpublishButton?.classList.toggle('hidden', !kvkkIsPublished);
-    }
-
-    function updateKvkkCharCount() {
-      const content = document.getElementById('kvkkContent')?.value || '';
-      const counter = document.getElementById('kvkkCharCount');
-      if (counter) counter.textContent = `${content.length.toLocaleString('tr-TR')} / 100000`;
-    }
-
-    function fillKvkkForm(page) {
-      document.getElementById('kvkkTitle').value = page?.title || 'KVKK Aydınlatma Metni';
-      document.getElementById('kvkkContent').value = page?.content || '';
-      document.getElementById('kvkkUpdatedAt').textContent = formatSourceDate(page?.updatedAt);
-      document.getElementById('kvkkUpdatedBy').textContent = page?.updatedBy || '-';
-      document.getElementById('kvkkPublishedAt').textContent = formatSourceDate(page?.publishedAt);
-      setKvkkStatus(page?.isPublished === true);
-      updateKvkkCharCount();
-    }
-
-    async function loadKvkk() {
-      if (userRole !== 'admin') return;
-      const badge = document.getElementById('kvkkStatusBadge');
-      if (badge) {
-        badge.className = 'text-[10px] px-2.5 py-1 rounded border bg-slate-700 text-slate-300 border-slate-600';
-        badge.innerHTML = '<i class="fa-solid fa-spinner fa-spin mr-1"></i>Yükleniyor';
-      }
-
-      try {
-        const res = await fetch('/api/admin/legal/kvkk', { headers: authHeaders(), cache: 'no-store' });
-        const data = await res.json();
-        if (!res.ok || data.success === false) {
-          throw new Error(data.message || 'KVKK metni yüklenemedi.');
-        }
-        fillKvkkForm(data.data || null);
-      } catch (error) {
-        console.error('KVKK yükleme hatası:', error);
-        setKvkkStatus(false);
-        notify('KVKK yükleme hatası: ' + error.message, 'error');
-      }
-    }
-
-    async function saveKvkk(isPublished, button) {
-      if (userRole !== 'admin') {
-        notify('Bu işlem için yönetici yetkisi gerekiyor.', 'error');
-        return;
-      }
-
-      const title = document.getElementById('kvkkTitle').value.trim();
-      const content = document.getElementById('kvkkContent').value.trim();
-      if (!title || !content) {
-        notify('KVKK başlığı ve metin içeriği zorunludur.', 'error');
-        return;
-      }
-
-      const oldHtml = button?.innerHTML;
-      if (button) {
-        button.disabled = true;
-        button.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Kaydediliyor';
-      }
-
-      try {
-        const res = await fetch('/api/admin/legal/kvkk', {
-          method: 'PUT',
-          headers: authHeaders(),
-          body: JSON.stringify({ title, content, isPublished })
-        });
-        const data = await res.json();
-        if (!res.ok || data.success === false) {
-          throw new Error(data.message || 'KVKK metni kaydedilemedi.');
-        }
-        fillKvkkForm(data.data || { title, content, isPublished });
-        notify(data.message || 'KVKK metni başarıyla kaydedildi.', 'success');
-      } catch (error) {
-        notify('KVKK kayıt hatası: ' + error.message, 'error');
-      } finally {
-        if (button) {
-          button.disabled = false;
-          button.innerHTML = oldHtml;
-        }
-      }
-    }
-
-    document.getElementById('kvkkContent')?.addEventListener('input', updateKvkkCharCount);
-    document.getElementById('refreshKvkkBtn')?.addEventListener('click', loadKvkk);
-    document.getElementById('saveKvkkDraftBtn')?.addEventListener('click', event => {
-      if (kvkkIsPublished && !confirm('Taslak kaydetmek mevcut metni yayından kaldırır. Devam edilsin mi?')) return;
-      saveKvkk(false, event.currentTarget);
-    });
-    document.getElementById('publishKvkkBtn')?.addEventListener('click', event => {
-      saveKvkk(true, event.currentTarget);
-    });
-    document.getElementById('unpublishKvkkBtn')?.addEventListener('click', event => {
-      if (!confirm('KVKK metnini yayından kaldırmak istediğinize emin misiniz?')) return;
-      saveKvkk(false, event.currentTarget);
-    });
 
     // Başlat
     checkAuth();

@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="tr">
 <head>
   <meta charset="UTF-8">
@@ -631,10 +631,9 @@ let activeAdsByPosition = {};
         localStorage.removeItem(SOURCE_PREFERENCES_KEY);
       }
 
-      const hasSavedPreference = Array.isArray(savedNames);
       const validSavedNames = (savedNames || []).filter(name => activeNameSet.has(name));
       selectedSources = new Set(
-        hasSavedPreference ? validSavedNames : activeNames
+        validSavedNames.length > 0 ? validSavedNames : activeNames
       );
       saveSourcePreferences();
     }
@@ -670,6 +669,10 @@ let activeAdsByPosition = {};
           const sourceName = btn.getAttribute('data-src');
 
           if (selectedSources.has(sourceName)) {
+            if (selectedSources.size === 1) {
+              showAlert('En az bir haber kaynağı seçili kalmalıdır.', 'error');
+              return;
+            }
             selectedSources.delete(sourceName);
           } else {
             selectedSources.add(sourceName);
@@ -693,13 +696,22 @@ let activeAdsByPosition = {};
 
     document.getElementById('clearAllSourcesBtn').addEventListener('click', () => {
       const visibleSources = getVisibleActiveSources();
-
-      if (visibleSources.length === 0) {
-        showAlert('Kaldırılabilecek aktif kaynak bulunamadı.', 'info');
-        return;
-      }
+      const visibleNames = new Set(visibleSources.map(source => source.name));
+      const selectedOutsideVisible = Array.from(selectedSources).filter(
+        name => !visibleNames.has(name)
+      );
 
       visibleSources.forEach(source => selectedSources.delete(source.name));
+
+      if (selectedSources.size === 0 && visibleSources.length > 0) {
+        selectedSources.add(visibleSources[0].name);
+        showAlert(
+          `En az bir kaynak zorunlu olduğu için ${visibleSources[0].name} seçili bırakıldı.`,
+          'info'
+        );
+      } else if (selectedOutsideVisible.length === 0 && visibleSources.length === 0) {
+        showAlert('Kaldırılabilecek aktif kaynak bulunamadı.', 'info');
+      }
 
       saveSourcePreferences();
       renderCategorySources();
@@ -777,17 +789,11 @@ let activeAdsByPosition = {};
       try {
         const res = await fetch('/api/sources');
         const data = await res.json();
-        const sourceList = Array.isArray(data)
-          ? data
-          : (Array.isArray(data?.data) ? data.data : []);
-
-        if (!res.ok) {
-          throw new Error(data?.message || data?.error || 'Kaynaklar yüklenemedi.');
+        if (data.success && data.data) {
+          allSourcesList = data.data;
+          restoreSourcePreferences();
+          renderCategorySources();
         }
-
-        allSourcesList = sourceList;
-        restoreSourcePreferences();
-        renderCategorySources();
       } catch (e) {}
     }
 
@@ -1081,28 +1087,16 @@ let activeAdsByPosition = {};
           url += `&search=${encodeURIComponent(search)}`;
         }
 
-        const visibleActiveSources = getVisibleActiveSources();
-        const visibleActiveSourceNames = visibleActiveSources.map(source => source.name);
-        const selectedVisibleSources = visibleActiveSourceNames.filter(name => selectedSources.has(name));
-
-        // Kullanıcı bu kategorideki tüm kaynakları kaldırdıysa API'ye boş
-        // "sources" göndermeyiz; bazı sunucular bunu "tüm kaynaklar" sayabilir.
-        // Haber havuzunu bilinçli olarak boş bırakırız.
-        if (visibleActiveSourceNames.length > 0 && selectedVisibleSources.length === 0) {
-          currentNewsList = [];
-          currentNewsPage = 1;
-          totalNewsCount = 0;
-          hasMoreNews = false;
-          renderNews();
-          loadMoreContainer.classList.add('hidden');
-          return;
-        }
+        const activeSourceNames = allSourcesList
+          .filter(source => source.isActive)
+          .map(source => source.name);
+        const selectedActiveSources = activeSourceNames.filter(name => selectedSources.has(name));
 
         if (
-          visibleActiveSourceNames.length > 0 &&
-          selectedVisibleSources.length < visibleActiveSourceNames.length
+          activeSourceNames.length > 0 &&
+          selectedActiveSources.length < activeSourceNames.length
         ) {
-          url += `&sources=${encodeURIComponent(selectedVisibleSources.join(','))}`;
+          url += `&sources=${encodeURIComponent(selectedActiveSources.join(','))}`;
         }
 
         const response = await fetch(url);

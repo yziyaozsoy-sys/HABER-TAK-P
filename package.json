@@ -5,10 +5,11 @@
   "main": "main.js",
   "author": "Ezequiel Sarser",
   "scripts": {
-    "start": "electron .",
+    "start": "node server.js",
     "build": "electron-builder --publish never",
     "release": "electron-builder --publish always",
-    "build:dir": "electron-builder --dir"
+    "build:dir": "electron-builder --dir",
+    "desktop": "electron ."
   },
   "devDependencies": {
     "electron": "^28.3.3",

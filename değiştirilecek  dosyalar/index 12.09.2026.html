@@ -25,8 +25,8 @@
       width: 160px;
       min-width: 160px;
       height: 600px;
-      position: static;
-      top: auto;
+      position: sticky;
+      top: 85px;
     }
     @keyframes ticker-scroll {
       0% { transform: translateX(100vw); }
@@ -54,55 +54,6 @@
     }
     .ticker-container:hover .ticker-track {
       animation-play-state: paused;
-    }
-
-
-    /* REKLAM ÖLÇÜLERİ: yatay alanlar 970x120 oranında, yan kuleler 160x600 */
-    #topAdContent,
-    #bottomAdContent,
-    .dynamic-inline-ad > div:last-child {
-      width: 100%;
-      height: 120px !important;
-      min-height: 120px !important;
-      max-height: 120px !important;
-    }
-
-    #topAdContent img,
-    #bottomAdContent img,
-    .dynamic-inline-ad img {
-      width: 100% !important;
-      height: 120px !important;
-      max-width: 970px;
-      object-fit: cover !important;
-      display: block;
-    }
-
-    #leftAdContainer,
-    #rightAdContainer {
-      width: 160px;
-      min-width: 160px;
-      height: 600px !important;
-      min-height: 600px !important;
-      max-height: 600px !important;
-      position: static !important;
-      top: auto !important;
-      align-self: flex-start;
-    }
-
-    #leftAdContent,
-    #rightAdContent {
-      flex: 1 1 auto;
-      min-height: 0;
-      height: auto !important;
-      overflow: hidden;
-    }
-
-    #leftAdContent img,
-    #rightAdContent img {
-      width: 100% !important;
-      height: 100% !important;
-      object-fit: cover !important;
-      display: block;
     }
   </style>
 </head>
@@ -223,16 +174,8 @@
         <span class="text-slate-400 font-medium flex items-center gap-1">
           <i class="fa-solid fa-filter text-emerald-400"></i> Kaynaklar:
         </span>
-        <div class="flex items-center gap-1.5 flex-wrap">
-          <button id="selectAllSourcesBtn" type="button" class="bg-emerald-600/15 hover:bg-emerald-600/30 text-emerald-300 border border-emerald-500/30 px-2 py-0.5 rounded-lg text-[11px] font-semibold transition">
-            <i class="fa-solid fa-check-double mr-1"></i>Tümünü Seç
-          </button>
-          <button id="clearAllSourcesBtn" type="button" class="bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 px-2 py-0.5 rounded-lg text-[11px] font-semibold transition">
-            <i class="fa-solid fa-xmark mr-1"></i>Tümünü Kaldır
-          </button>
-          <div id="sourcesFilter" class="flex items-center gap-1.5 flex-wrap">
-            <span class="text-xs text-slate-500">Kaynaklar yükleniyor...</span>
-          </div>
+        <div id="sourcesFilter" class="flex items-center gap-1.5 flex-wrap">
+          <span class="text-xs text-slate-500">Kaynaklar yükleniyor...</span>
         </div>
       </div>
 
@@ -261,7 +204,7 @@
 
     <div
       id="topAdContent"
-      class="w-full h-32 flex items-center justify-center bg-slate-800/30 border border-slate-800 rounded-xl overflow-hidden"
+      class="w-full min-h-20 flex items-center justify-center bg-slate-800/30 border border-slate-800 rounded-xl overflow-hidden"
     ></div>
   </section>
 
@@ -271,7 +214,7 @@
     <!-- SOL REKLAM KULESİ -->
     <aside id="leftAdContainer" class="hidden xl:flex ad-skyscraper invisible flex-col justify-center items-center bg-slate-800/40 border border-slate-800 rounded-xl overflow-hidden shadow-sm shrink-0">
       <span class="text-[10px] text-slate-600 mb-1">REKLAM</span>
-      <div id="leftAdContent" class="w-full flex-1 min-h-0 flex items-center justify-center p-1"></div>
+      <div id="leftAdContent" class="w-full h-full flex items-center justify-center p-1"></div>
     </aside>
 
     <!-- ORTA HABER İÇERİĞİ -->
@@ -287,20 +230,17 @@
             <span id="toggleSelectAllText">Tümünü Seç</span>
           </button>
         </div>
+
+        <button id="syncRssBtn" class="bg-slate-800 hover:bg-slate-700 text-emerald-400 border border-slate-700 px-3 py-1.5 rounded-lg text-xs font-semibold transition flex items-center gap-1.5 shadow-sm">
+          <i class="fa-solid fa-cloud-arrow-down" id="syncIcon"></i>
+          <span id="syncText">Kaynakları Tara</span>
+        </button>
       </div>
 
       <div id="statusAlert" class="hidden mb-4 p-3 rounded-xl text-xs font-medium transition"></div>
 
       <!-- Haber Grid -->
       <div id="newsGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 gap-5"></div>
-
-      <!-- Son 24 saat haberleri 100'erli gruplar hâlinde yüklenir. -->
-      <div id="loadMoreContainer" class="hidden mt-8 text-center">
-        <button id="loadMoreBtn" type="button" class="bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 disabled:cursor-not-allowed text-white px-5 py-2.5 rounded-xl text-sm font-semibold transition shadow-md">
-          <i class="fa-solid fa-circle-plus mr-2"></i>
-          <span id="loadMoreBtnText">Daha Fazla Yükle</span>
-        </button>
-      </div>
 
       <!-- FOOTER -->
       <footer class="mt-12 py-6 border-t border-slate-800/80 text-center">
@@ -317,7 +257,7 @@
     <!-- SAĞ REKLAM KULESİ -->
    <aside id="rightAdContainer" class="hidden xl:flex ad-skyscraper invisible flex-col justify-center items-center bg-slate-800/40 border border-slate-800 rounded-xl overflow-hidden shadow-sm shrink-0">
       <span class="text-[10px] text-slate-600 mb-1">REKLAM</span>
-      <div id="rightAdContent" class="w-full flex-1 min-h-0 flex items-center justify-center p-1"></div>
+      <div id="rightAdContent" class="w-full h-full flex items-center justify-center p-1"></div>
       </aside>
 
   </div>
@@ -334,7 +274,7 @@
 
     <div
       id="bottomAdContent"
-      class="w-full h-32 flex items-center justify-center bg-slate-800/30 border border-slate-800 rounded-xl overflow-hidden"
+      class="w-full min-h-20 flex items-center justify-center bg-slate-800/30 border border-slate-800 rounded-xl overflow-hidden"
     ></div>
   </section>
 
@@ -383,14 +323,9 @@
     let allSourcesList = [];
     let currentNewsList = [];
     let selectedSources = new Set();
-    const SOURCE_PREFERENCES_KEY = 'haber_selected_sources_v1';
     let selectedNewsGuids = new Set();
     let selectedCategory = 'Tümü';
     let currentSortMode = 'latest';
-    const NEWS_PAGE_SIZE = 100;
-    let currentNewsPage = 1;
-    let totalNewsCount = 0;
-    let hasMoreNews = false;
     let searchTimeout;
     let isPaused = false;
 let activeAdsByPosition = {};
@@ -597,119 +532,53 @@ let activeAdsByPosition = {};
       }
     }
 
-    function getVisibleActiveSources() {
-      let filtered = allSourcesList.filter(source => source.isActive);
-      if (selectedCategory !== 'Tümü') {
-        filtered = filtered.filter(
-          source => (source.category || 'Gündem') === selectedCategory
-        );
-      }
-      return filtered;
-    }
-
-    function saveSourcePreferences() {
-      localStorage.setItem(
-        SOURCE_PREFERENCES_KEY,
-        JSON.stringify(Array.from(selectedSources))
-      );
-    }
-
-    function restoreSourcePreferences() {
-      const activeNames = allSourcesList
-        .filter(source => source.isActive)
-        .map(source => source.name);
-      const activeNameSet = new Set(activeNames);
-      let savedNames = null;
-
-      try {
-        const savedValue = localStorage.getItem(SOURCE_PREFERENCES_KEY);
-        if (savedValue !== null) {
-          const parsedValue = JSON.parse(savedValue);
-          if (Array.isArray(parsedValue)) savedNames = parsedValue;
-        }
-      } catch (error) {
-        localStorage.removeItem(SOURCE_PREFERENCES_KEY);
-      }
-
-      const hasSavedPreference = Array.isArray(savedNames);
-      const validSavedNames = (savedNames || []).filter(name => activeNameSet.has(name));
-      selectedSources = new Set(
-        hasSavedPreference ? validSavedNames : activeNames
-      );
-      saveSourcePreferences();
-    }
-
-    function sourceChipClass(isSelected) {
-      return isSelected
-        ? 'source-chip bg-emerald-600/20 text-emerald-300 border border-emerald-500/30 px-2.5 py-0.5 rounded-full hover:opacity-80 transition flex items-center gap-1'
-        : 'source-chip bg-slate-800 text-slate-500 border border-slate-700 px-2.5 py-0.5 rounded-full hover:opacity-80 transition flex items-center gap-1';
-    }
-
     function renderCategorySources() {
-      const filtered = getVisibleActiveSources();
+      let filtered = allSourcesList.filter(s => s.isActive);
+      if (selectedCategory !== 'Tümü') {
+        filtered = filtered.filter(s => (s.category || 'Gündem') === selectedCategory);
+      }
 
+      selectedSources.clear();
       if (filtered.length === 0) {
         sourcesContainer.innerHTML = `<span class="text-slate-500 text-[11px] italic">Bu kategoride aktif kaynak bulunamadı.</span>`;
         return;
       }
 
       sourcesContainer.innerHTML = filtered.map(src => {
-        const isSelected = selectedSources.has(src.name);
+        selectedSources.add(src.name);
         const isEn = src.lang === 'en';
         return `
-          <button type="button" data-src="${src.name}" class="${sourceChipClass(isSelected)}">
+          <button data-src="${src.name}" class="source-chip bg-emerald-600/20 text-emerald-300 border border-emerald-500/30 px-2.5 py-0.5 rounded-full hover:opacity-80 transition flex items-center gap-1">
             <span>${src.name}</span>
             ${isEn ? '<span class="text-[9px] bg-indigo-500/30 text-indigo-200 px-1 rounded font-bold">TR Çeviri</span>' : ''}
-            <i class="fa-solid ${isSelected ? 'fa-check' : 'fa-xmark'} text-[10px]"></i>
+            <i class="fa-solid fa-check text-[10px]"></i>
           </button>
         `;
       }).join('');
 
       document.querySelectorAll('.source-chip').forEach(btn => {
         btn.addEventListener('click', () => {
-          const sourceName = btn.getAttribute('data-src');
-
-          if (selectedSources.has(sourceName)) {
-            selectedSources.delete(sourceName);
+          const src = btn.getAttribute('data-src');
+          if (selectedSources.has(src)) {
+            selectedSources.delete(src);
+            btn.className = 'source-chip bg-slate-800 text-slate-500 border border-slate-700 px-2.5 py-0.5 rounded-full hover:opacity-80 transition flex items-center gap-1';
+            btn.querySelector('i').className = 'fa-solid fa-xmark text-[10px]';
           } else {
-            selectedSources.add(sourceName);
+            selectedSources.add(src);
+            btn.className = 'source-chip bg-emerald-600/20 text-emerald-300 border border-emerald-500/30 px-2.5 py-0.5 rounded-full hover:opacity-80 transition flex items-center gap-1';
+            btn.querySelector('i').className = 'fa-solid fa-check text-[10px]';
           }
-
-          saveSourcePreferences();
-          renderCategorySources();
-          selectedNewsGuids.clear();
           loadNews();
         });
       });
     }
 
-    document.getElementById('selectAllSourcesBtn').addEventListener('click', () => {
-      getVisibleActiveSources().forEach(source => selectedSources.add(source.name));
-      saveSourcePreferences();
-      renderCategorySources();
-      selectedNewsGuids.clear();
-      loadNews();
-    });
-
-    document.getElementById('clearAllSourcesBtn').addEventListener('click', () => {
-      const visibleSources = getVisibleActiveSources();
-
-      if (visibleSources.length === 0) {
-        showAlert('Kaldırılabilecek aktif kaynak bulunamadı.', 'info');
-        return;
-      }
-
-      visibleSources.forEach(source => selectedSources.delete(source.name));
-
-      saveSourcePreferences();
-      renderCategorySources();
-      selectedNewsGuids.clear();
-      loadNews();
-    });
-
     const grid = document.getElementById('newsGrid');
     const countText = document.getElementById('newsCount');
     const alarmBadge = document.getElementById('alarmBadge');
+    const syncBtn = document.getElementById('syncRssBtn');
+    const syncIcon = document.getElementById('syncIcon');
+    const syncText = document.getElementById('syncText');
     const statusAlert = document.getElementById('statusAlert');
     const sourcesContainer = document.getElementById('sourcesFilter');
     const exportBtnText = document.getElementById('exportBtnText');
@@ -777,17 +646,10 @@ let activeAdsByPosition = {};
       try {
         const res = await fetch('/api/sources');
         const data = await res.json();
-        const sourceList = Array.isArray(data)
-          ? data
-          : (Array.isArray(data?.data) ? data.data : []);
-
-        if (!res.ok) {
-          throw new Error(data?.message || data?.error || 'Kaynaklar yüklenemedi.');
+        if (data.success && data.data) {
+          allSourcesList = data.data;
+          renderCategorySources();
         }
-
-        allSourcesList = sourceList;
-        restoreSourcePreferences();
-        renderCategorySources();
       } catch (e) {}
     }
 
@@ -833,7 +695,7 @@ let activeAdsByPosition = {};
     }
 
     function renderNews() {
-      countText.textContent = `Son 24 saatte ${totalNewsCount} haber bulundu. ${currentNewsList.length} haber gösteriliyor.`;
+      countText.textContent = `Toplam ${currentNewsList.length} haber listeleniyor.`;
       updateExportButtonState();
       updateTicker(currentNewsList);
 
@@ -1058,114 +920,36 @@ let activeAdsByPosition = {};
       }
     }
 
-    async function loadNews({ append = false } = {}) {
-      const targetPage = append ? currentNewsPage + 1 : 1;
-      const loadMoreBtn = document.getElementById('loadMoreBtn');
-      const loadMoreBtnText = document.getElementById('loadMoreBtnText');
-      const loadMoreContainer = document.getElementById('loadMoreContainer');
-
+    async function loadNews() {
       try {
-        if (append) {
-          loadMoreBtn.disabled = true;
-          loadMoreBtnText.textContent = 'Yükleniyor...';
-        }
-
-        let url = `/api/news?page=${targetPage}&limit=${NEWS_PAGE_SIZE}&sort=${encodeURIComponent(currentSortMode)}`;
-
+        let url = `/api/news?limit=120&sort=${currentSortMode}`;
         if (selectedCategory && selectedCategory !== 'Tümü') {
           url += `&category=${encodeURIComponent(selectedCategory)}`;
         }
-
         const search = document.getElementById('searchInput').value.trim();
-        if (search) {
-          url += `&search=${encodeURIComponent(search)}`;
+        if (search) url += `&search=${encodeURIComponent(search)}`;
+        
+        const totalActiveSources = allSourcesList.filter(s => s.isActive).length;
+        if (selectedSources.size > 0 && selectedSources.size < totalActiveSources) {
+          url += `&sources=${encodeURIComponent(Array.from(selectedSources).join(','))}`;
         }
 
-        const visibleActiveSources = getVisibleActiveSources();
-        const visibleActiveSourceNames = visibleActiveSources.map(source => source.name);
-        const selectedVisibleSources = visibleActiveSourceNames.filter(name => selectedSources.has(name));
+        const res = await fetch(url);
+        const data = await res.json();
+        if (!data.success) throw new Error(data.error || 'Veri çekilemedi');
 
-        // Kullanıcı bu kategorideki tüm kaynakları kaldırdıysa API'ye boş
-        // "sources" göndermeyiz; bazı sunucular bunu "tüm kaynaklar" sayabilir.
-        // Haber havuzunu bilinçli olarak boş bırakırız.
-        if (visibleActiveSourceNames.length > 0 && selectedVisibleSources.length === 0) {
-          currentNewsList = [];
-          currentNewsPage = 1;
-          totalNewsCount = 0;
-          hasMoreNews = false;
-          renderNews();
-          loadMoreContainer.classList.add('hidden');
-          return;
-        }
-
-        if (
-          visibleActiveSourceNames.length > 0 &&
-          selectedVisibleSources.length < visibleActiveSourceNames.length
-        ) {
-          url += `&sources=${encodeURIComponent(selectedVisibleSources.join(','))}`;
-        }
-
-        const response = await fetch(url);
-        const payload = await response.json();
-
-        if (!response.ok || !payload.success) {
-          throw new Error(payload.error || 'Veri çekilemedi');
-        }
-
-        const incomingNews = Array.isArray(payload.data) ? payload.data : [];
-        const pagination = payload.pagination || {};
-
-        currentNewsPage = Number(pagination.page) || targetPage;
-        totalNewsCount = Number(pagination.total) || 0;
-        hasMoreNews = pagination.hasMore === true;
-
-        if (append) {
-          const existingIds = new Set(
-            currentNewsList.map(item => item._id || item.guid)
-          );
-
-          const uniqueIncomingNews = incomingNews.filter(item => {
-            const key = item._id || item.guid;
-            return key && !existingIds.has(key);
-          });
-
-          currentNewsList = currentNewsList.concat(uniqueIncomingNews);
-        } else {
-          currentNewsList = incomingNews;
-        }
+        let news = data.data || [];
 
         if (currentSortMode === 'latest') {
-          currentNewsList.sort(
-            (first, second) =>
-              new Date(second.pubDate || second.createdAt) -
-              new Date(first.pubDate || first.createdAt)
-          );
+          news.sort((a, b) => new Date(b.pubDate || b.createdAt) - new Date(a.pubDate || a.createdAt));
         }
 
+        currentNewsList = news;
         renderNews();
-        loadMoreContainer.classList.toggle('hidden', !hasMoreNews);
       } catch (err) {
-        if (!append) {
-          currentNewsList = [];
-          totalNewsCount = 0;
-          hasMoreNews = false;
-          countText.textContent = 'Son 24 saat haberleri yüklenemedi.';
-          grid.innerHTML = `<div class="col-span-full text-center py-10 text-rose-400 text-xs">Hata: ${err.message}</div>`;
-          loadMoreContainer.classList.add('hidden');
-        } else {
-          showAlert('Daha fazla haber yüklenemedi: ' + err.message, 'error');
-        }
-      } finally {
-        loadMoreBtn.disabled = false;
-        loadMoreBtnText.textContent = 'Daha Fazla Yükle';
+        grid.innerHTML = `<div class="col-span-full text-center py-10 text-rose-400 text-xs">Hata: ${err.message}</div>`;
       }
     }
-
-    document.getElementById('loadMoreBtn').addEventListener('click', () => {
-      if (hasMoreNews) {
-        loadNews({ append: true });
-      }
-    });
 
     let refreshSeconds = 30;
     setInterval(() => {
@@ -1280,7 +1064,7 @@ let activeAdsByPosition = {};
         return 'w-full h-full object-cover rounded-lg hover:opacity-90 transition';
       }
 
-      return 'w-full h-full object-cover rounded-lg hover:opacity-90 transition';
+      return 'max-w-full w-auto max-h-48 object-contain rounded-lg hover:opacity-90 transition';
     }
 
     function fillAdContent(content, ad, position) {
@@ -1390,7 +1174,7 @@ let activeAdsByPosition = {};
       const wrapper = document.createElement('section');
 
       wrapper.className =
-        'dynamic-inline-ad col-span-full w-full my-4';
+        'dynamic-inline-ad col-span-full w-full my-2';
       wrapper.dataset.adPosition = position;
       wrapper.setAttribute('aria-label', 'Haber arası reklam');
 
@@ -1403,7 +1187,7 @@ let activeAdsByPosition = {};
       const content = document.createElement('div');
 
       content.className =
-        'w-full h-32 flex items-center justify-center bg-slate-800/30 border border-slate-800 rounded-xl overflow-hidden';
+        'w-full min-h-20 flex items-center justify-center bg-slate-800/30 border border-slate-800 rounded-xl overflow-hidden p-2';
 
       wrapper.appendChild(label);
       wrapper.appendChild(content);
@@ -1517,14 +1301,33 @@ console.log('REKLAM API VERİSİ:', payload);
       loadNews().finally(() => setTimeout(() => icon.classList.remove('fa-spin'), 600));
     });
 
-    async function initializePage() {
-      loadCategories();
-      await loadSources();
-      await loadNews();
-      loadBannerAds();
-    }
+    syncBtn.addEventListener('click', async () => {
+      syncBtn.disabled = true;
+      syncIcon.className = 'fa-solid fa-circle-notch fa-spin';
+      syncText.textContent = 'Taranıyor...';
+      showAlert('Kaynaklar taranıyor...', 'info');
 
-    initializePage();
+      try {
+        await fetch('/api/sync');
+        setTimeout(async () => {
+          await loadNews();
+          syncIcon.className = 'fa-solid fa-cloud-arrow-down';
+          syncText.textContent = 'Kaynakları Tara';
+          syncBtn.disabled = false;
+          showAlert('Tüm kaynaklar güncellendi.', 'success');
+        }, 3000);
+      } catch (e) {
+        syncIcon.className = 'fa-solid fa-triangle-exclamation';
+        syncText.textContent = 'Hata!';
+        syncBtn.disabled = false;
+        showAlert('Tarama hatası: ' + e.message, 'error');
+      }
+    });
+
+    loadCategories();
+    loadSources();
+    loadNews();
+    loadBannerAds();
   </script>
 </body>
 </html>

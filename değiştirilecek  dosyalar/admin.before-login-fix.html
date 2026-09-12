@@ -345,18 +345,17 @@
         <table class="w-full text-left text-xs">
           <thead>
             <tr class="text-slate-400 border-b border-slate-700 bg-slate-900/40">
-              <th class="py-2.5 px-3">Kaynak</th>
-              <th class="py-2.5 px-3">Tip / Dil</th>
+              <th class="py-2.5 px-3">Kaynak Adı</th>
+              <th class="py-2.5 px-3">Tip</th>
+              <th class="py-2.5 px-3">Dil</th>
               <th class="py-2.5 px-3">Kategori</th>
               <th class="py-2.5 px-3">Bağlantı URL</th>
-              <th class="py-2.5 px-3">Kaynak Sağlığı</th>
-              <th class="py-2.5 px-3">Son Tarama</th>
               <th class="py-2.5 px-3 text-center">Durum</th>
               <th class="py-2.5 px-3 text-right">İşlemler</th>
             </tr>
           </thead>
           <tbody id="sourcesTableBody" class="divide-y divide-slate-700/40">
-            <tr><td colspan="8" class="text-center py-6 text-slate-500">Kaynaklar yükleniyor...</td></tr>
+            <tr><td colspan="7" class="text-center py-6 text-slate-500">Kaynaklar yükleniyor...</td></tr>
           </tbody>
         </table>
       </div>
@@ -434,164 +433,132 @@
       </div>
     </section>
 
-        <!-- 7. BÖLÜM: 6 KONUMLU REKLAM YÖNETİMİ -->
+    <!-- 7. BÖLÜM: REKLAM ALANLARI -->
     <section class="bg-slate-800/80 border border-slate-700 rounded-2xl p-6 shadow-lg">
-      <div class="flex flex-wrap justify-between items-center gap-3 mb-5 pb-4 border-b border-slate-700">
-        <div>
-          <h2 class="text-base font-bold text-slate-100 flex items-center gap-2">
-            <i class="fa-solid fa-rectangle-ad text-yellow-400"></i>
-            Reklam Alanları Yönetimi
-          </h2>
-          <p class="text-xs text-slate-400 mt-0.5">
-            Üst, yan, haber arası ve alt reklam alanlarını buradan yönetin.
-          </p>
-        </div>
-
-        <button
-          id="refreshAdsBtn"
-          type="button"
-          class="bg-slate-700 hover:bg-slate-600 text-slate-200 px-3 py-1.5 rounded-lg text-xs font-medium transition flex items-center gap-1.5"
-        >
-          <i class="fa-solid fa-arrows-rotate"></i>
-          Reklamları Yenile
-        </button>
+      <div class="mb-5 pb-4 border-b border-slate-700">
+        <h2 class="text-base font-bold text-slate-100 flex items-center gap-2">
+          <i class="fa-solid fa-rectangle-ad text-yellow-400"></i> Reklam Alanları Yönetimi (Skyscraper)
+        </h2>
+        <p class="text-xs text-slate-400 mt-0.5">Sol ve Sağ kule reklamlarına Google AdSense kodları veya özel görseller atayın.</p>
       </div>
 
-      <div class="mb-5 grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-2 text-[11px]">
-        <div class="bg-slate-900/60 border border-slate-700 rounded-lg p-2 text-center">
-          <div class="font-semibold text-yellow-300">Üst</div>
-          <div class="text-slate-500">top</div>
-        </div>
-        <div class="bg-slate-900/60 border border-slate-700 rounded-lg p-2 text-center">
-          <div class="font-semibold text-sky-300">Sol Kule</div>
-          <div class="text-slate-500">left</div>
-        </div>
-        <div class="bg-slate-900/60 border border-slate-700 rounded-lg p-2 text-center">
-          <div class="font-semibold text-sky-300">Sağ Kule</div>
-          <div class="text-slate-500">right</div>
-        </div>
-        <div class="bg-slate-900/60 border border-slate-700 rounded-lg p-2 text-center">
-          <div class="font-semibold text-purple-300">Haber Arası 1</div>
-          <div class="text-slate-500">inline1</div>
-        </div>
-        <div class="bg-slate-900/60 border border-slate-700 rounded-lg p-2 text-center">
-          <div class="font-semibold text-purple-300">Haber Arası 2</div>
-          <div class="text-slate-500">inline2</div>
-        </div>
-        <div class="bg-slate-900/60 border border-slate-700 rounded-lg p-2 text-center">
-          <div class="font-semibold text-emerald-300">Alt</div>
-          <div class="text-slate-500">bottom</div>
-        </div>
-      </div>
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <!-- SOL REKLAM -->
+        <div class="bg-slate-900/60 p-5 rounded-xl border border-slate-700/60 flex flex-col justify-between">
+          <div>
+            <div class="flex justify-between items-center mb-3">
+              <span class="font-bold text-sm text-sky-400 flex items-center gap-1.5">
+                <i class="fa-solid fa-arrow-left"></i> Sol Kule Reklamı (160x600)
+              </span>
+              <label class="flex items-center gap-1.5 cursor-pointer text-xs">
+                <input type="checkbox" id="leftActive" class="w-4 h-4 rounded text-emerald-500 bg-slate-950 border-slate-700 focus:ring-emerald-500">
+                <span class="text-slate-300">Aktif</span>
+              </label>
+            </div>
 
-      <div
-        id="adsLoading"
-        class="py-8 text-center text-xs text-slate-500"
-      >
-        <i class="fa-solid fa-spinner fa-spin mr-1"></i>
-        Reklam alanları yükleniyor...
-      </div>
+            <div class="space-y-3 text-xs">
+              <div>
+                <label class="block text-slate-400 mb-1">Reklam Tipi</label>
+                <select id="leftType" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-2.5 py-1.5 text-slate-200">
+                  <option value="custom">Özel Görsel + Tıklama Linki</option>
+                  <option value="code">Google AdSense / HTML Kodu</option>
+                </select>
+              </div>
 
-      <div
-        id="adsGrid"
-        class="hidden grid grid-cols-1 lg:grid-cols-2 gap-5"
-      ></div>
-   </section>
-    <!-- 8. BÖLÜM: KVKK AYDINLATMA METNİ YÖNETİMİ (Admin Only) -->
-    <section id="legalSection" class="hidden bg-slate-800/80 border border-slate-700 rounded-2xl p-6 shadow-lg">
-      <div class="flex flex-wrap justify-between items-center gap-3 mb-5 pb-4 border-b border-slate-700">
-        <div>
-          <h2 class="text-base font-bold text-slate-100 flex items-center gap-2">
-            <i class="fa-solid fa-scale-balanced text-cyan-400"></i> KVKK Aydınlatma Metni Yönetimi
-          </h2>
-          <p class="text-xs text-slate-400 mt-0.5">KVKK metnini taslak olarak kaydedin, yayımlayın veya yayından kaldırın.</p>
-        </div>
-        <div class="flex items-center gap-2">
-          <span id="kvkkStatusBadge" class="text-[10px] px-2.5 py-1 rounded border bg-slate-700 text-slate-300 border-slate-600">Yükleniyor</span>
-          <button id="refreshKvkkBtn" type="button" class="bg-slate-700 hover:bg-slate-600 text-slate-200 px-3 py-1.5 rounded-lg text-xs transition">
-            <i class="fa-solid fa-arrows-rotate"></i> Yenile
-          </button>
-        </div>
-      </div>
+              <div id="leftCustomFields" class="space-y-2">
+                <div>
+                  <label class="block text-slate-400 mb-1">Görsel URL'si</label>
+                  <input type="url" id="leftImageUrl" placeholder="https://site.com/banner.jpg" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-2.5 py-1.5 text-slate-200 text-xs">
+                </div>
+                <div>
+                  <label class="block text-slate-400 mb-1">Hedef URL</label>
+                  <input type="url" id="leftTargetUrl" placeholder="https://sponsor.com" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-2.5 py-1.5 text-slate-200 text-xs">
+                </div>
+              </div>
 
-      <form id="kvkkForm" class="space-y-4">
-        <div>
-          <label for="kvkkTitle" class="block text-xs text-slate-400 mb-1">Metin Başlığı</label>
-          <input id="kvkkTitle" type="text" maxlength="200" required value="KVKK Aydınlatma Metni" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-200 focus:outline-none focus:border-cyan-500">
-        </div>
-
-        <div>
-          <div class="flex justify-between items-center mb-1">
-            <label for="kvkkContent" class="block text-xs text-slate-400">Metin İçeriği</label>
-            <span id="kvkkCharCount" class="text-[10px] text-slate-500 font-mono">0 / 100000</span>
+              <div id="leftCodeField" class="hidden">
+                <label class="block text-slate-400 mb-1">Google Reklam HTML/JS Kodu</label>
+                <textarea id="leftCode" rows="4" placeholder="<script ...></script>" class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2 text-slate-200 font-mono text-[11px]"></textarea>
+              </div>
+            </div>
           </div>
-          <textarea id="kvkkContent" rows="20" maxlength="100000" required placeholder="KVKK Aydınlatma Metnini buraya yazın..." class="w-full bg-slate-950 border border-slate-700 rounded-xl p-4 text-xs leading-6 text-slate-200 focus:outline-none focus:border-cyan-500 font-sans"></textarea>
-          <p class="text-[10px] text-amber-300 mt-2">
-            <i class="fa-solid fa-triangle-exclamation mr-1"></i>
-            Köşeli parantez içindeki e-posta ve tebligat adresi alanları tamamlanmadan metin yayımlanamaz.
-          </p>
+
+          <button id="saveLeftAdBtn" class="mt-4 w-full bg-blue-600 hover:bg-blue-500 text-white py-1.5 rounded-lg text-xs font-semibold transition">
+            Sol Reklamı Kaydet
+          </button>
         </div>
 
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-3 bg-slate-900/60 border border-slate-700/60 rounded-xl p-3 text-[11px]">
-          <div><span class="text-slate-500">Son güncelleme:</span> <span id="kvkkUpdatedAt" class="text-slate-300">Henüz yok</span></div>
-          <div><span class="text-slate-500">Güncelleyen:</span> <span id="kvkkUpdatedBy" class="text-slate-300">-</span></div>
-          <div><span class="text-slate-500">Yayın tarihi:</span> <span id="kvkkPublishedAt" class="text-slate-300">Henüz yok</span></div>
-        </div>
+        <!-- SAĞ REKLAM -->
+        <div class="bg-slate-900/60 p-5 rounded-xl border border-slate-700/60 flex flex-col justify-between">
+          <div>
+            <div class="flex justify-between items-center mb-3">
+              <span class="font-bold text-sm text-sky-400 flex items-center gap-1.5">
+                Sağ Kule Reklamı (160x600) <i class="fa-solid fa-arrow-right"></i>
+              </span>
+              <label class="flex items-center gap-1.5 cursor-pointer text-xs">
+                <input type="checkbox" id="rightActive" class="w-4 h-4 rounded text-emerald-500 bg-slate-950 border-slate-700 focus:ring-emerald-500">
+                <span class="text-slate-300">Aktif</span>
+              </label>
+            </div>
 
-        <div class="flex flex-wrap justify-end gap-2 pt-3 border-t border-slate-700">
-          <button id="unpublishKvkkBtn" type="button" class="hidden bg-rose-500/20 hover:bg-rose-600 text-rose-300 hover:text-white border border-rose-500/30 px-4 py-2 rounded-lg text-xs font-semibold transition">
-            <i class="fa-solid fa-eye-slash"></i> Yayından Kaldır
-          </button>
-          <button id="saveKvkkDraftBtn" type="button" class="bg-slate-700 hover:bg-slate-600 text-slate-200 px-4 py-2 rounded-lg text-xs font-semibold transition">
-            <i class="fa-solid fa-floppy-disk"></i> Taslak Kaydet
-          </button>
-          <button id="publishKvkkBtn" type="button" class="bg-cyan-600 hover:bg-cyan-500 text-white px-4 py-2 rounded-lg text-xs font-semibold transition">
-            <i class="fa-solid fa-globe"></i> Kaydet ve Yayımla
+            <div class="space-y-3 text-xs">
+              <div>
+                <label class="block text-slate-400 mb-1">Reklam Tipi</label>
+                <select id="rightType" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-2.5 py-1.5 text-slate-200">
+                  <option value="custom">Özel Görsel + Tıklama Linki</option>
+                  <option value="code">Google AdSense / HTML Kodu</option>
+                </select>
+              </div>
+
+              <div id="rightCustomFields" class="space-y-2">
+                <div>
+                  <label class="block text-slate-400 mb-1">Görsel URL'si</label>
+                  <input type="url" id="rightImageUrl" placeholder="https://site.com/banner.jpg" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-2.5 py-1.5 text-slate-200 text-xs">
+                </div>
+                <div>
+                  <label class="block text-slate-400 mb-1">Hedef URL</label>
+                  <input type="url" id="rightTargetUrl" placeholder="https://sponsor.com" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-2.5 py-1.5 text-slate-200 text-xs">
+                </div>
+              </div>
+
+              <div id="rightCodeField" class="hidden">
+                <label class="block text-slate-400 mb-1">Google Reklam HTML/JS Kodu</label>
+                <textarea id="rightCode" rows="4" placeholder="<script ...></script>" class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2 text-slate-200 font-mono text-[11px]"></textarea>
+              </div>
+            </div>
+          </div>
+
+          <button id="saveRightAdBtn" class="mt-4 w-full bg-blue-600 hover:bg-blue-500 text-white py-1.5 rounded-lg text-xs font-semibold transition">
+            Sağ Reklamı Kaydet
           </button>
         </div>
-      </form>
+      </div>
     </section>
-
   </main>
-
   <script>
     const token = localStorage.getItem('haber_admin_token');
     const userRole = localStorage.getItem('haber_admin_role');
     const userFullname = localStorage.getItem('haber_admin_name');
-
     const loginModal = document.getElementById('loginModal');
     const alertBox = document.getElementById('alertBox');
-
     let categoriesList = [];
     let sourcesList = [];
 
     function checkAuth() {
       if (!token) {
         loginModal.classList.remove('hidden');
-        return;
-      }
-
-      loginModal.classList.add('hidden');
-
-      document.getElementById('userBadge').textContent =
-        `${userFullname || 'Yönetici'} (${userRole === 'admin' ? 'Süper Admin' : 'Personel'})`;
-
-      if (userRole !== 'admin') {
-        document.getElementById('personnelSection')?.classList.add('hidden');
-        document.getElementById('legalSection')?.classList.add('hidden');
       } else {
-        document.getElementById('legalSection')?.classList.remove('hidden');
-      }
-
-      fetchRatings();
-      fetchRequests();
-      fetchCategories();
-      fetchSources();
-      loadAds();
-
-      if (userRole === 'admin') {
-        fetchStaff();
-        loadKvkk();
+        loginModal.classList.add('hidden');
+        document.getElementById('userBadge').textContent = `${userFullname || 'Yönetici'} (${userRole === 'admin' ? 'Süper Admin' : 'Personel'})`;
+        if (userRole !== 'admin') {
+          document.getElementById('personnelSection').classList.add('hidden');
+        }
+        fetchRatings();
+        fetchRequests();
+        fetchCategories();
+        fetchSources();
+        loadAds();
+        if (userRole === 'admin') fetchStaff();
       }
     }
 
@@ -603,7 +570,7 @@
       const alertEl = document.getElementById('loginAlert');
 
       try {
-        const res = await fetch('/api/login', {
+        const res = await fetch('/api/auth/login', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ username, password })
@@ -707,94 +674,45 @@
     // --- 2. KATEGORİ YÖNETİMİ ---
     async function fetchCategories() {
       try {
-        const res = await fetch('/api/categories', { cache: 'no-store' });
-        const response = await res.json();
-
-        if (!res.ok) {
-          throw new Error(response.message || response.error || 'Kategoriler alınamadı.');
+        const res = await fetch('/api/categories');
+        const data = await res.json();
+        if (data.success && data.data) {
+          categoriesList = data.data;
+          renderCategories();
+          populateCategorySelect();
         }
-
-        const rawCategories = Array.isArray(response)
-          ? response
-          : Array.isArray(response.data)
-            ? response.data
-            : Array.isArray(response.categories)
-              ? response.categories
-              : [];
-
-        categoriesList = rawCategories.map(category => {
-          if (typeof category === 'string') {
-            const name = category.trim();
-            return name ? { _id: name, name } : null;
-          }
-          if (category && typeof category.name === 'string') {
-            const name = category.name.trim();
-            return name ? { ...category, _id: category._id || name, name } : null;
-          }
-          return null;
-        }).filter(Boolean);
-
-        renderCategories();
-        populateCategorySelect();
-      } catch (error) {
-        console.error('Kategori yükleme hatası:', error);
-        categoriesList = [];
-        renderCategories();
-        populateCategorySelect();
-        notify('Kategoriler yüklenemedi: ' + error.message, 'error');
-      }
+      } catch (e) {}
     }
 
     function renderCategories() {
       const container = document.getElementById('categoryChipsContainer');
-      if (!container) return;
-
       if (categoriesList.length === 0) {
         container.innerHTML = '<span class="text-xs text-slate-500">Henüz kategori bulunmuyor.</span>';
         return;
       }
-
-      container.innerHTML = categoriesList.map(category => {
-        const name = category.name;
-        const isSystemCategory = ['Gündem', 'Spor', 'Ekonomi'].includes(name);
-        return `
-          <div class="inline-flex items-center gap-1.5 bg-slate-800 border border-slate-700 px-3 py-1 rounded-lg text-xs font-medium shadow-sm">
-            <span class="text-purple-300 font-semibold">${escapeHtml(name)}</span>
-            ${!isSystemCategory ? `
-              <button type="button" data-category-name="${escapeHtml(name)}" class="delete-category-btn text-slate-500 hover:text-rose-400 transition ml-1" title="Kategoriyi Sil">
-                <i class="fa-solid fa-xmark text-[10px]"></i>
-              </button>
-            ` : '<span class="text-[10px] text-slate-500 ml-1 font-mono">(sistem)</span>'}
-          </div>`;
-      }).join('');
-
-      container.querySelectorAll('.delete-category-btn').forEach(button => {
-        button.addEventListener('click', () => deleteCategory(button.dataset.categoryName));
-      });
+      container.innerHTML = categoriesList.map(c => `
+        <div class="inline-flex items-center gap-1.5 bg-slate-800 border border-slate-700 px-3 py-1 rounded-lg text-xs font-medium shadow-sm">
+          <span class="text-purple-300 font-semibold">${c.name}</span>
+          ${!['Gündem', 'Spor', 'Ekonomi'].includes(c.name) ? `
+            <button onclick="deleteCategory('${c._id}', '${c.name}')" title="Kategoriyi Sil" class="text-slate-500 hover:text-rose-400 transition ml-1">
+              <i class="fa-solid fa-xmark text-[10px]"></i>
+            </button>
+          ` : '<span class="text-[10px] text-slate-500 ml-1 font-mono">(sistem)</span>'}
+        </div>
+      `).join('');
     }
 
     function populateCategorySelect() {
-      const options = categoriesList.length
-        ? categoriesList.map(category => `<option value="${escapeHtml(category.name)}">${escapeHtml(category.name)}</option>`).join('')
-        : '<option value="" disabled selected>Kategori bulunamadı</option>';
-
-      const sourceCategory = document.getElementById('srcCategory');
-      const editCategory = document.getElementById('editSrcCategory');
-
-      [sourceCategory, editCategory].forEach(select => {
-        if (!select) return;
-        const previousValue = select.value;
-        select.innerHTML = options;
-        if (previousValue && categoriesList.some(category => category.name === previousValue)) {
-          select.value = previousValue;
-        }
-      });
+      const options = categoriesList.map(c => `<option value="${c.name}">${c.name}</option>`).join('');
+      document.getElementById('srcCategory').innerHTML = options;
+      const editCat = document.getElementById('editSrcCategory');
+      if (editCat) editCat.innerHTML = options;
     }
 
-    document.getElementById('addCategoryForm').addEventListener('submit', async event => {
-      event.preventDefault();
-      const categoryInput = document.getElementById('catNameInput');
-      const name = categoryInput.value.trim();
+    document.getElementById('addCategoryForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const catInput = document.getElementById('catNameInput');
+      const name = catInput.value.trim();
       if (!name) return;
 
       try {
@@ -804,34 +722,45 @@
           body: JSON.stringify({ name })
         });
         const data = await res.json();
-        if (!res.ok || data.success === false) {
-          throw new Error(data.message || data.error || 'Kategori eklenemedi.');
+        if (data.success) {
+          notify(data.message, 'success');
+          catInput.value = '';
+          fetchCategories();
+        } else {
+          notify(data.message, 'error');
         }
-        notify(data.message || `"${name}" kategorisi eklendi.`, 'success');
-        categoryInput.value = '';
-        await fetchCategories();
-      } catch (error) {
-        notify('Kategori ekleme hatası: ' + error.message, 'error');
+      } catch (err) {
+        notify('Hata: ' + err.message, 'error');
       }
     });
 
-    window.deleteCategory = async name => {
+    window.deleteCategory = async (id, name) => {
       if (!confirm(`"${name}" kategorisini silmek istediğinize emin misiniz?`)) return;
       try {
-        const res = await fetch(`/api/categories/${encodeURIComponent(name)}`, {
-          method: 'DELETE',
-          headers: authHeaders()
-        });
+        const res = await fetch(`/api/categories/${id}`, { method: 'DELETE', headers: authHeaders() });
         const data = await res.json();
-        if (!res.ok || data.success === false) {
-          throw new Error(data.message || data.error || 'Kategori silinemedi.');
+        if (data.success) {
+          notify(data.message, 'success');
+          fetchCategories();
+        } else {
+          notify(data.message, 'error');
         }
-        notify(data.message || `"${name}" kategorisi silindi.`, 'success');
-        await fetchCategories();
-      } catch (error) {
-        notify('Kategori silme hatası: ' + error.message, 'error');
+      } catch (err) {
+        notify('Hata: ' + err.message, 'error');
       }
     };
+
+    const srcTypeSelect = document.getElementById('srcType');
+    const htmlSelectorDiv = document.getElementById('htmlSelectorDiv');
+    srcTypeSelect.addEventListener('change', () => {
+      htmlSelectorDiv.classList.toggle('hidden', srcTypeSelect.value !== 'html');
+    });
+
+    const editSrcTypeSelect = document.getElementById('editSrcType');
+    const editHtmlSelectorDiv = document.getElementById('editHtmlSelectorDiv');
+    editSrcTypeSelect.addEventListener('change', () => {
+      editHtmlSelectorDiv.classList.toggle('hidden', editSrcTypeSelect.value !== 'html');
+    });
 
     // --- 3. KULLANICI TALEPLERİ ---
     async function fetchRequests() {
@@ -880,7 +809,7 @@
       const newPassword = document.getElementById('newPassword').value.trim();
 
       try {
-        const res = await fetch('/api/change-password', {
+        const res = await fetch('/api/auth/change-password', {
           method: 'POST',
           headers: authHeaders(),
           body: JSON.stringify({ currentPassword, newPassword })
@@ -991,108 +920,52 @@
     };
 
     // --- 6. KAYNAKLAR & DÜZENLEME (DİL DESTEKLİ) ---
-    function escapeHtml(value) {
-      return String(value ?? '')
-        .replaceAll('&', '&amp;')
-        .replaceAll('<', '&lt;')
-        .replaceAll('>', '&gt;')
-        .replaceAll('"', '&quot;')
-        .replaceAll("'", '&#039;');
-    }
-
-    function formatSourceDate(value) {
-      if (!value) return 'Henüz yok';
-      const date = new Date(value);
-      return Number.isNaN(date.getTime()) ? 'Henüz yok' : date.toLocaleString('tr-TR');
-    }
-
-    function getHealthView(source) {
-      const status = source.healthStatus || 'unknown';
-      const views = {
-        healthy: { label: 'Sağlıklı', icon: 'fa-circle-check', style: 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30' },
-        warning: { label: 'Uyarı', icon: 'fa-triangle-exclamation', style: 'bg-amber-500/20 text-amber-300 border-amber-500/30' },
-        error: { label: 'Hatalı', icon: 'fa-circle-xmark', style: 'bg-rose-500/20 text-rose-300 border-rose-500/30' },
-        unknown: { label: 'Test edilmedi', icon: 'fa-circle-question', style: 'bg-slate-700 text-slate-300 border-slate-600' }
-      };
-      return views[status] || views.unknown;
-    }
-
     async function fetchSources() {
-      const tbody = document.getElementById('sourcesTableBody');
       try {
-        const res = await fetch('/api/admin/sources-health', { headers: authHeaders() });
+               const res = await fetch('/api/sources');
         const data = await res.json();
-        if (!res.ok || !data.success) throw new Error(data.message || 'Kaynaklar alınamadı.');
-        sourcesList = Array.isArray(data.data) ? data.data : [];
+        const tbody = document.getElementById('sourcesTableBody');
+        // Hem dizi gelse hem data.data gelse ikisinde de çalışır:
+        sourcesList = Array.isArray(data) ? data : (data.data || []);
 
-        if (sourcesList.length === 0) {
-          tbody.innerHTML = '<tr><td colspan="8" class="text-center py-6 text-slate-500">Henüz kaynak bulunmuyor.</td></tr>';
-          return;
-        }
 
         tbody.innerHTML = sourcesList.map(s => {
           const isEn = s.lang === 'en';
-          const health = getHealthView(s);
-          const errorMessage = escapeHtml(s.lastErrorMessage || '');
           return `
-            <tr class="hover:bg-slate-800/40 transition align-top">
-              <td class="py-2.5 px-3 font-semibold text-slate-200 whitespace-nowrap">${escapeHtml(s.name)}</td>
-              <td class="py-2.5 px-3 whitespace-nowrap">
+            <tr class="hover:bg-slate-800/40 transition">
+              <td class="py-2.5 px-3 font-semibold text-slate-200">${s.name}</td>
+              <td class="py-2.5 px-3">
                 <span class="text-[10px] px-2 py-0.5 rounded font-mono font-semibold ${s.type === 'html' ? 'bg-amber-500/20 text-amber-300 border border-amber-500/30' : 'bg-blue-500/20 text-blue-300 border border-blue-500/30'}">
-                  ${s.type === 'html' ? 'HTML' : 'RSS'}
-                </span>
-                <span class="ml-1 text-[10px] px-2 py-0.5 rounded font-bold ${isEn ? 'bg-indigo-500/20 text-indigo-300 border border-indigo-500/30' : 'bg-slate-800 text-slate-400 border border-slate-700'}">
-                  ${isEn ? 'EN ➔ TR' : 'TR'}
+                  ${s.type === 'html' ? 'HTML Web' : 'RSS XML'}
                 </span>
               </td>
-              <td class="py-2.5 px-3"><span class="text-[10px] bg-slate-700 text-purple-300 px-2 py-0.5 rounded font-medium">${escapeHtml(s.category || 'Gündem')}</span></td>
-              <td class="py-2.5 px-3 text-slate-400 font-mono text-[11px] truncate max-w-xs" title="${escapeHtml(s.url)}">${escapeHtml(s.url)}</td>
-              <td class="py-2.5 px-3 min-w-[170px]">
-                <span class="inline-flex items-center gap-1 text-[10px] px-2 py-1 rounded border ${health.style}"><i class="fa-solid ${health.icon}"></i>${health.label}</span>
-                <div class="text-[10px] text-slate-400 mt-1">Art arda hata: <b class="text-slate-300">${Number(s.consecutiveErrors || 0)}</b></div>
-                ${errorMessage ? `<div class="text-[10px] text-rose-300 mt-1 max-w-[220px] truncate" title="${errorMessage}">${errorMessage}</div>` : ''}
+              <td class="py-2.5 px-3">
+                <span class="text-[10px] px-2 py-0.5 rounded font-bold ${isEn ? 'bg-indigo-500/20 text-indigo-300 border border-indigo-500/30' : 'bg-slate-800 text-slate-400 border border-slate-700'}">
+                  ${isEn ? '<i class="fa-solid fa-language mr-1"></i>EN ➔ TR' : 'TR'}
+                </span>
               </td>
-              <td class="py-2.5 px-3 min-w-[150px] text-[10px] text-slate-400">
-                <div>${formatSourceDate(s.lastScanAt)}</div>
-                <div class="mt-1 text-blue-300">İşlenen: ${Number(s.lastItemCount || 0)} haber</div>
-                ${s.lastSuccessAt ? `<div class="mt-1 text-emerald-400" title="${formatSourceDate(s.lastSuccessAt)}">Son başarı: ${formatSourceDate(s.lastSuccessAt)}</div>` : ''}
+              <td class="py-2.5 px-3">
+                <span class="text-[10px] bg-slate-700 text-purple-300 px-2 py-0.5 rounded font-medium">${s.category || 'Gündem'}</span>
               </td>
+              <td class="py-2.5 px-3 text-slate-400 font-mono text-[11px] truncate max-w-xs" title="${s.url}">${s.url}</td>
               <td class="py-2.5 px-3 text-center">
-                <button onclick="toggleSource('${s._id}')" class="px-2 py-0.5 rounded-full text-[10px] font-semibold transition ${s.isActive ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30' : 'bg-slate-700 text-slate-400'}">${s.isActive ? 'Aktif' : 'Pasif'}</button>
+                <button onclick="toggleSource('${s._id}')" class="px-2 py-0.5 rounded-full text-[10px] font-semibold transition ${s.isActive ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30' : 'bg-slate-700 text-slate-400'}">
+                  ${s.isActive ? 'Aktif' : 'Pasif'}
+                </button>
               </td>
-              <td class="py-2.5 px-3 text-right space-x-1 whitespace-nowrap">
-                <button id="testSourceBtn-${s._id}" onclick="testSource('${s._id}')" class="bg-blue-500/20 hover:bg-blue-500 text-blue-300 hover:text-white px-2 py-1 rounded transition text-xs" title="Kaynağı şimdi test et"><i class="fa-solid fa-vial"></i> Test</button>
-                <button onclick="openEditModal('${s._id}')" class="bg-amber-500/20 hover:bg-amber-500 text-amber-300 hover:text-white px-2 py-1 rounded transition text-xs" title="Kaynağı düzenle"><i class="fa-solid fa-pen-to-square"></i></button>
-                <button onclick="deleteSource('${s._id}')" class="text-rose-400 hover:text-rose-300 text-xs px-2 py-1 rounded transition" title="Kaynağı sil"><i class="fa-solid fa-trash"></i></button>
+              <td class="py-2.5 px-3 text-right space-x-1.5 whitespace-nowrap">
+                <button onclick="openEditModal('${s._id}')" class="bg-amber-500/20 hover:bg-amber-500 text-amber-300 hover:text-white px-2.5 py-1 rounded transition text-xs" title="Kaynağı Düzenle">
+                  <i class="fa-solid fa-pen-to-square"></i> Düzenle
+                </button>
+                <button onclick="deleteSource('${s._id}')" class="text-rose-400 hover:text-rose-300 text-xs px-2 py-1 rounded transition" title="Kaynağı Sil">
+                  <i class="fa-solid fa-trash"></i> Sil
+                </button>
               </td>
-            </tr>`;
+            </tr>
+          `;
         }).join('');
-      } catch (error) {
-        tbody.innerHTML = `<tr><td colspan="8" class="text-center py-6 text-rose-400">${escapeHtml(error.message)}</td></tr>`;
-      }
+      } catch (e) {}
     }
-
-    window.testSource = async (id) => {
-      const button = document.getElementById(`testSourceBtn-${id}`);
-      const oldHtml = button?.innerHTML;
-      if (button) {
-        button.disabled = true;
-        button.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Test ediliyor';
-      }
-      try {
-        const res = await fetch(`/api/admin/sources/${id}/test`, { method: 'POST', headers: authHeaders() });
-        const data = await res.json();
-        notify(data.message || (res.ok ? 'Kaynak testi tamamlandı.' : 'Kaynak testi başarısız.'), res.ok && data.success ? 'success' : 'error');
-      } catch (error) {
-        notify('Kaynak testi sırasında bağlantı hatası: ' + error.message, 'error');
-      } finally {
-        if (button) {
-          button.disabled = false;
-          button.innerHTML = oldHtml;
-        }
-        fetchSources();
-      }
-    };
 
     document.getElementById('addSourceForm').addEventListener('submit', async (e) => {
       e.preventDefault();
@@ -1201,550 +1074,67 @@
     });
 
     document.getElementById('refreshSyncBtn').addEventListener('click', async () => {
-      const button = document.getElementById('refreshSyncBtn');
-      const oldHtml = button.innerHTML;
-      button.disabled = true;
-      button.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Taranıyor';
       try {
-        const res = await fetch('/api/sync', { method: 'POST', headers: authHeaders() });
-        const data = await res.json();
-        notify(data.message || 'Tüm kaynakların taraması tamamlandı.', res.ok && data.success ? 'success' : 'error');
-        fetchSources();
-      } catch (error) {
-        notify('Tarama başlatılamadı: ' + error.message, 'error');
-      } finally {
-        button.disabled = false;
-        button.innerHTML = oldHtml;
-      }
+        await fetch('/api/sync');
+        notify('Tüm kaynakların (RSS ve HTML) taraması başlatıldı.', 'success');
+      } catch (e) {}
     });
 
-        // --- 7. ALTI KONUMLU REKLAM YÖNETİMİ ---
-    const AD_POSITIONS = [
-      {
-        position: 'top',
-        title: 'Üst Reklam',
-        description: 'Sayfanın üst bölümünde görüntülenir.',
-        size: 'Yatay banner',
-        icon: 'fa-arrow-up',
-        color: 'text-yellow-400'
-      },
-      {
-        position: 'left',
-        title: 'Sol Kule Reklamı',
-        description: 'Masaüstünde içerik alanının solunda görüntülenir.',
-        size: '160x600',
-        icon: 'fa-arrow-left',
-        color: 'text-sky-400'
-      },
-      {
-        position: 'right',
-        title: 'Sağ Kule Reklamı',
-        description: 'Masaüstünde içerik alanının sağında görüntülenir.',
-        size: '160x600',
-        icon: 'fa-arrow-right',
-        color: 'text-sky-400'
-      },
-      {
-        position: 'inline1',
-        title: 'Haber Arası Reklam 1',
-        description: 'Haber listesinin ilk bölümünde görüntülenir.',
-        size: 'İçerik içi',
-        icon: 'fa-grip-lines',
-        color: 'text-purple-400'
-      },
-      {
-        position: 'inline2',
-        title: 'Haber Arası Reklam 2',
-        description: 'Haber listesinin ikinci bölümünde görüntülenir.',
-        size: 'İçerik içi',
-        icon: 'fa-grip-lines',
-        color: 'text-purple-400'
-      },
-      {
-        position: 'bottom',
-        title: 'Alt Reklam',
-        description: 'Sayfanın alt bölümünde görüntülenir.',
-        size: 'Yatay banner',
-        icon: 'fa-arrow-down',
-        color: 'text-emerald-400'
-      }
-    ];
-
-    function normalizeAdsResponse(payload) {
-      if (Array.isArray(payload)) return payload;
-      if (Array.isArray(payload?.data)) return payload.data;
-      if (Array.isArray(payload?.ads)) return payload.ads;
-      return [];
-    }
-
-    function getAdByPosition(ads, position) {
-      return ads.find(ad => ad.position === position) || {
-        position,
-        type: 'custom',
-        isActive: false,
-        imageUrl: '',
-        targetUrl: '',
-        code: ''
-      };
-    }
-
-    function escapeAttribute(value = '') {
-      return String(value)
-        .replaceAll('&', '&amp;')
-        .replaceAll('"', '&quot;')
-        .replaceAll('<', '&lt;')
-        .replaceAll('>', '&gt;');
-    }
-
-    function escapeTextarea(value = '') {
-      return String(value)
-        .replaceAll('&', '&amp;')
-        .replaceAll('<', '&lt;')
-        .replaceAll('>', '&gt;');
-    }
-
-    function renderAdCard(config, ad) {
-      const position = config.position;
-      const type = ad.type === 'code' ? 'code' : 'custom';
-      const isCode = type === 'code';
-
-      return `
-        <article
-          id="${position}AdCard"
-          class="bg-slate-900/60 p-5 rounded-xl border border-slate-700/60"
-        >
-          <div class="flex flex-wrap justify-between items-start gap-3 mb-4">
-            <div>
-              <h3 class="font-bold text-sm ${config.color} flex items-center gap-2">
-                <i class="fa-solid ${config.icon}"></i>
-                ${config.title}
-              </h3>
-
-              <p class="text-[11px] text-slate-500 mt-1">
-                ${config.description}
-              </p>
-
-              <span class="inline-block mt-2 text-[10px] bg-slate-800 text-slate-400 border border-slate-700 px-2 py-0.5 rounded">
-                ${config.size} · ${position}
-              </span>
-            </div>
-
-            <label class="flex items-center gap-2 cursor-pointer text-xs select-none">
-              <input
-                type="checkbox"
-                id="${position}Active"
-                ${ad.isActive ? 'checked' : ''}
-                class="w-4 h-4 rounded text-emerald-500 bg-slate-950 border-slate-700 focus:ring-emerald-500"
-              >
-              <span class="text-slate-300">Aktif</span>
-            </label>
-          </div>
-
-          <div class="space-y-3 text-xs">
-            <div>
-              <label class="block text-slate-400 mb-1">Reklam Tipi</label>
-              <select
-                id="${position}Type"
-                class="w-full bg-slate-950 border border-slate-700 rounded-lg px-2.5 py-2 text-slate-200 focus:outline-none focus:border-yellow-500"
-              >
-                <option value="custom" ${type === 'custom' ? 'selected' : ''}>
-                  Özel Görsel ve Hedef Link
-                </option>
-                <option value="code" ${type === 'code' ? 'selected' : ''}>
-                  Google AdSense / HTML Kodu
-                </option>
-              </select>
-            </div>
-
-            <div
-              id="${position}CustomFields"
-              class="space-y-3 ${isCode ? 'hidden' : ''}"
-            >
-              <div>
-                <label class="block text-slate-400 mb-1">Görsel URL'si</label>
-                <input
-                  type="url"
-                  id="${position}ImageUrl"
-                  value="${escapeAttribute(ad.imageUrl || '')}"
-                  placeholder="https://site.com/reklam.jpg"
-                  class="w-full bg-slate-950 border border-slate-700 rounded-lg px-2.5 py-2 text-slate-200 text-xs focus:outline-none focus:border-yellow-500"
-                >
-              </div>
-
-              <div>
-                <label class="block text-slate-400 mb-1">Hedef URL</label>
-                <input
-                  type="url"
-                  id="${position}TargetUrl"
-                  value="${escapeAttribute(ad.targetUrl || '')}"
-                  placeholder="https://reklamveren.com"
-                  class="w-full bg-slate-950 border border-slate-700 rounded-lg px-2.5 py-2 text-slate-200 text-xs focus:outline-none focus:border-yellow-500"
-                >
-              </div>
-            </div>
-
-            <div
-              id="${position}CodeField"
-              class="${isCode ? '' : 'hidden'}"
-            >
-              <label class="block text-slate-400 mb-1">
-                Google AdSense / HTML Kodu
-              </label>
-
-              <textarea
-                id="${position}Code"
-                rows="6"
-                placeholder="Reklam sağlayıcısının verdiği kodu buraya yapıştırın"
-                class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2.5 text-slate-200 font-mono text-[11px] focus:outline-none focus:border-yellow-500"
-              >${escapeTextarea(ad.code || '')}</textarea>
-            </div>
-
-            <div
-              id="${position}SaveStatus"
-              class="hidden text-[11px] rounded-lg px-3 py-2"
-            ></div>
-
-            <button
-              type="button"
-              id="${position}SaveBtn"
-              class="w-full bg-blue-600 hover:bg-blue-500 disabled:bg-slate-700 disabled:text-slate-400 text-white py-2 rounded-lg text-xs font-semibold transition flex items-center justify-center gap-2"
-            >
-              <i class="fa-solid fa-floppy-disk"></i>
-              ${config.title} Kaydet
-            </button>
-          </div>
-        </article>
-      `;
-    }
-
-    function handleTypeSwitch(position) {
-      const typeElement = document.getElementById(`${position}Type`);
-      const customFields = document.getElementById(`${position}CustomFields`);
-      const codeField = document.getElementById(`${position}CodeField`);
-
-      if (!typeElement || !customFields || !codeField) return;
-
-      const isCode = typeElement.value === 'code';
-      customFields.classList.toggle('hidden', isCode);
-      codeField.classList.toggle('hidden', !isCode);
-    }
-
-    function bindAdEvents() {
-      AD_POSITIONS.forEach(({ position }) => {
-        const typeElement = document.getElementById(`${position}Type`);
-        const saveButton = document.getElementById(`${position}SaveBtn`);
-
-        typeElement?.addEventListener('change', () => {
-          handleTypeSwitch(position);
-        });
-
-        saveButton?.addEventListener('click', () => {
-          saveAd(position);
-        });
-      });
-    }
-
+    // --- 7. REKLAM YÖNETİMİ ---
     async function loadAds() {
-      const grid = document.getElementById('adsGrid');
-      const loading = document.getElementById('adsLoading');
-
-      if (!grid || !loading) return;
-
-      loading.classList.remove('hidden');
-      grid.classList.add('hidden');
-
       try {
-        let res = await fetch('/api/admin/ads', {
-          headers: authHeaders()
-        });
-
-        // Yönetici listeleme ucu bulunmuyorsa herkese açık listeyi kullan.
-        if (res.status === 404) {
-          res = await fetch('/api/ads');
+        const res = await fetch('/api/ads');
+        const data = await res.json();
+        if (data.success) {
+          data.data.forEach(ad => {
+            const prefix = ad.position;
+            document.getElementById(`${prefix}Active`).checked = ad.isActive;
+            document.getElementById(`${prefix}Type`).value = ad.type;
+            document.getElementById(`${prefix}ImageUrl`).value = ad.imageUrl || '';
+            document.getElementById(`${prefix}TargetUrl`).value = ad.targetUrl || '';
+            document.getElementById(`${prefix}Code`).value = ad.code || '';
+            handleTypeSwitch(prefix);
+          });
         }
+      } catch (e) {}
+    }
 
-        let payload = {};
-
-        try {
-          payload = await res.json();
-        } catch {
-          throw new Error('Sunucudan geçerli JSON cevabı alınamadı.');
-        }
-
-        if (res.status === 401 || res.status === 403) {
-          localStorage.removeItem('haber_admin_token');
-          throw new Error('Oturum geçersiz. Lütfen çıkış yapıp yeniden giriş yapın.');
-        }
-
-        if (!res.ok || payload.success === false) {
-          throw new Error(
-            payload.message ||
-            `Reklamlar alınamadı. HTTP ${res.status}`
-          );
-        }
-
-        const ads = normalizeAdsResponse(payload);
-
-        grid.innerHTML = AD_POSITIONS.map(config => {
-          const ad = getAdByPosition(ads, config.position);
-          return renderAdCard(config, ad);
-        }).join('');
-
-        bindAdEvents();
-        grid.classList.remove('hidden');
-      } catch (error) {
-        grid.innerHTML = `
-          <div class="lg:col-span-2 bg-rose-500/10 border border-rose-500/30 text-rose-300 rounded-xl p-4 text-xs">
-            <div class="font-bold mb-1">
-              <i class="fa-solid fa-triangle-exclamation mr-1"></i>
-              Reklam alanları yüklenemedi
-            </div>
-            <div>${escapeAttribute(error.message)}</div>
-          </div>
-        `;
-
-        grid.classList.remove('hidden');
-        notify(`Reklam yükleme hatası: ${error.message}`, 'error');
-      } finally {
-        loading.classList.add('hidden');
+    function handleTypeSwitch(pos) {
+      const type = document.getElementById(`${pos}Type`).value;
+      if (type === 'code') {
+        document.getElementById(`${pos}CustomFields`).classList.add('hidden');
+        document.getElementById(`${pos}CodeField`).classList.remove('hidden');
+      } else {
+        document.getElementById(`${pos}CustomFields`).classList.remove('hidden');
+        document.getElementById(`${pos}CodeField`).classList.add('hidden');
       }
     }
+
+    document.getElementById('leftType').addEventListener('change', () => handleTypeSwitch('left'));
+    document.getElementById('rightType').addEventListener('change', () => handleTypeSwitch('right'));
 
     async function saveAd(position) {
-      const saveButton = document.getElementById(`${position}SaveBtn`);
-      const statusElement = document.getElementById(`${position}SaveStatus`);
-      const typeElement = document.getElementById(`${position}Type`);
-      const activeElement = document.getElementById(`${position}Active`);
-      const imageElement = document.getElementById(`${position}ImageUrl`);
-      const targetElement = document.getElementById(`${position}TargetUrl`);
-      const codeElement = document.getElementById(`${position}Code`);
-
-      if (
-        !saveButton ||
-        !statusElement ||
-        !typeElement ||
-        !activeElement ||
-        !imageElement ||
-        !targetElement ||
-        !codeElement
-      ) {
-        notify(`"${position}" reklam formu bulunamadı.`, 'error');
-        return;
-      }
-
-      const payload = {
-  position,
-  type: typeElement.value,
-  isActive: activeElement.checked,
-  isVisible: activeElement.checked,
-  imageUrl: imageElement.value.trim(),
-  targetUrl: targetElement.value.trim(),
-  code: codeElement.value.trim()
-};
-
-      if (
-        payload.isActive &&
-        payload.type === 'custom' &&
-        !payload.imageUrl
-      ) {
-        notify('Aktif özel reklam için görsel URL’si gereklidir.', 'error');
-        imageElement.focus();
-        return;
-      }
-
-      if (
-        payload.isActive &&
-        payload.type === 'code' &&
-        !payload.code
-      ) {
-        notify('Aktif kod reklamı için reklam kodu gereklidir.', 'error');
-        codeElement.focus();
-        return;
-      }
-
-      const oldButtonHtml = saveButton.innerHTML;
-      saveButton.disabled = true;
-      saveButton.innerHTML = `
-        <i class="fa-solid fa-spinner fa-spin"></i>
-        Kaydediliyor...
-      `;
-
-      statusElement.classList.add('hidden');
+      const type = document.getElementById(`${position}Type`).value;
+      const isActive = document.getElementById(`${position}Active`).checked;
+      const imageUrl = document.getElementById(`${position}ImageUrl`).value.trim();
+      const targetUrl = document.getElementById(`${position}TargetUrl`).value.trim();
+      const code = document.getElementById(`${position}Code`).value.trim();
 
       try {
-        const res = await fetch(
-          `/api/admin/ads/${encodeURIComponent(position)}`,
-          {
-            method: 'PUT',
-            headers: authHeaders(),
-            body: JSON.stringify(payload)
-          }
-        );
-
-        let data = {};
-
-        try {
-          data = await res.json();
-        } catch {
-          throw new Error('Sunucudan geçerli JSON cevabı alınamadı.');
-        }
-
-        if (res.status === 401 || res.status === 403) {
-          throw new Error('Bu işlem için yönetici yetkisi gerekiyor.');
-        }
-
-        if (!res.ok || data.success === false) {
-          throw new Error(
-            data.message ||
-            `Reklam kaydedilemedi. HTTP ${res.status}`
-          );
-        }
-
-        const config = AD_POSITIONS.find(
-          item => item.position === position
-        );
-
-        statusElement.className =
-          'text-[11px] rounded-lg px-3 py-2 bg-emerald-500/15 text-emerald-300 border border-emerald-500/30';
-
-        statusElement.innerHTML =
-          '<i class="fa-solid fa-circle-check mr-1"></i>Başarıyla kaydedildi.';
-
-        statusElement.classList.remove('hidden');
-
-        notify(
-          `${config?.title || position} başarıyla güncellendi.`,
-          'success'
-        );
-      } catch (error) {
-        statusElement.className =
-          'text-[11px] rounded-lg px-3 py-2 bg-rose-500/15 text-rose-300 border border-rose-500/30';
-
-        statusElement.textContent = error.message;
-        statusElement.classList.remove('hidden');
-
-        notify(`Kayıt hatası: ${error.message}`, 'error');
-      } finally {
-        saveButton.disabled = false;
-        saveButton.innerHTML = oldButtonHtml;
-      }
-    }
-
-    document
-      .getElementById('refreshAdsBtn')
-      ?.addEventListener('click', loadAds);
-
-
-    // --- 8. KVKK AYDINLATMA METNİ YÖNETİMİ ---
-    let kvkkIsPublished = false;
-
-    function setKvkkStatus(isPublished) {
-      kvkkIsPublished = isPublished === true;
-      const badge = document.getElementById('kvkkStatusBadge');
-      const unpublishButton = document.getElementById('unpublishKvkkBtn');
-      if (badge) {
-        badge.className = kvkkIsPublished
-          ? 'text-[10px] px-2.5 py-1 rounded border bg-emerald-500/20 text-emerald-300 border-emerald-500/30'
-          : 'text-[10px] px-2.5 py-1 rounded border bg-amber-500/20 text-amber-300 border-amber-500/30';
-        badge.innerHTML = kvkkIsPublished
-          ? '<i class="fa-solid fa-circle-check mr-1"></i>Yayında'
-          : '<i class="fa-solid fa-pen-ruler mr-1"></i>Taslak';
-      }
-      unpublishButton?.classList.toggle('hidden', !kvkkIsPublished);
-    }
-
-    function updateKvkkCharCount() {
-      const content = document.getElementById('kvkkContent')?.value || '';
-      const counter = document.getElementById('kvkkCharCount');
-      if (counter) counter.textContent = `${content.length.toLocaleString('tr-TR')} / 100000`;
-    }
-
-    function fillKvkkForm(page) {
-      document.getElementById('kvkkTitle').value = page?.title || 'KVKK Aydınlatma Metni';
-      document.getElementById('kvkkContent').value = page?.content || '';
-      document.getElementById('kvkkUpdatedAt').textContent = formatSourceDate(page?.updatedAt);
-      document.getElementById('kvkkUpdatedBy').textContent = page?.updatedBy || '-';
-      document.getElementById('kvkkPublishedAt').textContent = formatSourceDate(page?.publishedAt);
-      setKvkkStatus(page?.isPublished === true);
-      updateKvkkCharCount();
-    }
-
-    async function loadKvkk() {
-      if (userRole !== 'admin') return;
-      const badge = document.getElementById('kvkkStatusBadge');
-      if (badge) {
-        badge.className = 'text-[10px] px-2.5 py-1 rounded border bg-slate-700 text-slate-300 border-slate-600';
-        badge.innerHTML = '<i class="fa-solid fa-spinner fa-spin mr-1"></i>Yükleniyor';
-      }
-
-      try {
-        const res = await fetch('/api/admin/legal/kvkk', { headers: authHeaders(), cache: 'no-store' });
-        const data = await res.json();
-        if (!res.ok || data.success === false) {
-          throw new Error(data.message || 'KVKK metni yüklenemedi.');
-        }
-        fillKvkkForm(data.data || null);
-      } catch (error) {
-        console.error('KVKK yükleme hatası:', error);
-        setKvkkStatus(false);
-        notify('KVKK yükleme hatası: ' + error.message, 'error');
-      }
-    }
-
-    async function saveKvkk(isPublished, button) {
-      if (userRole !== 'admin') {
-        notify('Bu işlem için yönetici yetkisi gerekiyor.', 'error');
-        return;
-      }
-
-      const title = document.getElementById('kvkkTitle').value.trim();
-      const content = document.getElementById('kvkkContent').value.trim();
-      if (!title || !content) {
-        notify('KVKK başlığı ve metin içeriği zorunludur.', 'error');
-        return;
-      }
-
-      const oldHtml = button?.innerHTML;
-      if (button) {
-        button.disabled = true;
-        button.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Kaydediliyor';
-      }
-
-      try {
-        const res = await fetch('/api/admin/legal/kvkk', {
-          method: 'PUT',
+        const res = await fetch('/api/ads', {
+          method: 'POST',
           headers: authHeaders(),
-          body: JSON.stringify({ title, content, isPublished })
+          body: JSON.stringify({ position, type, isActive, imageUrl, targetUrl, code })
         });
-        const data = await res.json();
-        if (!res.ok || data.success === false) {
-          throw new Error(data.message || 'KVKK metni kaydedilemedi.');
-        }
-        fillKvkkForm(data.data || { title, content, isPublished });
-        notify(data.message || 'KVKK metni başarıyla kaydedildi.', 'success');
-      } catch (error) {
-        notify('KVKK kayıt hatası: ' + error.message, 'error');
-      } finally {
-        if (button) {
-          button.disabled = false;
-          button.innerHTML = oldHtml;
-        }
+        const d = await res.json();
+        if (d.success) notify(`${position === 'left' ? 'Sol' : 'Sağ'} reklam güncellendi!`, 'success');
+      } catch (e) {
+        notify('Hata: ' + e.message, 'error');
       }
     }
 
-    document.getElementById('kvkkContent')?.addEventListener('input', updateKvkkCharCount);
-    document.getElementById('refreshKvkkBtn')?.addEventListener('click', loadKvkk);
-    document.getElementById('saveKvkkDraftBtn')?.addEventListener('click', event => {
-      if (kvkkIsPublished && !confirm('Taslak kaydetmek mevcut metni yayından kaldırır. Devam edilsin mi?')) return;
-      saveKvkk(false, event.currentTarget);
-    });
-    document.getElementById('publishKvkkBtn')?.addEventListener('click', event => {
-      saveKvkk(true, event.currentTarget);
-    });
-    document.getElementById('unpublishKvkkBtn')?.addEventListener('click', event => {
-      if (!confirm('KVKK metnini yayından kaldırmak istediğinize emin misiniz?')) return;
-      saveKvkk(false, event.currentTarget);
-    });
+    document.getElementById('saveLeftAdBtn').addEventListener('click', () => saveAd('left'));
+    document.getElementById('saveRightAdBtn').addEventListener('click', () => saveAd('right'));
 
     // Başlat
     checkAuth();

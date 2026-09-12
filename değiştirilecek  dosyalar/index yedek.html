@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="tr">
 <head>
   <meta charset="UTF-8">
@@ -223,16 +223,8 @@
         <span class="text-slate-400 font-medium flex items-center gap-1">
           <i class="fa-solid fa-filter text-emerald-400"></i> Kaynaklar:
         </span>
-        <div class="flex items-center gap-1.5 flex-wrap">
-          <button id="selectAllSourcesBtn" type="button" class="bg-emerald-600/15 hover:bg-emerald-600/30 text-emerald-300 border border-emerald-500/30 px-2 py-0.5 rounded-lg text-[11px] font-semibold transition">
-            <i class="fa-solid fa-check-double mr-1"></i>Tümünü Seç
-          </button>
-          <button id="clearAllSourcesBtn" type="button" class="bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 px-2 py-0.5 rounded-lg text-[11px] font-semibold transition">
-            <i class="fa-solid fa-xmark mr-1"></i>Tümünü Kaldır
-          </button>
-          <div id="sourcesFilter" class="flex items-center gap-1.5 flex-wrap">
-            <span class="text-xs text-slate-500">Kaynaklar yükleniyor...</span>
-          </div>
+        <div id="sourcesFilter" class="flex items-center gap-1.5 flex-wrap">
+          <span class="text-xs text-slate-500">Kaynaklar yükleniyor...</span>
         </div>
       </div>
 
@@ -287,6 +279,11 @@
             <span id="toggleSelectAllText">Tümünü Seç</span>
           </button>
         </div>
+
+        <button id="syncRssBtn" class="bg-slate-800 hover:bg-slate-700 text-emerald-400 border border-slate-700 px-3 py-1.5 rounded-lg text-xs font-semibold transition flex items-center gap-1.5 shadow-sm">
+          <i class="fa-solid fa-cloud-arrow-down" id="syncIcon"></i>
+          <span id="syncText">Kaynakları Tara</span>
+        </button>
       </div>
 
       <div id="statusAlert" class="hidden mb-4 p-3 rounded-xl text-xs font-medium transition"></div>
@@ -383,7 +380,6 @@
     let allSourcesList = [];
     let currentNewsList = [];
     let selectedSources = new Set();
-    const SOURCE_PREFERENCES_KEY = 'haber_selected_sources_v1';
     let selectedNewsGuids = new Set();
     let selectedCategory = 'Tümü';
     let currentSortMode = 'latest';
@@ -597,119 +593,53 @@ let activeAdsByPosition = {};
       }
     }
 
-    function getVisibleActiveSources() {
-      let filtered = allSourcesList.filter(source => source.isActive);
-      if (selectedCategory !== 'Tümü') {
-        filtered = filtered.filter(
-          source => (source.category || 'Gündem') === selectedCategory
-        );
-      }
-      return filtered;
-    }
-
-    function saveSourcePreferences() {
-      localStorage.setItem(
-        SOURCE_PREFERENCES_KEY,
-        JSON.stringify(Array.from(selectedSources))
-      );
-    }
-
-    function restoreSourcePreferences() {
-      const activeNames = allSourcesList
-        .filter(source => source.isActive)
-        .map(source => source.name);
-      const activeNameSet = new Set(activeNames);
-      let savedNames = null;
-
-      try {
-        const savedValue = localStorage.getItem(SOURCE_PREFERENCES_KEY);
-        if (savedValue !== null) {
-          const parsedValue = JSON.parse(savedValue);
-          if (Array.isArray(parsedValue)) savedNames = parsedValue;
-        }
-      } catch (error) {
-        localStorage.removeItem(SOURCE_PREFERENCES_KEY);
-      }
-
-      const hasSavedPreference = Array.isArray(savedNames);
-      const validSavedNames = (savedNames || []).filter(name => activeNameSet.has(name));
-      selectedSources = new Set(
-        hasSavedPreference ? validSavedNames : activeNames
-      );
-      saveSourcePreferences();
-    }
-
-    function sourceChipClass(isSelected) {
-      return isSelected
-        ? 'source-chip bg-emerald-600/20 text-emerald-300 border border-emerald-500/30 px-2.5 py-0.5 rounded-full hover:opacity-80 transition flex items-center gap-1'
-        : 'source-chip bg-slate-800 text-slate-500 border border-slate-700 px-2.5 py-0.5 rounded-full hover:opacity-80 transition flex items-center gap-1';
-    }
-
     function renderCategorySources() {
-      const filtered = getVisibleActiveSources();
+      let filtered = allSourcesList.filter(s => s.isActive);
+      if (selectedCategory !== 'Tümü') {
+        filtered = filtered.filter(s => (s.category || 'Gündem') === selectedCategory);
+      }
 
+      selectedSources.clear();
       if (filtered.length === 0) {
         sourcesContainer.innerHTML = `<span class="text-slate-500 text-[11px] italic">Bu kategoride aktif kaynak bulunamadı.</span>`;
         return;
       }
 
       sourcesContainer.innerHTML = filtered.map(src => {
-        const isSelected = selectedSources.has(src.name);
+        selectedSources.add(src.name);
         const isEn = src.lang === 'en';
         return `
-          <button type="button" data-src="${src.name}" class="${sourceChipClass(isSelected)}">
+          <button data-src="${src.name}" class="source-chip bg-emerald-600/20 text-emerald-300 border border-emerald-500/30 px-2.5 py-0.5 rounded-full hover:opacity-80 transition flex items-center gap-1">
             <span>${src.name}</span>
             ${isEn ? '<span class="text-[9px] bg-indigo-500/30 text-indigo-200 px-1 rounded font-bold">TR Çeviri</span>' : ''}
-            <i class="fa-solid ${isSelected ? 'fa-check' : 'fa-xmark'} text-[10px]"></i>
+            <i class="fa-solid fa-check text-[10px]"></i>
           </button>
         `;
       }).join('');
 
       document.querySelectorAll('.source-chip').forEach(btn => {
         btn.addEventListener('click', () => {
-          const sourceName = btn.getAttribute('data-src');
-
-          if (selectedSources.has(sourceName)) {
-            selectedSources.delete(sourceName);
+          const src = btn.getAttribute('data-src');
+          if (selectedSources.has(src)) {
+            selectedSources.delete(src);
+            btn.className = 'source-chip bg-slate-800 text-slate-500 border border-slate-700 px-2.5 py-0.5 rounded-full hover:opacity-80 transition flex items-center gap-1';
+            btn.querySelector('i').className = 'fa-solid fa-xmark text-[10px]';
           } else {
-            selectedSources.add(sourceName);
+            selectedSources.add(src);
+            btn.className = 'source-chip bg-emerald-600/20 text-emerald-300 border border-emerald-500/30 px-2.5 py-0.5 rounded-full hover:opacity-80 transition flex items-center gap-1';
+            btn.querySelector('i').className = 'fa-solid fa-check text-[10px]';
           }
-
-          saveSourcePreferences();
-          renderCategorySources();
-          selectedNewsGuids.clear();
           loadNews();
         });
       });
     }
 
-    document.getElementById('selectAllSourcesBtn').addEventListener('click', () => {
-      getVisibleActiveSources().forEach(source => selectedSources.add(source.name));
-      saveSourcePreferences();
-      renderCategorySources();
-      selectedNewsGuids.clear();
-      loadNews();
-    });
-
-    document.getElementById('clearAllSourcesBtn').addEventListener('click', () => {
-      const visibleSources = getVisibleActiveSources();
-
-      if (visibleSources.length === 0) {
-        showAlert('Kaldırılabilecek aktif kaynak bulunamadı.', 'info');
-        return;
-      }
-
-      visibleSources.forEach(source => selectedSources.delete(source.name));
-
-      saveSourcePreferences();
-      renderCategorySources();
-      selectedNewsGuids.clear();
-      loadNews();
-    });
-
     const grid = document.getElementById('newsGrid');
     const countText = document.getElementById('newsCount');
     const alarmBadge = document.getElementById('alarmBadge');
+    const syncBtn = document.getElementById('syncRssBtn');
+    const syncIcon = document.getElementById('syncIcon');
+    const syncText = document.getElementById('syncText');
     const statusAlert = document.getElementById('statusAlert');
     const sourcesContainer = document.getElementById('sourcesFilter');
     const exportBtnText = document.getElementById('exportBtnText');
@@ -777,17 +707,10 @@ let activeAdsByPosition = {};
       try {
         const res = await fetch('/api/sources');
         const data = await res.json();
-        const sourceList = Array.isArray(data)
-          ? data
-          : (Array.isArray(data?.data) ? data.data : []);
-
-        if (!res.ok) {
-          throw new Error(data?.message || data?.error || 'Kaynaklar yüklenemedi.');
+        if (data.success && data.data) {
+          allSourcesList = data.data;
+          renderCategorySources();
         }
-
-        allSourcesList = sourceList;
-        restoreSourcePreferences();
-        renderCategorySources();
       } catch (e) {}
     }
 
@@ -1081,28 +1004,9 @@ let activeAdsByPosition = {};
           url += `&search=${encodeURIComponent(search)}`;
         }
 
-        const visibleActiveSources = getVisibleActiveSources();
-        const visibleActiveSourceNames = visibleActiveSources.map(source => source.name);
-        const selectedVisibleSources = visibleActiveSourceNames.filter(name => selectedSources.has(name));
-
-        // Kullanıcı bu kategorideki tüm kaynakları kaldırdıysa API'ye boş
-        // "sources" göndermeyiz; bazı sunucular bunu "tüm kaynaklar" sayabilir.
-        // Haber havuzunu bilinçli olarak boş bırakırız.
-        if (visibleActiveSourceNames.length > 0 && selectedVisibleSources.length === 0) {
-          currentNewsList = [];
-          currentNewsPage = 1;
-          totalNewsCount = 0;
-          hasMoreNews = false;
-          renderNews();
-          loadMoreContainer.classList.add('hidden');
-          return;
-        }
-
-        if (
-          visibleActiveSourceNames.length > 0 &&
-          selectedVisibleSources.length < visibleActiveSourceNames.length
-        ) {
-          url += `&sources=${encodeURIComponent(selectedVisibleSources.join(','))}`;
+        const totalActiveSources = allSourcesList.filter(source => source.isActive).length;
+        if (selectedSources.size > 0 && selectedSources.size < totalActiveSources) {
+          url += `&sources=${encodeURIComponent(Array.from(selectedSources).join(','))}`;
         }
 
         const response = await fetch(url);
@@ -1517,14 +1421,33 @@ console.log('REKLAM API VERİSİ:', payload);
       loadNews().finally(() => setTimeout(() => icon.classList.remove('fa-spin'), 600));
     });
 
-    async function initializePage() {
-      loadCategories();
-      await loadSources();
-      await loadNews();
-      loadBannerAds();
-    }
+    syncBtn.addEventListener('click', async () => {
+      syncBtn.disabled = true;
+      syncIcon.className = 'fa-solid fa-circle-notch fa-spin';
+      syncText.textContent = 'Taranıyor...';
+      showAlert('Kaynaklar taranıyor...', 'info');
 
-    initializePage();
+      try {
+        await fetch('/api/sync');
+        setTimeout(async () => {
+          await loadNews();
+          syncIcon.className = 'fa-solid fa-cloud-arrow-down';
+          syncText.textContent = 'Kaynakları Tara';
+          syncBtn.disabled = false;
+          showAlert('Tüm kaynaklar güncellendi.', 'success');
+        }, 3000);
+      } catch (e) {
+        syncIcon.className = 'fa-solid fa-triangle-exclamation';
+        syncText.textContent = 'Hata!';
+        syncBtn.disabled = false;
+        showAlert('Tarama hatası: ' + e.message, 'error');
+      }
+    });
+
+    loadCategories();
+    loadSources();
+    loadNews();
+    loadBannerAds();
   </script>
 </body>
 </html>
